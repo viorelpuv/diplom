@@ -1,0 +1,613 @@
+{% extends 'base.html' %}
+
+{% block title %}
+Оплата — BRT
+{% endblock %}
+
+{% block body %}
+<div class="seat-selection">
+    <div class="seat-selection__container">
+        <div class="seat-selection__tickets">
+            <!-- Билет "Туда" -->
+            <div class="ticket-card ticket-card--selected" id="forwardCard">
+                <div class="ticket-card__left">
+                    <div class="ticket-card__route">
+                        <h1 class="ticket-card__from" id="fwdFrom">—</h1>
+                        <img src="{{ url_for('static', filename='icons/arrow-short.svg') }}" alt="" class="ticket-card__route-arrow">
+                        <h1 class="ticket-card__to" id="fwdTo">—</h1>
+                    </div>
+                    <div class="ticket-card__details" id="fwdDetails">
+                        <span class="ticket-card__train">—</span>
+                        <span class="ticket-card__separator">|</span>
+                        <span class="ticket-card__duration">—</span>
+                        <span class="ticket-card__transfer">
+                            <span class="transfer-text">—</span>
+                        </span>
+                    </div>
+                </div>
+                <div class="ticket-card__right">
+                    <div class="ticket-card__time-block">
+                        <div class="ticket-card__time" id="fwdDep">—</div>
+                        <div class="ticket-card__date" id="fwdDepDate">—</div>
+                        <div class="ticket-card__station" id="fwdFromStation">—</div>
+                    </div>
+                    <div class="ticket-card__travel-info">
+                        <img src="{{ url_for('static', filename='icons/arrow-long.svg') }}" alt="" class="ticket-card__travel-arrow">
+                        <span class="ticket-card__travel-duration" id="fwdDuration">—</span>
+                    </div>
+                    <div class="ticket-card__time-block">
+                        <div class="ticket-card__time" id="fwdArr">—</div>
+                        <div class="ticket-card__date" id="fwdArrDate">—</div>
+                        <div class="ticket-card__station" id="fwdToStation">—</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Билет "Обратно" -->
+            <div class="ticket-card" id="backwardCard" style="display:none;">
+                <div class="ticket-card__left">
+                    <div class="ticket-card__route">
+                        <h1 class="ticket-card__from" id="bwdFrom">—</h1>
+                        <img src="{{ url_for('static', filename='icons/arrow-short.svg') }}" alt="" class="ticket-card__route-arrow">
+                        <h1 class="ticket-card__to" id="bwdTo">—</h1>
+                    </div>
+                    <div class="ticket-card__details" id="bwdDetails">
+                        <span class="ticket-card__train">—</span>
+                        <span class="ticket-card__separator">|</span>
+                        <span class="ticket-card__duration">—</span>
+                        <span class="ticket-card__transfer">
+                            <span class="transfer-text">—</span>
+                        </span>
+                    </div>
+                </div>
+                <div class="ticket-card__right">
+                    <div class="ticket-card__time-block">
+                        <div class="ticket-card__time" id="bwdDep">—</div>
+                        <div class="ticket-card__date" id="bwdDepDate">—</div>
+                        <div class="ticket-card__station" id="bwdFromStation">—</div>
+                    </div>
+                    <div class="ticket-card__travel-info">
+                        <img src="{{ url_for('static', filename='icons/arrow-long.svg') }}" alt="" class="ticket-card__travel-arrow">
+                        <span class="ticket-card__travel-duration" id="bwdDuration">—</span>
+                    </div>
+                    <div class="ticket-card__time-block">
+                        <div class="ticket-card__time" id="bwdArr">—</div>
+                        <div class="ticket-card__date" id="bwdArrDate">—</div>
+                        <div class="ticket-card__station" id="bwdToStation">—</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Блок с формами пассажиров (вместо схемы) -->
+            <div class="tickets-control" id="passengerFormsBlock">
+                <h3 class="tickets-control__title">Данные пассажиров</h3>
+                <div id="passengerForms"><!-- Заполняется JS --></div>
+                <div class="contact-info" id="contactInfo" style="display:none;">
+                <div class="contact-info__header">
+                    <h3 class="contact-info__title">Контактная информация покупателя</h3>
+                    <p class="contact-info__subtitle">Информацию о бронировании направим на вашу электронную почту</p>
+                </div>
+                <div class="contact-info__fields">
+                    <div class="contact-info__row">
+                        <div class="contact-info__group">
+                            <label class="contact-info__label">Эл. почта</label>
+                            <input type="email" class="contact-info__input" placeholder="email@example.com">
+                        </div>
+                        <div class="contact-info__group">
+                            <label class="contact-info__label">Телефон</label>
+                            <input type="tel" class="contact-info__input" id="phoneInput" placeholder="+7" oninput="formatPhone(this)">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            </div>
+        </div>
+
+        <!-- Сайдбар -->
+        <div class="seat-selection__sidebar">
+            <h2 class="sidebar__title">Стоимость билетов</h2>
+            <div class="sidebar__route">
+                <span id="sidebarFrom">—</span>
+                <img src="{{ url_for('static', filename='icons/arrow-short-gray.svg') }}" alt="">
+                <span id="sidebarTo">—</span>
+            </div>
+            <div class="sidebar__passengers" id="sidebarPassengers">
+                <div class="sidebar__passenger-row sidebar__passenger-row--empty">
+                    <span class="sidebar__passenger-place" style="color: #A3A3A3; font-size: 16px; width: 100%;">Будет известна после выбора мест</span>
+                </div>
+            </div>
+            <div class="sidebar__total-row">
+                <span class="sidebar__total-label">Итого</span>
+                <span class="sidebar__total-price" id="sidebarTotalPrice">0 ₽</span>
+            </div>
+            <button class="sidebar__continue-btn">Перейти к оплате</button>
+            <div class="sidebar__payment">
+                <p class="sidebar__subtitle">Способы оплаты</p>
+                <div class="sidebar__payment-icons">
+                    <img src="{{ url_for('static', filename='icons/payment/mir.svg') }}" alt="Мир">
+                    <img src="{{ url_for('static', filename='icons/payment/sbp.svg') }}" alt="СБП">
+                    <img src="{{ url_for('static', filename='icons/payment/sberpay.svg') }}" alt="Сберпэй">
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const header = document.getElementById('header');
+    if (header) {
+        header.classList.add('scrolled');
+        header.style.boxShadow = 'none';
+        
+        // Меняем иконки в шапке на тёмные
+        const logoWhite = header.querySelector('.header__logo--white');
+        const logoDark = header.querySelector('.header__logo--dark');
+        if (logoWhite) logoWhite.style.display = 'none';
+        if (logoDark) logoDark.style.display = 'block';
+        
+        const sepImg = header.querySelector('.lang-cur img');
+        const favImg = header.querySelector('.fav');
+        const supportImg = header.querySelector('.support-image');
+        
+        if (sepImg) sepImg.src = '/static/icons/v-line-18.png';
+        if (favImg) favImg.src = '/static/icons/fav.svg';
+        if (supportImg) supportImg.src = '/static/icons/support.svg';
+        
+        // Прокрутка — добавляем тень при скролле
+        window.addEventListener('scroll', function() {
+            if (window.scrollY > 50) {
+                header.style.background = '#EFF1F4';
+                header.style.boxShadow = '0 2px 20px rgba(0, 0, 0, 0.15)';
+            } else {
+                header.style.boxShadow = 'none';
+            }
+        });
+    }
+    
+    const urlParams = new URLSearchParams(window.location.search);
+    const hasBackward = urlParams.get('has_return') === '1';
+    const adults = parseInt(urlParams.get('adults')) || 1;
+    const children = parseInt(urlParams.get('children')) || 0;
+    const infants = parseInt(urlParams.get('infants')) || 0;
+    
+    // Читаем данные из sessionStorage
+    const seats = JSON.parse(sessionStorage.getItem('selectedSeats') || '{"forward":[],"backward":[]}');
+    const counts = JSON.parse(sessionStorage.getItem('ticketCounts') || '{"forward":{"adults":1,"children":0},"backward":{"adults":0,"children":0}}');
+    
+    if (!hasBackward) {
+        document.getElementById('backwardCard').style.display = 'none';
+    } else {
+        document.getElementById('backwardCard').style.display = 'flex';
+    }
+    
+    // Билет "Туда"
+    document.getElementById('fwdFrom').textContent = urlParams.get('from_city') || '—';
+    document.getElementById('fwdTo').textContent = urlParams.get('to_city') || '—';
+    document.getElementById('fwdDep').textContent = urlParams.get('departure') || '—';
+    document.getElementById('fwdArr').textContent = urlParams.get('arrival') || '—';
+    document.getElementById('fwdDuration').textContent = urlParams.get('duration') || '—';
+    document.getElementById('fwdDepDate').textContent = urlParams.get('dep_date') || '—';
+    document.getElementById('fwdArrDate').textContent = urlParams.get('arr_date') || '—';
+    document.getElementById('fwdFromStation').textContent = urlParams.get('from_station') || '—';
+    document.getElementById('fwdToStation').textContent = urlParams.get('to_station') || '—';
+    
+    const transferText = urlParams.get('transfer_text') || '—';
+    const transferClass = transferText.includes('Без') ? 'transfer--none' : 'transfer--one';
+    document.getElementById('fwdDetails').innerHTML = 
+        '<span class="ticket-card__train">' + (urlParams.get('train_number') || '—') + '</span>' +
+        '<span class="ticket-card__separator">|</span>' +
+        '<span class="ticket-card__duration">' + (urlParams.get('duration') || '—') + '</span>' +
+        '<span class="ticket-card__transfer ' + transferClass + '">' +
+            '<span class="transfer-text">' + transferText + '</span>' +
+        '</span>';
+    
+    // Билет "Обратно"
+    if (hasBackward) {
+        document.getElementById('bwdFrom').textContent = urlParams.get('return_from_city') || '—';
+        document.getElementById('bwdTo').textContent = urlParams.get('return_to_city') || '—';
+        document.getElementById('bwdDep').textContent = urlParams.get('return_departure') || '—';
+        document.getElementById('bwdArr').textContent = urlParams.get('return_arrival') || '—';
+        document.getElementById('bwdDuration').textContent = urlParams.get('return_duration') || '—';
+        document.getElementById('bwdDepDate').textContent = urlParams.get('return_dep_date') || '—';
+        document.getElementById('bwdArrDate').textContent = urlParams.get('return_arr_date') || '—';
+        document.getElementById('bwdFromStation').textContent = urlParams.get('return_from_station') || '—';
+        document.getElementById('bwdToStation').textContent = urlParams.get('return_to_station') || '—';
+        
+        const retTransferText = urlParams.get('return_transfer_text') || '—';
+        const retTransferClass = retTransferText.includes('Без') ? 'transfer--none' : 'transfer--one';
+        document.getElementById('bwdDetails').innerHTML = 
+            '<span class="ticket-card__train">' + (urlParams.get('return_train_number') || '—') + '</span>' +
+            '<span class="ticket-card__separator">|</span>' +
+            '<span class="ticket-card__duration">' + (urlParams.get('return_duration') || '—') + '</span>' +
+            '<span class="ticket-card__transfer ' + retTransferClass + '">' +
+                '<span class="transfer-text">' + retTransferText + '</span>' +
+            '</span>';
+    }
+    
+    // Сайдбар
+    document.getElementById('sidebarFrom').textContent = urlParams.get('from_city') || '—';
+    document.getElementById('sidebarTo').textContent = urlParams.get('to_city') || '—';
+    
+    let sidebarHTML = '';
+    let total = 0;
+    
+    if (seats.forward.length > 0) {
+        sidebarHTML += '<div style="margin-bottom: 0px; font-weight: 600; font-size: 17px; color: #A3A3A3; font-family: \'Commissioner\', sans-serif;">Места туда</div>';
+        seats.forward.forEach((s, i) => {
+            const type = i < (counts.forward.adults || adults) ? 'Взрослый' : 'Детский';
+            sidebarHTML += '<div class="sidebar__passenger-row"><span class="sidebar__passenger-type">' + type + '</span><span class="sidebar__passenger-place">Ваг.' + s.wagon + ', место ' + s.seat + '</span><span class="sidebar__passenger-price">' + (s.price || 0).toLocaleString('ru-RU') + ' ₽</span></div>';
+            total += (s.price || 0);
+        });
+    }
+    
+    if (hasBackward && seats.backward.length > 0) {
+        sidebarHTML += '<div style="margin-top:12px;margin-bottom:0;font-weight:600;font-size:17px;color:#A3A3A3;">Места обратно</div>';
+        seats.backward.forEach((s, i) => {
+            const type = i < (counts.backward.adults || adults) ? 'Взрослый' : 'Детский';
+            sidebarHTML += '<div class="sidebar__passenger-row"><span class="sidebar__passenger-type">' + type + '</span><span class="sidebar__passenger-place">Ваг.' + s.wagon + ', место ' + s.seat + '</span><span class="sidebar__passenger-price">' + (s.price || 0).toLocaleString('ru-RU') + ' ₽</span></div>';
+            total += (s.price || 0);
+        });
+    }
+    
+    if (!sidebarHTML) {
+        sidebarHTML = '<div class="sidebar__passenger-row sidebar__passenger-row--empty"><span class="sidebar__passenger-place" style="color:#A3A3A3;font-size:16px;width:100%;">Места не выбраны</span></div>';
+    }
+    
+    document.getElementById('sidebarPassengers').innerHTML = sidebarHTML;
+    document.getElementById('sidebarTotalPrice').textContent = total.toLocaleString('ru-RU') + ' ₽';
+    
+    // Формы пассажиров
+    let formsHtml = '';
+    let num = 1;
+    
+    for (let i = 0; i < adults; i++) {
+        formsHtml += getFormHTML(num++, 'Взрослый', 'Туда');
+    }
+    for (let i = 0; i < children; i++) {
+        formsHtml += getFormHTML(num++, 'Детский', 'Туда');
+    }
+    if (hasBackward) {
+        for (let i = 0; i < adults; i++) {
+            formsHtml += getFormHTML(num++, 'Взрослый', 'Обратно');
+        }
+        for (let i = 0; i < children; i++) {
+            formsHtml += getFormHTML(num++, 'Детский', 'Обратно');
+        }
+    }
+    
+    document.getElementById('passengerForms').innerHTML = formsHtml;
+
+    window.togglePatronymic = function(checkbox) {
+        const patronymicGroup = checkbox.closest('.passenger-form__group--patronymic');
+        const patronymicInput = patronymicGroup.querySelector('.passenger-form__input');
+        
+        if (checkbox.checked) {
+            patronymicInput.disabled = true;
+            patronymicInput.value = '';
+            patronymicInput.placeholder = '';
+            patronymicInput.style.opacity = '0.5';
+        } else {
+            patronymicInput.disabled = false;
+            patronymicInput.placeholder = 'Иванович';
+            patronymicInput.style.opacity = '1';
+        }
+    };
+
+    window.formatPassportNumber = function(input) {
+        const docType = input.dataset.docType;
+        let value = input.value.replace(/[^\dA-Za-zА-Яа-я]/g, '');
+        
+        if (docType === 'military' || docType === 'military_id') {
+            value = value.toUpperCase();
+            if (value.length > 9) value = value.slice(0, 9);
+        } else if (docType === 'foreign_doc') {
+            if (value.length > 20) value = value.slice(0, 20);
+            input.value = value;
+            return;
+        } else {
+            value = value.replace(/\D/g, '');
+        }
+        
+        let formatted = '';
+        let numVal = value.replace(/[^\d]/g, '');
+        
+        switch (docType) {
+            case 'passport_rf':
+                if (numVal.length > 10) numVal = numVal.slice(0, 10);
+                if (numVal.length > 0) formatted = numVal.slice(0, 4);
+                if (numVal.length >= 5) formatted += ' ' + numVal.slice(4, 10);
+                break;
+            case 'passport_int':
+                if (numVal.length > 9) numVal = numVal.slice(0, 9);
+                if (numVal.length > 0) formatted = numVal.slice(0, 2);
+                if (numVal.length >= 3) formatted += ' ' + numVal.slice(2, 9);
+                break;
+            case 'birth_cert':
+                formatted = numVal.slice(0, 12);
+                break;
+            case 'seaman':
+                formatted = numVal.slice(0, 7);
+                break;
+            case 'military':
+            case 'military_id':
+                if (value.length > 9) value = value.slice(0, 9);
+                formatted = value;
+                break;
+            case 'foreign_doc':
+                formatted = value;
+                break;
+            default:
+                formatted = numVal;
+        }
+        
+        input.value = formatted;
+    };
+
+    window.updateDocumentFields = function(select) {
+        const num = select.dataset.num;
+        const docRow = document.getElementById('doc-row-' + num);
+        const numberInput = docRow.querySelector('.doc-number-input');
+        const extraDiv = document.getElementById('doc-extra-' + num);
+        const docType = select.value;
+        
+        numberInput.dataset.docType = docType;
+        numberInput.value = '';
+        
+        switch (docType) {
+            case 'passport_rf':
+                numberInput.placeholder = '0000 000000';
+                numberInput.maxLength = 11;
+                break;
+            case 'passport_int':
+                numberInput.placeholder = '00 0000000';
+                numberInput.maxLength = 10;
+                break;
+            case 'birth_cert':
+                numberInput.placeholder = '000000000000';
+                numberInput.maxLength = 12;
+                break;
+            case 'seaman':
+                numberInput.placeholder = '0000000';
+                numberInput.maxLength = 7;
+                break;
+            case 'military':
+            case 'military_id':
+                numberInput.placeholder = 'АА1234567';
+                numberInput.maxLength = 9;
+                break;
+            case 'foreign_doc':
+                numberInput.placeholder = 'Номер документа';
+                numberInput.maxLength = 20;
+                break;
+        }
+        
+        // Находим форму пассажира
+        const passengerForm = docRow.closest('.passenger-form__fields');
+        
+        // Удаляем старые дополнительные поля
+        const oldExtra = passengerForm.querySelector('.doc-extra-fields');
+        if (oldExtra) oldExtra.remove();
+        
+        if (docType === 'military' || docType === 'military_id') {
+            const extraFields = document.createElement('div');
+            extraFields.className = 'passenger-form__row doc-extra-fields';
+            extraFields.style.marginTop = '0';
+            extraFields.innerHTML = 
+                '<div class="passenger-form__group" style="flex: 1;">' +
+                    '<label class="passenger-form__label">Категория военнослужащего</label>' +
+                    '<div class="passenger-form__select-wrapper">' +
+                        '<select class="passenger-form__select">' +
+                            '<option value="contract">Контрактник</option>' +
+                            '<option value="conscript">Призывник</option>' +
+                            '<option value="mobilized">Мобилизованный</option>' +
+                            '<option value="cadet">Курсант</option>' +
+                        '</select>' +
+                        '<img src="/static/icons/arrow-short.svg" alt="" class="passenger-form__select-arrow">' +
+                    '</div>' +
+                '</div>' +
+                '<div class="passenger-form__group" style="flex: 1;">' +
+                    '<label class="passenger-form__label">Дата начала военной службы</label>' +
+                    '<input type="date" class="passenger-form__input passenger-form__input--date">' +
+                '</div>';
+            
+            docRow.after(extraFields);
+            
+            extraFields.querySelector('.passenger-form__select').addEventListener('change', function() {
+                setTimeout(() => { this.blur(); }, 10);
+            });
+            
+        } else if (docType === 'foreign_doc') {
+            const extraFields = document.createElement('div');
+            extraFields.className = 'passenger-form__row doc-extra-fields';
+            extraFields.style.marginTop = '0';
+            extraFields.innerHTML = 
+                '<div class="passenger-form__group" style="flex: 1;">' +
+                    '<label class="passenger-form__label">Гражданство</label>' +
+                    '<input type="text" class="passenger-form__input" placeholder="Казахстан">' +
+                '</div>';
+            
+            docRow.after(extraFields);
+        }
+        
+        extraDiv.style.display = 'none';
+        
+        setTimeout(() => { select.blur(); }, 10);
+    };
+
+    function getFormHTML(num, type, direction) {
+        return '<div class="passenger-form" style="margin-top:20px;">' +
+            '<div class="passenger-form__header">' +
+                '<span class="passenger-form__number">' + num + '</span>' +
+                '<span class="passenger-form__type">' + (type === 'Взрослый' ? 'Взрослый пассажир' : 'Детский билет') + ' — ' + direction + '</span>' +
+            '</div>' +
+            '<div class="passenger-form__fields">' +
+                '<div class="passenger-form__row passenger-form__row--fio">' +
+                    '<div class="passenger-form__group"><label class="passenger-form__label">Фамилия</label><input type="text" class="passenger-form__input" placeholder="Иванов"></div>' +
+                    '<div class="passenger-form__group"><label class="passenger-form__label">Имя</label><input type="text" class="passenger-form__input" placeholder="Иван"></div>' +
+                    '<div class="passenger-form__group passenger-form__group--patronymic">' +
+                        '<label class="passenger-form__label">Отчество</label>' +
+                        '<input type="text" class="passenger-form__input" placeholder="Иванович">' +
+                        '<label class="passenger-form__checkbox-label">' +
+                            '<input type="checkbox" class="passenger-form__checkbox" onchange="togglePatronymic(this)">' +
+                            '<span class="passenger-form__checkbox-text">Нет отчества</span>' +
+                        '</label>' +
+                    '</div>' +
+                '</div>' +
+                '<div class="passenger-form__row">' +
+                    '<div class="passenger-form__group" style="flex: 1;">' +
+                        '<label class="passenger-form__label">Пол</label>' +
+                        '<div class="passenger-form__gender">' +
+                            '<div class="passenger-form__gender-slider"></div>' +
+                            '<button type="button" class="passenger-form__gender-btn passenger-form__gender-btn--active" data-gender="male">Мужской</button>' +
+                            '<button type="button" class="passenger-form__gender-btn" data-gender="female">Женский</button>' +
+                        '</div>' +
+                    '</div>' +
+                    '<div class="passenger-form__group" style="flex: 1.5;">' +
+                        '<label class="passenger-form__label">Дата рождения</label>' +
+                        '<input type="date" class="passenger-form__input passenger-form__input--date">' +
+                    '</div>' +
+                '</div>' +
+                '<div class="passenger-form__row" id="doc-row-' + num + '">' +
+                    '<div class="passenger-form__group" style="flex: 1.5;">' +
+                        '<label class="passenger-form__label">Документ</label>' +
+                        '<div class="passenger-form__select-wrapper">' +
+                            '<select class="passenger-form__select doc-type-select" onchange="updateDocumentFields(this)" data-num="' + num + '">' +
+                                (type === 'Взрослый' ? 
+                                    '<option value="passport_rf" selected>Паспорт РФ</option>' +
+                                    '<option value="passport_int">Загранпаспорт</option>' +
+                                    '<option value="seaman">Паспорт моряка</option>' +
+                                    '<option value="military">Военный билет</option>' +
+                                    '<option value="military_id">Удостоверение военнослужащего</option>' +
+                                    '<option value="foreign_doc">Иностранный документ</option>'
+                                :
+                                    '<option value="birth_cert" selected>Свидетельство о рождении</option>' +
+                                    '<option value="passport_int">Загранпаспорт</option>' +
+                                    '<option value="foreign_doc">Иностранный документ</option>'
+                                ) +
+                            '</select>' +
+                            '<img src="/static/icons/arrow-short.svg" alt="" class="passenger-form__select-arrow">' +
+                        '</div>' +
+                    '</div>' +
+                    '<div class="passenger-form__group" style="flex: 1;" id="doc-number-group-' + num + '">' +
+                        '<label class="passenger-form__label">Серия и номер</label>' +
+                        '<input type="text" class="passenger-form__input doc-number-input" placeholder="0000 000000" maxlength="11" oninput="formatPassportNumber(this)" data-doc-type="' + (type === 'Взрослый' ? 'passport_rf' : 'birth_cert') + '">' +
+                    '</div>' +
+                    '<div id="doc-extra-' + num + '" style="display:none;"></div>' +
+                '</div>' +
+            '</div>' +
+        '</div>';
+    }
+
+    // Показываем блок контактной информации
+    document.getElementById('contactInfo').style.display = 'block';
+
+    // Форматирование телефона
+    const phoneInput = document.getElementById('phoneInput');
+    if (phoneInput) {
+        phoneInput.addEventListener('input', function(e) {
+            let value = this.value.replace(/\D/g, '');
+            
+            if (value === '') {
+                this.value = '';
+                return;
+            }
+            
+            if (value.startsWith('7')) {
+                value = value.slice(1);
+            }
+            
+            if (value.length > 10) {
+                value = value.slice(0, 10);
+            }
+            
+            if (value.length === 0) {
+                this.value = '+7';
+                this.setSelectionRange(2, 2);
+                return;
+            }
+            
+            let formatted = '+7';
+            
+            if (value.length >= 1) {
+                formatted += ' (' + value.slice(0, Math.min(3, value.length));
+            }
+            
+            if (value.length >= 3) {
+                formatted += ') ' + value.slice(3, Math.min(6, value.length));
+            }
+            
+            if (value.length >= 6) {
+                formatted += '-' + value.slice(6, Math.min(8, value.length));
+            }
+            
+            if (value.length >= 8) {
+                formatted += '-' + value.slice(8, 10);
+            }
+            
+            this.value = formatted;
+            
+            let newPos = formatted.length;
+            this.setSelectionRange(newPos, newPos);
+        });
+        
+        phoneInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Backspace') {
+                let cursorPos = this.selectionStart;
+                let value = this.value;
+                
+                if (cursorPos > 2 && cursorPos <= value.length) {
+                    let charBefore = value[cursorPos - 1];
+                    if (charBefore === ')' || charBefore === '-' || charBefore === ' ' || charBefore === '(') {
+                        e.preventDefault();
+                        let before = value.slice(0, cursorPos - 2);
+                        let after = value.slice(cursorPos);
+                        this.value = before + after;
+                        this.dispatchEvent(new Event('input'));
+                        let newPos = before.length;
+                        this.setSelectionRange(newPos, newPos);
+                    }
+                }
+                
+                if (cursorPos <= 2) {
+                    e.preventDefault();
+                }
+            }
+        });
+        
+        phoneInput.addEventListener('click', function() {
+            if (this.selectionStart < 2) {
+                this.setSelectionRange(this.value.length, this.value.length);
+            }
+        });
+    }
+
+    // Анимированный переключатель пола
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('passenger-form__gender-btn')) {
+            const container = e.target.closest('.passenger-form__gender');
+            const slider = container.querySelector('.passenger-form__gender-slider');
+            const buttons = container.querySelectorAll('.passenger-form__gender-btn');
+            
+            buttons.forEach(btn => btn.classList.remove('passenger-form__gender-btn--active'));
+            e.target.classList.add('passenger-form__gender-btn--active');
+            
+            if (e.target.dataset.gender === 'female') {
+                slider.classList.add('passenger-form__gender-slider--right');
+            } else {
+                slider.classList.remove('passenger-form__gender-slider--right');
+            }
+        }
+    });
+    
+    // Убираем фокус с select после выбора опции
+    document.addEventListener('change', function(e) {
+        if (e.target.classList.contains('passenger-form__select') && !e.target.classList.contains('doc-type-select')) {
+            setTimeout(() => {
+                e.target.blur();
+            }, 10);
+        }
+    });
+});
+</script>
+{% endblock %}

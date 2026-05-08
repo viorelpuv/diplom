@@ -1,0 +1,497 @@
+/* ============================================
+   PAYMENT PAGE
+   ============================================ */
+.payment {
+    background: #EFF1F4;
+    min-height: 100vh;
+    padding-top: 110px;
+}
+
+.payment__container {
+    display: flex;
+    gap: 24px;
+    padding: 0 127px;
+    max-width: 100%;
+    margin: 0 auto;
+    align-items: flex-start;
+}
+
+.payment__form {
+    flex: 3;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.payment__title {
+    font-family: 'Commissioner', sans-serif;
+    font-weight: 600;
+    font-size: 32px;
+    color: #1E1E1E;
+    margin: 0 0 10px 0;
+}
+
+/* Форма пассажира */
+.passenger-form {
+    background: #FFFFFF;
+    border-radius: 35px;
+    padding: 30px 40px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+    border: 1.5px solid #D9D9D9;
+}
+
+.passenger-form__header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 24px;
+}
+
+.passenger-form__number {
+    width: 32px;
+    height: 32px;
+    background: #4672FF;
+    color: #FFFFFF;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Commissioner', sans-serif;
+    font-weight: 600;
+    font-size: 18px;
+}
+
+.passenger-form__type {
+    font-family: 'Commissioner', sans-serif;
+    font-weight: 600;
+    font-size: 27px;
+    color: #1E1E1E;
+}
+
+.passenger-form__fields {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.passenger-form__row {
+    display: flex;
+    gap: 16px;
+    align-items: flex-end;
+}
+
+.passenger-form__group {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.passenger-form__label {
+    font-family: 'Commissioner', sans-serif;
+    font-weight: 500;
+    font-size: 14px;
+    color: #A3A3A3;
+    margin-left: 5px;
+}
+
+.passenger-form__input,
+.passenger-form__select {
+    height: 64px;
+    border: 2px solid #D9D9D9;
+    border-radius: 18.5px;
+    padding: 0 16px;
+    font-family: 'Commissioner', sans-serif;
+    font-weight: 400;
+    font-size: 16px;
+    color: #1E1E1E;
+    outline: none;
+    transition: border-color 0.2s;
+    width: 100%;
+    box-sizing: border-box;
+    font-size: 20px;
+    font-weight: 500;
+}
+
+.passenger-form__input:focus,
+.passenger-form__select:focus {
+    border-color: #4672FF;
+}
+
+.passenger-form__input::placeholder {
+    color: #BCBCBC;
+    font-size: 20px;
+    font-weight: 500;
+}
+
+.passenger-form__input:disabled {
+    background: #F5F5F7;
+    color: #BCBCBC;
+    opacity: 0.7;
+}
+
+.passenger-form__input:disabled::placeholder {
+    color: transparent;
+}
+
+.passenger-form__input--date {
+    cursor: pointer;
+    width: 254px;
+}
+
+.passenger-form__input--date::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+    opacity: 0.5;
+}
+
+
+.passenger-form__select-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+.passenger-form__select {
+    height: 64px;
+    border: 2px solid #D9D9D9;
+    border-radius: 18.5px;
+    padding: 0 16px;
+    font-family: 'Commissioner', sans-serif;
+    font-weight: 500;
+    font-size: 20px;
+    color: #1E1E1E;
+    outline: none;
+    transition: border-color 0.2s;
+    width: 100%;
+    box-sizing: border-box;
+    background-color: #F5F5F7;
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+}
+
+.passenger-form__select:focus {
+    border-color: #4672FF;
+}
+
+.passenger-form__select-arrow {
+    position: absolute;
+    right: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 14px;
+    height: auto;
+    pointer-events: none;
+    transition: transform 0.2s ease;
+}
+
+.passenger-form__select:focus + .passenger-form__select-arrow {
+    transform: translateY(-50%) rotate(180deg);
+}
+
+/* Чекбокс "Нет отчества" */
+.passenger-form__group--patronymic {
+    position: relative;
+}
+
+.passenger-form__checkbox {
+    width: 20px;
+    height: 20px;
+    border: 2px solid #D9D9D9;
+    border-radius: 6px;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background: #FFFFFF;
+    cursor: pointer;
+    flex-shrink: 0;
+    position: relative;
+    padding: 0;
+    margin: 0;
+    outline: none;
+}
+
+.passenger-form__checkbox:checked {
+    background: #4672FF;
+    border-color: #4672FF;
+}
+
+.passenger-form__checkbox:checked::after {
+    content: '';
+    position: absolute;
+    left: 5px;
+    top: 2px;
+    width: 6px;
+    height: 10px;
+    border: solid #FFFFFF;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+}
+
+.passenger-form__checkbox-label {
+    position: absolute;
+    bottom: -27px;
+    left: 5px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    user-select: none;
+}
+
+.passenger-form__checkbox-text {
+    font-family: 'Commissioner', sans-serif;
+    font-weight: 400;
+    font-size: 14px;
+    color: #A3A3A3;
+}
+
+/* Кнопки выбора пола */
+.passenger-form__gender {
+    display: flex;
+    gap: 5px;
+    height: 64px;
+    border: 2px solid #D9D9D9;
+    border-radius: 18.5px;
+    padding: 5px;
+    box-sizing: border-box;
+}
+
+.passenger-form__gender-btn {
+    flex: 1;
+    height: 100%;
+    border: none;
+    background: transparent;
+    font-family: 'Commissioner', sans-serif;
+    font-weight: 400;
+    font-size: 16px;
+    color: #A3A3A3;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border-radius: 14px;
+    font-size: 18px;
+}
+
+.passenger-form__gender-btn--active {
+    background: #1E1E1E;
+    color: #FFFFFF;
+    font-weight: 500;
+}
+
+/* Сайдбар */
+.payment__sidebar {
+    flex: 1;
+    background: #FFFFFF;
+    border-radius: 35px;
+    padding: 30px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+    border: 1.5px solid #D9D9D9;
+    position: sticky;
+    top: 110px;
+}
+
+.sidebar__tickets {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.sidebar__ticket {
+    background: #F5F5F7;
+    border-radius: 18px;
+    padding: 16px;
+}
+
+.sidebar__ticket-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 4px;
+}
+
+.sidebar__ticket-train {
+    font-family: 'Commissioner', sans-serif;
+    font-weight: 600;
+    font-size: 16px;
+    color: #1E1E1E;
+}
+
+.sidebar__ticket-date {
+    font-family: 'Commissioner', sans-serif;
+    font-weight: 400;
+    font-size: 14px;
+    color: #A3A3A3;
+}
+
+.sidebar__ticket-time {
+    font-family: 'Commissioner', sans-serif;
+    font-weight: 500;
+    font-size: 14px;
+    color: #4672FF;
+    margin-bottom: 8px;
+}
+
+.sidebar__ticket-seats {
+    display: flex;
+    justify-content: space-between;
+    font-family: 'Commissioner', sans-serif;
+    font-weight: 400;
+    font-size: 14px;
+    color: #1E1E1E;
+}
+
+.sidebar__pay-btn {
+    width: 100%;
+    padding: 16px;
+    background: #4672FF;
+    background: linear-gradient(135deg, #4672FF, #7193FF);
+    border: none;
+    border-radius: 18.5px;
+    font-family: 'Commissioner', sans-serif;
+    font-weight: 500;
+    font-size: 18px;
+    color: #FFFFFF;
+    cursor: pointer;
+    transition: background 0.2s ease;
+    margin-bottom: 20px;
+}
+
+.sidebar__pay-btn:hover {
+    background: #003CFF;
+    background: linear-gradient(135deg, #003CFF, #4672FF);
+}
+
+/* Контактная информация */
+.contact-info {
+    background: #FFFFFF;
+    border-radius: 35px;
+    padding: 30px 40px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+    border: 1.5px solid #D9D9D9;
+    margin-top: 20px;
+}
+
+.contact-info__header {
+    margin-bottom: 20px;
+}
+
+.contact-info__title {
+    font-family: 'Commissioner', sans-serif;
+    font-weight: 600;
+    font-size: 20px;
+    color: #1E1E1E;
+    margin: 0 0 6px 0;
+    font-size: 27px;
+}
+
+.contact-info__subtitle {
+    font-family: 'Commissioner', sans-serif;
+    font-weight: 400;
+    font-size: 20px;
+    color: #1e1e1e;
+    margin: 0;
+}
+
+.contact-info__fields {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.contact-info__row {
+    display: flex;
+    gap: 16px;
+}
+
+.contact-info__group {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.contact-info__label {
+    font-family: 'Commissioner', sans-serif;
+    font-weight: 500;
+    font-size: 14px;
+    color: #A3A3A3;
+    margin-left: 5px;
+}
+
+.contact-info__input {
+    height: 64px;
+    border: 2px solid #D9D9D9;
+    border-radius: 18.5px;
+    padding: 0 16px;
+    font-family: 'Commissioner', sans-serif;
+    font-weight: 500;
+    font-size: 20px;
+    color: #1E1E1E;
+    outline: none;
+    transition: border-color 0.2s;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.contact-info__input:focus {
+    border-color: #4672FF;
+}
+
+.contact-info__input::placeholder {
+    color: #BCBCBC;
+    font-size: 20px;
+    font-weight: 500;
+}
+
+.seat-selection {
+    padding-bottom: 40px;
+}
+
+.passenger-form__gender {
+    display: flex;
+    gap: 0;
+    height: 64px;
+    border: 2px solid #D9D9D9;
+    border-radius: 18.5px;
+    padding: 5px;
+    box-sizing: border-box;
+    position: relative;
+    background: #F5F5F7;
+}
+
+.passenger-form__gender-slider {
+    position: absolute;
+    top: 4px;
+    left: 4px;
+    width: calc(50% - 4px);
+    height: calc(100% - 8px);
+    background: #1E1E1E;
+    border-radius: 14px;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 0;
+}
+
+.passenger-form__gender-slider--right {
+    transform: translateX(calc(100% + 0px));
+}
+
+.passenger-form__gender-btn {
+    flex: 1;
+    height: 100%;
+    border: none;
+    background: transparent;
+    font-family: 'Commissioner', sans-serif;
+    font-weight: 400;
+    font-size: 18px;
+    color: #A3A3A3;
+    cursor: pointer;
+    transition: color 0.3s ease;
+    border-radius: 14px;
+    position: relative;
+    z-index: 1;
+}
+
+.passenger-form__gender-btn--active {
+    color: #FFFFFF;
+    font-weight: 500;
+}

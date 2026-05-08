@@ -1,0 +1,704 @@
+<!-- templates/select_seats.html -->
+{% extends 'base.html' %}
+
+{% block title %}
+Выбор мест — BRT
+{% endblock %}
+
+{% block body %}
+<div class="seat-selection">
+    <div class="seat-selection__container">
+        <div class="seat-selection__tickets">
+            <!-- Билет "Туда" -->
+            <div class="ticket-card ticket-card--selected" id="forwardTicket">
+                <div class="ticket-card__left">
+                    <div class="ticket-card__route">
+                        <h1 class="ticket-card__from">{{ trip.get('from_city', trip.get('from', '')) }}</h1>
+                        <img src="{{ url_for('static', filename='icons/arrow-short.svg') }}" alt="" class="ticket-card__route-arrow">
+                        <h1 class="ticket-card__to">{{ trip.get('to_city', trip.get('to', '')) }}</h1>
+                    </div>
+                    
+                    <div class="ticket-card__details">
+                        <span class="ticket-card__train">{{ trip.get('train_number', '') }}</span>
+                        {% if trip.get('train_name') %}
+                        <span class="ticket-card__separator">|</span>
+                        <span class="ticket-card__train">{{ trip.get('train_name') }}</span>
+                        {% endif %}
+                        <span class="ticket-card__separator">|</span>
+                        <span class="ticket-card__duration">{{ trip.get('duration', '') }}</span>
+                        <span class="ticket-card__transfer transfer--{{ 'none' if trip.get('transfer_count', 0) == 0 else 'one' }}">
+                            <span class="transfer-text">{{ 'Без пересадок' if trip.get('transfer_count', 0) == 0 else 'С пересадкой' }}</span>
+                        </span>
+                    </div>
+                    
+                    <a href="{{ url_for('search', from=from_city, to=to_city, date_from=date_from) }}" class="ticket-card__change">Изменить поезд туда</a>
+                </div>
+                
+                <div class="ticket-card__right">
+                    <div class="ticket-card__time-block">
+                        {% set dep = trip.get('departure', trip.get('departure_time', '')) %}
+                        <div class="ticket-card__time">{{ dep[:5] if dep else '' }}</div>
+                        {% set date_str = trip.get('date', '') %}
+                        {% if trip.get('day_dep') %}
+                            <div class="ticket-card__date">{{ trip.get('day_dep') }} {{ trip.get('month_dep', '')|month_name }}{% if date_str %}, {{ date_str|day_of_week }}{% endif %}</div>
+                        {% elif date_str %}
+                            <div class="ticket-card__date">{{ date_str.split('-')[2] if date_str|length > 5 else date_str }} {{ date_str.split('-')[1] if date_str|length > 5 else '' }}{% if date_str|length > 5 %}, {{ date_str|day_of_week }}{% endif %}</div>
+                        {% endif %}
+                        <div class="ticket-card__station" title="{{ trip.get('from_station', '') }}">{{ trip.get('from_station', '')|short_station }}</div>
+                    </div>
+                    
+                    <div class="ticket-card__travel-info">
+                        <img src="{{ url_for('static', filename='icons/arrow-long.svg') }}" alt="" class="ticket-card__travel-arrow">
+                        <span class="ticket-card__travel-duration">{{ trip.get('duration', '') }}</span>
+                    </div>
+                    
+                    <div class="ticket-card__time-block">
+                        {% set arr = trip.get('arrival', trip.get('arrival_time', '')) %}
+                        <div class="ticket-card__time">{{ arr[:5] if arr else '' }}</div>
+                        {% if trip.get('day_arr') %}
+                            <div class="ticket-card__date">{{ trip.get('day_arr') }} {{ trip.get('month_arr', '')|month_name }}{% if date_str %}, {{ date_str|day_of_week }}{% endif %}</div>
+                        {% elif date_str %}
+                            <div class="ticket-card__date">{{ date_str.split('-')[2] if date_str|length > 5 else date_str }} {{ date_str.split('-')[1] if date_str|length > 5 else '' }}{% if date_str|length > 5 %}, {{ date_str|day_of_week }}{% endif %}</div>
+                        {% endif %}
+                        <div class="ticket-card__station" title="{{ trip.get('to_station', '') }}">{{ trip.get('to_station', '')|short_station }}</div>
+                    </div>
+                </div>
+            </div>
+
+            {% if return_trip %}
+            <!-- Билет "Обратно" -->
+            <div class="ticket-card" id="returnTicket">
+                <div class="ticket-card__left">
+                    <div class="ticket-card__route">
+                        <h1 class="ticket-card__from">{{ return_trip.get('from_city', return_trip.get('from', '')) }}</h1>
+                        <img src="{{ url_for('static', filename='icons/arrow-short.svg') }}" alt="" class="ticket-card__route-arrow">
+                        <h1 class="ticket-card__to">{{ return_trip.get('to_city', return_trip.get('to', '')) }}</h1>
+                    </div>
+                    
+                    <div class="ticket-card__details">
+                        <span class="ticket-card__train">{{ return_trip.get('train_number', '') }}</span>
+                        {% if return_trip.get('train_name') %}
+                        <span class="ticket-card__separator">|</span>
+                        <span class="ticket-card__train">{{ return_trip.get('train_name') }}</span>
+                        {% endif %}
+                        <span class="ticket-card__separator">|</span>
+                        <span class="ticket-card__duration">{{ return_trip.get('duration', '') }}</span>
+                        <span class="ticket-card__transfer transfer--{{ 'none' if return_trip.get('transfer_count', 0) == 0 else 'one' }}">
+                            <span class="transfer-text">{{ 'Без пересадок' if return_trip.get('transfer_count', 0) == 0 else 'С пересадкой' }}</span>
+                        </span>
+                    </div>
+                    
+                    <a href="{{ url_for('search', from=to_city, to=from_city, date_from=date_to) }}" class="ticket-card__change">Изменить поезд обратно</a>
+                </div>
+                
+                <div class="ticket-card__right">
+                    <div class="ticket-card__time-block">
+                        {% set dep = return_trip.get('departure', return_trip.get('departure_time', '')) %}
+                        <div class="ticket-card__time">{{ dep[:5] if dep else '' }}</div>
+                        {% set date_str = return_trip.get('date', '') %}
+                        {% if return_trip.get('day_dep') %}
+                            <div class="ticket-card__date">{{ return_trip.get('day_dep') }} {{ return_trip.get('month_dep', '')|month_name }}{% if date_str %}, {{ date_str|day_of_week }}{% endif %}</div>
+                        {% elif date_str %}
+                            <div class="ticket-card__date">{{ date_str.split('-')[2] if date_str|length > 5 else date_str }} {{ date_str.split('-')[1] if date_str|length > 5 else '' }}{% if date_str|length > 5 %}, {{ date_str|day_of_week }}{% endif %}</div>
+                        {% endif %}
+                        <div class="ticket-card__station" title="{{ return_trip.get('from_station', '') }}">{{ return_trip.get('from_station', '')|short_station }}</div>
+                    </div>
+                    
+                    <div class="ticket-card__travel-info">
+                        <img src="{{ url_for('static', filename='icons/arrow-long.svg') }}" alt="" class="ticket-card__travel-arrow">
+                        <span class="ticket-card__travel-duration">{{ return_trip.get('duration', '') }}</span>
+                    </div>
+                    
+                    <div class="ticket-card__time-block">
+                        {% set arr = return_trip.get('arrival', return_trip.get('arrival_time', '')) %}
+                        <div class="ticket-card__time">{{ arr[:5] if arr else '' }}</div>
+                        {% if return_trip.get('day_arr') %}
+                            <div class="ticket-card__date">{{ return_trip.get('day_arr') }} {{ return_trip.get('month_arr', '')|month_name }}{% if date_str %}, {{ date_str|day_of_week }}{% endif %}</div>
+                        {% elif date_str %}
+                            <div class="ticket-card__date">{{ date_str.split('-')[2] if date_str|length > 5 else date_str }} {{ date_str.split('-')[1] if date_str|length > 5 else '' }}{% if date_str|length > 5 %}, {{ date_str|day_of_week }}{% endif %}</div>
+                        {% endif %}
+                        <div class="ticket-card__station" title="{{ return_trip.get('to_station', '') }}">{{ return_trip.get('to_station', '')|short_station }}</div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Блок управления количеством билетов -->
+            <div class="tickets-control">
+                <h3 class="tickets-control__title">Укажите количество билетов</h3>
+                
+                <div class="tickets-control__categories">
+                    <div class="tickets-control__category">
+                        <div class="tickets-control__info">
+                            <span class="tickets-control__label">Взрослые</span>
+                            <span class="tickets-control__sublabel">12 лет и старше</span>
+                        </div>
+                        <div class="tickets-control__counter">
+                            <button class="counter__btn counter__btn--minus" data-target="adults-control">−</button>
+                            <span class="counter__value" id="count-adults-control">{{ adults }}</span>
+                            <button class="counter__btn counter__btn--plus" data-target="adults-control">+</button>
+                        </div>
+                    </div>
+                    
+                    <div class="tickets-control__category">
+                        <div class="tickets-control__info">
+                            <span class="tickets-control__label">Дети</span>
+                            <span class="tickets-control__sublabel">От 2 до 11 лет</span>
+                        </div>
+                        <div class="tickets-control__counter">
+                            <button class="counter__btn counter__btn--minus" data-target="children-control">−</button>
+                            <span class="counter__value" id="count-children-control">{{ children }}</span>
+                            <button class="counter__btn counter__btn--plus" data-target="children-control">+</button>
+                        </div>
+                    </div>
+                    
+                    <div class="tickets-control__category">
+                        <div class="tickets-control__info">
+                            <span class="tickets-control__label">Младенцы</span>
+                            <span class="tickets-control__sublabel">Младше 2 лет, без места</span>
+                        </div>
+                        <div class="tickets-control__counter">
+                            <button class="counter__btn counter__btn--minus" data-target="infants-control">−</button>
+                            <span class="counter__value" id="count-infants-control">{{ infants }}</span>
+                            <button class="counter__btn counter__btn--plus" data-target="infants-control">+</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Блок выбора типа вагона и мест -->
+            <div class="wagon-select" id="wagonSelectBlock" 
+                data-train-number="{{ trip.get('train_number', '') }}"
+                data-from-station="{{ trip.get('from_station', '') }}"
+                data-to-station="{{ trip.get('to_station', '') }}"
+                data-date="{{ trip.get('date', '') }}"
+                data-departure="{{ trip.get('departure', trip.get('departure_time', ''))[:5] }}"
+                data-prices-forward='{{ trip.get("prices", {}) | tojson | forceescape }}'
+                {% if return_trip %}
+                data-prices-backward='{{ return_trip.get("prices", {}) | tojson | forceescape }}'
+                data-return-train-number="{{ return_trip.get('train_number', '') }}"
+                data-return-from-station="{{ return_trip.get('from_station', '') }}"
+                data-return-to-station="{{ return_trip.get('to_station', '') }}"
+                data-return-date="{{ return_trip.get('date', '') }}"
+                data-return-departure="{{ return_trip.get('departure', return_trip.get('departure_time', ''))[:5] }}"
+                {% endif %}>
+                
+                <div class="wagon-select__types" id="wagonTypesContainer">
+                    {% set grouped = trip.get('prices', {}) | group_wagons %}
+                    {% set wagon_order = ['reserved_seat', 'compartment', 'sitting', 'luxury', 'soft', 'sv'] %}
+                    {% for wagon_type in wagon_order %}
+                        {% set data = grouped.get(wagon_type) %}
+                        {% if data and data.price > 0 %}
+                        <div class="wagon-type-card" data-wagon="{{ wagon_type }}">
+                            <div class="wagon-type-card__header">
+                                <span class="wagon-type-card__name">{{ data.wagon_name }}</span>
+                                <span class="wagon-type-card__dash">—</span>
+                                <span class="wagon-type-card__seats">{{ data.free_seats }}</span>
+                            </div>
+                            <div class="wagon-type-card__price">{{ "{:,}".format(data.price).replace(',', ' ') }} ₽</div>
+                        </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+                
+                <div class="wagon-scheme" id="wagonScheme">
+                    <p style="text-align: center; color: #A3A3A3; padding: 40px 0;">Загрузка схемы вагона...</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="seat-selection__sidebar">
+            <h2 class="sidebar__title">Стоимость билетов</h2>
+            <div class="sidebar__route">
+                <span>{{ trip.get('from_city', trip.get('from', '')) }}</span>
+                <img src="{{ url_for('static', filename='icons/arrow-short-gray.svg') }}" alt="">
+                <span>{{ trip.get('to_city', trip.get('to', '')) }}</span>
+            </div>
+            <div class="sidebar__passengers" id="sidebarPassengers">
+                {% if adults > 0 %}
+                <div class="sidebar__passenger-row sidebar__passenger-row--empty">
+                    <span class="sidebar__passenger-type">Взрослый</span>
+                    <span class="sidebar__passenger-place">Место не выбрано</span>
+                </div>
+                {% endif %}
+                {% for i in range(adults - 1) %}
+                <div class="sidebar__passenger-row sidebar__passenger-row--empty">
+                    <span class="sidebar__passenger-type">Взрослый</span>
+                    <span class="sidebar__passenger-place">Место не выбрано</span>
+                </div>
+                {% endfor %}
+                {% for i in range(children) %}
+                <div class="sidebar__passenger-row sidebar__passenger-row--empty">
+                    <span class="sidebar__passenger-type">Детский</span>
+                    <span class="sidebar__passenger-place">Место не выбрано</span>
+                </div>
+                {% endfor %}
+            </div>
+            <div class="sidebar__total-row">
+                <span class="sidebar__total-label">Итого</span>
+                <span class="sidebar__total-price" id="sidebarTotalPrice">0 ₽</span>
+            </div>
+            <button class="sidebar__continue-btn" id="continueBtn">Далее</button>
+            <div class="sidebar__payment">
+                <p class="sidebar__subtitle">Способы оплаты</p>
+                <div class="sidebar__payment-icons">
+                    <img src="{{ url_for('static', filename='icons/payment/mir.svg') }}" alt="Мир">
+                    <img src="{{ url_for('static', filename='icons/payment/sbp.svg') }}" alt="СБП">
+                    <img src="{{ url_for('static', filename='icons/payment/sberpay.svg') }}" alt="Сберпэй">
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Глобальные переменные
+let activeTicket = 'forward';
+let pricePerSeat = 0;
+
+const selectedSeatsStore = {
+    forward: [],
+    backward: []
+};
+window.selectedSeatsStore = selectedSeatsStore;
+
+document.addEventListener('DOMContentLoaded', function() {
+    const header = document.getElementById('header');
+    const logoWhite = header.querySelector('.header__logo--white');
+    const logoDark = header.querySelector('.header__logo--dark');
+    const sepImg = header.querySelector('.lang-cur img');
+    const favImg = header.querySelector('.fav');
+    const supportImg = header.querySelector('.support-image');
+    
+    header.classList.add('scrolled');
+    header.style.boxShadow = 'none';
+    logoWhite.style.display = 'none';
+    logoDark.style.display = 'block';
+    
+    if (sepImg) sepImg.src = '/static/icons/v-line-18.png';
+    if (favImg) favImg.src = '/static/icons/fav.svg';
+    if (supportImg) supportImg.src = '/static/icons/support.svg';
+    
+    window.addEventListener('scroll', function() {
+        if (window.scrollY > 50) {
+            header.style.background = '#EFF1F4';
+            header.style.boxShadow = '0 2px 20px rgba(0, 0, 0, 0.15)';
+        } else {
+            header.style.boxShadow = 'none';
+        }
+    });
+    
+    const ticketCounts = {
+        forward: {
+            adults: parseInt('{{ adults }}') || 1,
+            children: parseInt('{{ children }}') || 0,
+            infants: parseInt('{{ infants }}') || 0
+        },
+        backward: {
+            adults: 0,
+            children: 0,
+            infants: 0
+        }
+    };
+    
+    window._ticketCounts = ticketCounts;
+    
+    const forwardCard = document.getElementById('forwardTicket');
+    
+    document.querySelectorAll('.ticket-card').forEach(card => {
+        card.addEventListener('click', function() {
+            document.querySelectorAll('.ticket-card').forEach(c => c.classList.remove('ticket-card--selected'));
+            this.classList.add('ticket-card--selected');
+            
+            if (this === forwardCard) {
+                activeTicket = 'forward';
+            } else {
+                activeTicket = 'backward';
+            }
+            
+            updateControlCounters();
+            updateSidebar();
+            updateWagonTypes(activeTicket);
+        });
+    });
+    
+    document.querySelectorAll('.tickets-control__counter .counter__btn--plus').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const target = this.dataset.target.replace('-control', '');
+            ticketCounts[activeTicket][target]++;
+            updateControlCounters();
+            updateSidebar();
+        });
+    });
+    
+    document.querySelectorAll('.tickets-control__counter .counter__btn--minus').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const target = this.dataset.target.replace('-control', '');
+            if (target === 'adults' && ticketCounts[activeTicket][target] <= 1) return;
+            if (ticketCounts[activeTicket][target] <= 0) return;
+            ticketCounts[activeTicket][target]--;
+            updateControlCounters();
+            updateSidebar();
+        });
+    });
+    
+    function updateControlCounters() {
+        const counts = ticketCounts[activeTicket];
+        document.getElementById('count-adults-control').textContent = counts.adults;
+        document.getElementById('count-children-control').textContent = counts.children;
+        document.getElementById('count-infants-control').textContent = counts.infants;
+        
+        const minusAdult = document.querySelector('[data-target="adults-control"].counter__btn--minus');
+        if (minusAdult) {
+            minusAdult.style.opacity = counts.adults <= 1 ? '0.4' : '1';
+            minusAdult.style.pointerEvents = counts.adults <= 1 ? 'none' : 'auto';
+        }
+    }
+    
+    function updateSidebar() {
+        const counts = ticketCounts[activeTicket];
+        const maxSeats = (counts.adults || 1) + (counts.children || 0);
+        
+        if (selectedSeatsStore[activeTicket].length > maxSeats) {
+            selectedSeatsStore[activeTicket] = selectedSeatsStore[activeTicket].slice(0, maxSeats);
+        }
+        
+        updateSidebarWithSeats();
+    }
+    
+    updateControlCounters();
+    updateSidebar();
+    
+    const minusAdult = document.querySelector('[data-target="adults-control"].counter__btn--minus');
+    if (minusAdult && ticketCounts[activeTicket].adults <= 1) {
+        minusAdult.style.opacity = '0.4';
+        minusAdult.style.pointerEvents = 'none';
+    }
+    
+    document.querySelectorAll('.wagon-type-card').forEach(card => {
+        card.addEventListener('click', function() {
+            document.querySelectorAll('.wagon-type-card').forEach(c => c.classList.remove('wagon-type-card--selected'));
+            this.classList.add('wagon-type-card--selected');
+            updatePriceFromCard(this);
+            loadWagonScheme(this.dataset.wagon);
+        });
+    });
+    
+    function updatePriceFromCard(card) {
+        const priceText = card.querySelector('.wagon-type-card__price')?.textContent || '';
+        const priceMatch = priceText.match(/[\d\s]+/);
+        if (priceMatch) {
+            pricePerSeat = parseInt(priceMatch[0].replace(/\s/g, '')) || 0;
+        }
+    }
+    
+    const firstWagonCard = document.querySelector('.wagon-type-card');
+    if (firstWagonCard) {
+        firstWagonCard.classList.add('wagon-type-card--selected');
+        updatePriceFromCard(firstWagonCard);
+        loadWagonScheme(firstWagonCard.dataset.wagon);
+    }
+    
+    // Кнопка "Далее"
+    const continueBtn = document.getElementById('continueBtn');
+    if (continueBtn) {
+        continueBtn.addEventListener('click', function() {
+            const hasReturn = document.querySelectorAll('.ticket-card').length > 1;
+            
+            const fwdNeeded = ticketCounts.forward.adults + ticketCounts.forward.children;
+            
+            if (selectedSeatsStore.forward.length < fwdNeeded) {
+                alert('Выберите все места для билета "Туда"');
+                return;
+            }
+            
+            if (hasReturn && selectedSeatsStore.backward.length < (ticketCounts.backward.adults + ticketCounts.backward.children)) {
+                alert('Выберите все места для билета "Обратно"');
+                return;
+            }
+            
+            // Сохраняем в sessionStorage
+            sessionStorage.setItem('selectedSeats', JSON.stringify(selectedSeatsStore));
+            sessionStorage.setItem('ticketCounts', JSON.stringify(ticketCounts));
+            
+            // Читаем данные из HTML
+            const forwardCard = document.getElementById('forwardTicket');
+            const returnCard = document.getElementById('returnTicket');
+            
+            let url = '/payment?';
+            url += 'from_city=' + encodeURIComponent(forwardCard.querySelector('.ticket-card__from').textContent.trim());
+            url += '&to_city=' + encodeURIComponent(forwardCard.querySelector('.ticket-card__to').textContent.trim());
+            url += '&from_station=' + encodeURIComponent(forwardCard.querySelector('.ticket-card__time-block .ticket-card__station').textContent.trim());
+            url += '&to_station=' + encodeURIComponent(forwardCard.querySelectorAll('.ticket-card__time-block .ticket-card__station')[1].textContent.trim());
+            url += '&train_number=' + encodeURIComponent(forwardCard.querySelector('.ticket-card__train').textContent.trim());
+            url += '&departure=' + encodeURIComponent(forwardCard.querySelector('.ticket-card__time-block .ticket-card__time').textContent.trim());
+            url += '&arrival=' + encodeURIComponent(forwardCard.querySelectorAll('.ticket-card__time-block .ticket-card__time')[1].textContent.trim());
+            url += '&duration=' + encodeURIComponent(forwardCard.querySelector('.ticket-card__travel-duration').textContent.trim());
+            url += '&dep_date=' + encodeURIComponent(forwardCard.querySelector('.ticket-card__date').textContent.trim());
+            const arrDateEl = forwardCard.querySelectorAll('.ticket-card__time-block .ticket-card__date')[1];
+            url += '&arr_date=' + encodeURIComponent(arrDateEl ? arrDateEl.textContent.trim() : '');
+            url += '&transfer_text=' + encodeURIComponent(forwardCard.querySelector('.transfer-text').textContent.trim());
+            url += '&adults=' + ticketCounts.forward.adults;
+            url += '&children=' + ticketCounts.forward.children;
+            url += '&infants=' + ticketCounts.forward.infants;
+            url += '&has_return=' + (hasReturn ? '1' : '0');
+            
+            if (returnCard) {
+                url += '&return_from_city=' + encodeURIComponent(returnCard.querySelector('.ticket-card__from').textContent.trim());
+                url += '&return_to_city=' + encodeURIComponent(returnCard.querySelector('.ticket-card__to').textContent.trim());
+                url += '&return_from_station=' + encodeURIComponent(returnCard.querySelector('.ticket-card__time-block .ticket-card__station').textContent.trim());
+                url += '&return_to_station=' + encodeURIComponent(returnCard.querySelectorAll('.ticket-card__time-block .ticket-card__station')[1].textContent.trim());
+                url += '&return_train_number=' + encodeURIComponent(returnCard.querySelector('.ticket-card__train').textContent.trim());
+                url += '&return_departure=' + encodeURIComponent(returnCard.querySelector('.ticket-card__time-block .ticket-card__time').textContent.trim());
+                url += '&return_arrival=' + encodeURIComponent(returnCard.querySelectorAll('.ticket-card__time-block .ticket-card__time')[1].textContent.trim());
+                url += '&return_duration=' + encodeURIComponent(returnCard.querySelector('.ticket-card__travel-duration').textContent.trim());
+                url += '&return_dep_date=' + encodeURIComponent(returnCard.querySelector('.ticket-card__date').textContent.trim());
+                const retArrDateEl = returnCard.querySelectorAll('.ticket-card__time-block .ticket-card__date')[1];
+                url += '&return_arr_date=' + encodeURIComponent(retArrDateEl ? retArrDateEl.textContent.trim() : '');
+                url += '&return_transfer_text=' + encodeURIComponent(returnCard.querySelector('.transfer-text').textContent.trim());
+            }
+            
+            window.location.href = url;
+        });
+    }
+});
+
+function handleSeatClick(seat) {
+    const maxSeats = (window._ticketCounts?.[activeTicket]?.adults || 1) + (window._ticketCounts?.[activeTicket]?.children || 0);
+    const store = selectedSeatsStore[activeTicket];
+    const seatId = seat.dataset.seat;
+    const wagon = seat.dataset.wagon || '1';
+    const container = document.getElementById('wagonScheme');
+    
+    const existingIndex = store.findIndex(s => s.seat === seatId && s.wagon === wagon);
+    
+    if (existingIndex >= 0) {
+        store.splice(existingIndex, 1);
+        seat.classList.remove('seat--selected');
+        seat.style.background = '#E8F0FE';
+        seat.style.color = '#4672FF';
+    } else {
+        if (store.length >= maxSeats) {
+            const removed = store.shift();
+            const removedSeat = container.querySelector(`[data-seat="${removed.seat}"][data-wagon="${removed.wagon}"]`);
+            if (removedSeat) {
+                removedSeat.classList.remove('seat--selected');
+                removedSeat.style.background = '#E8F0FE';
+                removedSeat.style.color = '#4672FF';
+            }
+        }
+        store.push({ seat: seatId, wagon: wagon, price: pricePerSeat });
+        seat.classList.add('seat--selected');
+        seat.style.background = '#4672FF';
+        seat.style.color = '#fff';
+    }
+    
+    updateSidebarWithSeats();
+}
+
+function updateSidebarWithSeats() {
+    const passengerContainer = document.getElementById('sidebarPassengers');
+    const totalPriceEl = document.getElementById('sidebarTotalPrice');
+    
+    if (!passengerContainer || !totalPriceEl) return;
+    
+    const counts = window._ticketCounts || {forward: {adults: 1, children: 0}, backward: {adults: 0, children: 0}};
+    
+    let html = '';
+    let totalPrice = 0;
+    
+    if (selectedSeatsStore.forward.length > 0) {
+        html += '<div style="margin-bottom: 0px; font-weight: 600; font-size: 17px; color: #A3A3A3; font-family: \'Commissioner\', sans-serif;">Места туда</div>';
+        selectedSeatsStore.forward.forEach((s, i) => {
+            const type = i < counts.forward.adults ? 'Взрослый' : 'Детский';
+            html += `<div class="sidebar__passenger-row">
+                <span class="sidebar__passenger-type">${type}</span>
+                <span class="sidebar__passenger-place">Ваг.${s.wagon}, место ${s.seat}</span>
+                <span class="sidebar__passenger-price">${s.price.toLocaleString('ru-RU')} ₽</span>
+            </div>`;
+            totalPrice += s.price;
+        });
+    }
+    
+    if (selectedSeatsStore.backward.length > 0) {
+        html += '<div style="margin-top: 12px; margin-bottom: 0px; font-weight: 600; font-size: 17px; color: #A3A3A3; font-family: \'Commissioner\', sans-serif;">Места обратно</div>';
+        selectedSeatsStore.backward.forEach((s, i) => {
+            const type = i < counts.backward.adults ? 'Взрослый' : 'Детский';
+            html += `<div class="sidebar__passenger-row">
+                <span class="sidebar__passenger-type">${type}</span>
+                <span class="sidebar__passenger-place">Ваг.${s.wagon}, место ${s.seat}</span>
+                <span class="sidebar__passenger-price">${s.price.toLocaleString('ru-RU')} ₽</span>
+            </div>`;
+            totalPrice += s.price;
+        });
+    }
+    
+    if (!html) {
+        html = `<div class="sidebar__passenger-row sidebar__passenger-row--empty">
+            <span class="sidebar__passenger-place" style="color: #A3A3A3; font-size: 16px; width: 100%;">Будет известна после выбора мест</span>
+        </div>`;
+    }
+    
+    passengerContainer.innerHTML = html;
+    totalPriceEl.textContent = totalPrice.toLocaleString('ru-RU') + ' ₽';
+}
+
+function loadWagonScheme(wagonType) {
+    const schemeContainer = document.getElementById('wagonScheme');
+    schemeContainer.innerHTML = '<p style="text-align: center; color: #A3A3A3; padding: 40px 0;">Загрузка схемы вагона...</p>';
+    
+    const selectedCard = document.querySelector('.wagon-type-card--selected');
+    const seatsText = selectedCard ? selectedCard.querySelector('.wagon-type-card__seats')?.textContent : '';
+    const freeSeats = parseInt(seatsText) || 0;
+    
+    const wagonBlock = document.getElementById('wagonSelectBlock');
+    const trainNumber = wagonBlock ? wagonBlock.dataset.trainNumber : '';
+    const date = wagonBlock ? wagonBlock.dataset.date : '';
+    const time = wagonBlock ? wagonBlock.dataset.departure : '';
+    
+    let actualFreeSeats = freeSeats;
+    let actualTotalSeats = freeSeats + 10;
+    
+    const pricesJson = activeTicket === 'forward' 
+        ? (wagonBlock ? wagonBlock.dataset.pricesForward : '')
+        : (wagonBlock ? wagonBlock.dataset.pricesBackward : '');
+    
+    if (pricesJson) {
+        try {
+            const prices = JSON.parse(pricesJson);
+            for (const [key, data] of Object.entries(prices)) {
+                if (data.wagon_type === wagonType) {
+                    actualFreeSeats = data.free_seats || freeSeats;
+                    actualTotalSeats = data.total_seats || (freeSeats + 10);
+                    break;
+                }
+            }
+        } catch(e) {}
+    }
+    
+    if (actualTotalSeats < actualFreeSeats) {
+        actualTotalSeats = actualFreeSeats + Math.ceil(actualFreeSeats * 0.15);
+    }
+    
+    fetch(`/api/wagon-scheme?wagon_type=${wagonType}&free_seats=${actualFreeSeats}&total_seats=${actualTotalSeats}&train_number=${encodeURIComponent(trainNumber)}&date=${date}&time=${time}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.scheme_html) {
+                schemeContainer.innerHTML = data.scheme_html;
+                
+                const store = selectedSeatsStore[activeTicket];
+                store.forEach(s => {
+                    const seat = schemeContainer.querySelector(`[data-seat="${s.seat}"][data-wagon="${s.wagon}"]`);
+                    if (seat && !seat.classList.contains('scheme-seat--occupied')) {
+                        seat.classList.add('seat--selected');
+                        seat.style.background = '#4672FF';
+                        seat.style.color = '#fff';
+                    }
+                });
+                
+                schemeContainer.querySelectorAll('.scheme-seat:not(.scheme-seat--occupied)').forEach(seat => {
+                    seat.addEventListener('click', function() {
+                        handleSeatClick(this);
+                    });
+                });
+            }
+        })
+        .catch(error => {
+            schemeContainer.innerHTML = '<p style="text-align: center; color: #A3A3A3; padding: 40px 0;">Ошибка загрузки схемы</p>';
+        });
+}
+
+function updateWagonTypes(ticketType) {
+    const wagonBlock = document.getElementById('wagonSelectBlock');
+    if (!wagonBlock) return;
+    
+    const pricesJson = ticketType === 'forward' 
+        ? wagonBlock.dataset.pricesForward 
+        : wagonBlock.dataset.pricesBackward;
+    
+    if (!pricesJson) return;
+    
+    let prices;
+    try { prices = JSON.parse(pricesJson); } catch(e) { return; }
+    
+    if (ticketType === 'backward') {
+        wagonBlock.dataset.trainNumber = wagonBlock.dataset.returnTrainNumber || wagonBlock.dataset.trainNumber;
+        wagonBlock.dataset.fromStation = wagonBlock.dataset.returnFromStation || wagonBlock.dataset.fromStation;
+        wagonBlock.dataset.toStation = wagonBlock.dataset.returnToStation || wagonBlock.dataset.toStation;
+        wagonBlock.dataset.date = wagonBlock.dataset.returnDate || wagonBlock.dataset.date;
+        wagonBlock.dataset.departure = wagonBlock.dataset.returnDeparture || wagonBlock.dataset.departure;
+    }
+    
+    const grouped = groupWagons(prices);
+    renderWagonCards(grouped);
+}
+
+function groupWagons(prices) {
+    const grouped = {};
+    for (const [key, data] of Object.entries(prices)) {
+        const wt = data.wagon_type || key;
+        if (!grouped[wt]) {
+            grouped[wt] = { wagon_type: wt, wagon_name: data.wagon_name || '', price: data.price || 0, free_seats: data.free_seats || 0 };
+        } else {
+            grouped[wt].free_seats += data.free_seats || 0;
+            if (data.price > 0 && data.price < grouped[wt].price) grouped[wt].price = data.price;
+        }
+    }
+    return grouped;
+}
+
+function renderWagonCards(grouped) {
+    const container = document.getElementById('wagonTypesContainer');
+    if (!container) return;
+    
+    const wagonOrder = ['reserved_seat', 'compartment', 'sitting', 'luxury', 'soft', 'sv'];
+    let html = '';
+    
+    for (const wt of wagonOrder) {
+        const data = grouped[wt];
+        if (data && data.price > 0) {
+            html += `<div class="wagon-type-card" data-wagon="${wt}">
+                <div class="wagon-type-card__header">
+                    <span class="wagon-type-card__name">${data.wagon_name}</span>
+                    <span class="wagon-type-card__dash">—</span>
+                    <span class="wagon-type-card__seats">${data.free_seats}</span>
+                </div>
+                <div class="wagon-type-card__price">${data.price.toLocaleString('ru-RU')} ₽</div>
+            </div>`;
+        }
+    }
+    
+    container.innerHTML = html;
+    
+    container.querySelectorAll('.wagon-type-card').forEach(card => {
+        card.addEventListener('click', function() {
+            container.querySelectorAll('.wagon-type-card').forEach(c => c.classList.remove('wagon-type-card--selected'));
+            this.classList.add('wagon-type-card--selected');
+            updatePriceFromCard(this);
+            loadWagonScheme(this.dataset.wagon);
+        });
+    });
+    
+    const firstCard = container.querySelector('.wagon-type-card');
+    if (firstCard) {
+        firstCard.classList.add('wagon-type-card--selected');
+        updatePriceFromCard(firstCard);
+        loadWagonScheme(firstCard.dataset.wagon);
+    }
+}
+
+function updatePriceFromCard(card) {
+    const priceText = card.querySelector('.wagon-type-card__price')?.textContent || '';
+    const priceMatch = priceText.match(/[\d\s]+/);
+    if (priceMatch) {
+        pricePerSeat = parseInt(priceMatch[0].replace(/\s/g, '')) || 0;
+    }
+}
+
+document.addEventListener('resetSidebar', function() {
+    updateSidebarWithSeats();
+});
+</script>
+{% endblock %}

@@ -1,0 +1,156 @@
+/* Исправленные @font-face */
+@font-face {
+    font-family: 'Lack';
+    src: url('fonts/Lack/Lack-Regular.woff2') format('woff2'),
+         url('fonts/Lack/Lack-Regular.woff') format('woff'),
+         url('fonts/Lack/Lack-Regular.ttf') format('truetype');
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Lack';
+    src: url('fonts/Lack/Lack-Medium.woff2') format('woff2'),
+         url('fonts/Lack/Lack-Medium.woff') format('woff'),
+         url('fonts/Lack/Lack-Medium.ttf') format('truetype');
+    font-weight: 500;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Lack';
+    src: url('fonts/Lack/Lack-Bold.woff2') format('woff2'),
+         url('fonts/Lack/Lack-Bold.woff') format('woff'),
+         url('fonts/Lack/Lack-Bold.ttf') format('truetype');
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
+}
+
+/* TT Chocolates */
+@font-face {
+    font-family: 'TT Chocolates';
+    src: url('/static/fonts/tt_chocolates/TTChocolates-Light.woff2') format('woff2'),
+         url('/static/fonts/tt_chocolates/TTChocolates-Light.woff') format('woff'),
+         url('/static/fonts/tt_chocolates/TTChocolates-Light.ttf') format('truetype');
+    font-weight: 300;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'TT Chocolates';
+    src: url('/static/fonts/tt_chocolates/TTChocolates-Italic.woff2') format('woff2'),
+         url('/static/fonts/tt_chocolates/TTChocolates-Italic.woff') format('woff'),
+         url('/static/fonts/tt_chocolates/TTChocolates-Italic.ttf') format('truetype');
+    font-weight: 400;
+    font-style: italic;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'TT Chocolates';
+    src: url('/static/fonts/tt_chocolates/TTChocolates-Bold.woff2') format('woff2'),
+         url('/static/fonts/tt_chocolates/TTChocolates-Bold.woff') format('woff'),
+         url('/static/fonts/tt_chocolates/TTChocolates-Bold.ttf') format('truetype');
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'TT Chocolates';
+    src: url('/static/fonts/tt_chocolates/TTChocolates-BoldItalic.woff2') format('woff2'),
+         url('/static/fonts/tt_chocolates/TTChocolates-BoldItalic.woff') format('woff'),
+         url('/static/fonts/tt_chocolates/TTChocolates-BoldItalic.ttf') format('truetype');
+    font-weight: 700;
+    font-style: italic;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'TT Chocolates';
+    src: url('/static/fonts/tt_chocolates/TTChocolates-Black.woff2') format('woff2'),
+         url('/static/fonts/tt_chocolates/TTChocolates-Black.woff') format('woff'),
+         url('/static/fonts/tt_chocolates/TTChocolates-Black.ttf') format('truetype');
+    font-weight: 900;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'TT Chocolates';
+    src: url('/static/fonts/tt_chocolates/TTChocolates-BlackItalic.woff2') format('woff2'),
+         url('/static/fonts/tt_chocolates/TTChocolates-BlackItalic.woff') format('woff'),
+         url('/static/fonts/tt_chocolates/TTChocolates-BlackItalic.ttf') format('truetype');
+    font-weight: 900;
+    font-style: italic;
+    font-display: swap;
+}
+
+/* Calvino Grande */
+@font-face {
+    font-family: 'Calvino Grande';
+    src: url('/static/fonts/Calvino/Calvino-Grande-Italic-trial.ttf') format('truetype');
+    font-weight: 400;
+    font-style: italic;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Calvino Grande';
+    src: url('/static/fonts/Calvino/Calvino-Grande-Bold-Italic-trial.ttf') format('truetype');
+    font-weight: 700;
+    font-style: italic;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Calvino Grande';
+    src: url('/static/fonts/Calvino/Calvino-Grande-Extrabold-Italic-trial.ttf') format('truetype');
+    font-weight: 800;
+    font-style: italic;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Calvino Grande';
+    src: url('/static/fonts/Calvino/Calvino-Grande-Black-Italic-trial.ttf') format('truetype');
+    font-weight: 900;
+    font-style: italic;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Calvino Grande';
+    src: url('/static/fonts/Calvino/Calvino-Grande-Light-Italic-trial.ttf') format('truetype');
+    font-weight: 300;
+    font-style: italic;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Calvino Grande';
+    src: url('/static/fonts/Calvino/Calvino-Grande-Extralight-Italic-trial.ttf') format('truetype');
+    font-weight: 200;
+    font-style: italic;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Calvino Grande';
+    src: url('/static/fonts/Calvino/Calvino-Grande-Thin-Italic-trial.ttf') format('truetype');
+    font-weight: 100;
+    font-style: italic;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Calvino Grande';
+    src: url('/static/fonts/Calvino/Calvino-Grande-Semibold-Italic-trial.ttf') format('truetype');
+    font-weight: 600;
+    font-style: italic;
+    font-display: swap;
+}

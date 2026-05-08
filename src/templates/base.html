@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='main.css') }}">
+    <title>{% block title %}{% endblock %}</title>
+</head>
+
+<body>
+
+<header id="header">
+    <a href="{{ url_for('main') }}">
+        <img class="header__logo--white" src="{{ url_for('static', filename='icons/logotype_white.svg') }}" alt="Логотип">
+        <img class="header__logo header__logo--dark" src="{{ url_for('static', filename='icons/logotype_black.svg') }}" alt="Логотип" style="display: none;">
+    </a>
+    <ul>
+        <li>
+            <div class="support">
+                <a href=""><img class="support-image" src="{{ url_for('static', filename='icons/support_white.svg') }}" alt=""></a>
+                <a href="">Служба поддержки</a>
+            </div>
+        </li>
+        <li>
+            <div class="lang-cur" id="langCur">
+                <span class="lang-cur__current">
+                    <span class="lang">ru</span>
+                    <img class="lang-cur__separator" src="{{ url_for('static', filename='icons/v-line-18-white.png') }}" alt="">
+                    <span class="cur">₽</span>
+                </span>
+                
+                <div class="lang-cur__dropdown">
+                    <div class="lang-cur__section">
+                        <span class="lang-cur__section-title">Язык</span>
+                        <div class="lang-cur__option lang-cur__option--active" data-type="lang" data-value="ru">
+                            <span>Русский</span>
+                            <span class="lang-cur__check">✓</span>
+                        </div>
+                        <div class="lang-cur__option" data-type="lang" data-value="en">
+                            <span>English</span>
+                            <span class="lang-cur__check">✓</span>
+                        </div>
+                    </div>
+                    <div class="lang-cur__divider"></div>
+                    <div class="lang-cur__section">
+                        <span class="lang-cur__section-title">Валюта</span>
+                        <div class="lang-cur__option lang-cur__option--active" data-type="cur" data-value="RUB">
+                            <span>₽ Российский рубль</span>
+                            <span class="lang-cur__check">✓</span>
+                        </div>
+                        <div class="lang-cur__option" data-type="cur" data-value="USD">
+                            <span>$ Доллар США</span>
+                            <span class="lang-cur__check">✓</span>
+                        </div>
+                        <div class="lang-cur__option" data-type="cur" data-value="EUR">
+                            <span>€ Евро</span>
+                            <span class="lang-cur__check">✓</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </li>
+        <li>
+            <img class="fav" src="{{ url_for('static', filename='icons/fav_white.svg') }}" alt="">
+        </li>
+        <li>
+            <img class="profile" src="{{ url_for('static', filename='icons/profile.svg') }}" alt="">
+        </li>
+    </ul>
+</header>
+
+    {% block body %}
+    {% endblock %}
+
+<footer class="footer">
+    <div class="footer__inner">
+        <div class="footer__columns">
+            <div class="footer__column">
+                <h4 class="footer__title">Клиентам</h4>
+                <ul class="footer__list">
+                    <li><a href="#">Частые вопросы</a></li>
+                    <li><a href="#">Контакты</a></li>
+                    <li><a href="#">Использование cookie</a></li>
+                    <li><a href="#">Конфиденциальность</a></li>
+                </ul>
+            </div>
+            <div class="footer__column">
+                <h4 class="footer__title">Сотрудничество</h4>
+                <ul class="footer__list">
+                    <li><a href="#">Рекламодателям</a></li>
+                    <li><a href="#">Блогерам</a></li>
+                </ul>
+            </div>
+            <div class="footer__column">
+                <h4 class="footer__title">Компания</h4>
+                <ul class="footer__list">
+                    <li><a href="#">О компании</a></li>
+                    <li><a href="#">Карьера</a></li>
+                    <li><a href="#">Отзывы</a></li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="footer__subscribe-wrapper">
+            <div class="footer__subscribe">
+                <span class="footer__subscribe-text">Рассылка с выгодными билетами</span>
+                <div class="footer__subscribe-form">
+                    <input type="email" placeholder="Ваш email" class="footer__subscribe-input">
+                    <button class="footer__subscribe-btn">
+                        <img src="{{ url_for('static', filename='icons/arrow-short.svg') }}" alt="">
+                    </button>
+                </div>
+            </div>
+            <p class="footer__subscribe-agreement"><u>Соглашаюсь получать рекламу</u>, нескучные письма, подборки билетов и другие полезности</p>
+        </div>
+        
+        <div class="footer__info">
+            <div class="footer__social">
+                <span>Мы в соц сетях</span>
+                <div class="footer__social-icons">
+                    <a href="#"><img src="{{ url_for('static', filename='icons/social/vk.png') }}" alt="VK"></a>
+                    <a href="#"><img src="{{ url_for('static', filename='icons/social/max.png') }}" alt="Max"></a>
+                </div>
+            </div>
+            <div class="footer__payment">
+                <span>Способы оплаты</span>
+                <div class="footer__payment-icons">
+                    <img src="{{ url_for('static', filename='icons/payment/mir.svg') }}" alt="Мир">
+                    <img src="{{ url_for('static', filename='icons/payment/sbp.svg') }}" alt="СБП">
+                    <img src="{{ url_for('static', filename='icons/payment/sberpay.svg') }}" alt="Сберпэй">
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="footer__bottom">
+        <div class="footer__bottom-inner">
+            <p class="footer__legal">Ж/д билеты предоставляются партнерами. Стоимость билетов указана с учетом сервисного сбора. Итоговая стоимость отображена на  экране подтверждения покупки. Содержимое сайта является объектом  авторских прав. Все права защищены. Запрещается копировать, использовать, распространять, модифицировать любое  содержимое этого сайта. Bahn Routing Tools не несёт ответственности  за информацию, представленную на внешних сайтах.</p>
+            <p class="footer__copyright">© 2026 OOO "Bahn Routing Tools"</p>
+        </div>
+    </div>
+</footer>
+
+
+<div class="cookie-consent" id="cookieConsent">
+    <div class="cookie-consent__content">
+        <p class="cookie-consent__text">
+            Мы используем <a href="#">cookie-файлы</a> для улучшения работы сайта. 
+            Продолжая пользоваться сайтом, вы соглашаетесь с их использованием.
+        </p>
+        <button class="cookie-consent__btn" id="cookieAccept">Принять</button>
+    </div>
+</div>
+
+<script>
+// ============================================
+// COOKIE HELPER
+// ============================================
+function setCookie(name, value, days) {
+    const date = new Date();
+    date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+    document.cookie = name + '=' + value + ';expires=' + date.toUTCString() + ';path=/;SameSite=Lax';
+}
+
+function getCookie(name) {
+    const nameEQ = name + '=';
+    const cookies = document.cookie.split(';');
+    for (let i = 0; i < cookies.length; i++) {
+        let c = cookies[i].trim();
+        if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length);
+    }
+    return null;
+}
+
+// ============================================
+// TRANSLATIONS
+// ============================================
+const translations = {
+    // Шапка
+    'Служба поддержки': 'Support',
+    
+    // Главная страница
+    'В путь без переплат.': 'Travel without overpay.',
+    'Найти': 'Search',
+    'Откуда': 'From',
+    'Куда': 'To',
+    'Когда': 'When',
+    'Обратно': 'Return',
+    'пассажир': 'passenger',
+    'пассажира': 'passengers',
+    'пассажиров': 'passengers',
+    'Популярные маршруты': 'Popular Routes',
+    'Россия': 'Russia',
+    'Польша': 'Poland',
+    'От': 'From',
+    'Справочный раздел': 'Information',
+    'С ответами на часто задаваемые': 'With answers to frequently asked',
+    'вопросы': 'questions',
+    'Вернуть билет': 'Return Ticket',
+    'Перевозка животных': 'Pet Transport',
+    'Провоз багажа': 'Baggage',
+    'Обратная связь': 'Feedback',
+    'Количество пассажиров': 'Passenger Count',
+    'Взрослые': 'Adults',
+    'Дети': 'Children',
+    'Младенцы': 'Infants',
+    '12 лет и старше': '12 years and older',
+    'От 2 до 11 лет': '2 to 11 years',
+    'Младше 2 лет, без места': 'Under 2, no seat',
+    'Класс обслуживания': 'Service Class',
+    'Эконом': 'Economy',
+    'Бизнес': 'Business',
+    
+    // Футер
+    'Клиентам': 'For Clients',
+    'Частые вопросы': 'FAQ',
+    'Контакты': 'Contacts',
+    'Использование cookie': 'Cookie Usage',
+    'Конфиденциальность': 'Privacy',
+    'Сотрудничество': 'Partnership',
+    'Рекламодателям': 'For Advertisers',
+    'Блогерам': 'For Bloggers',
+    'Компания': 'Company',
+    'О компании': 'About',
+    'Карьера': 'Careers',
+    'Отзывы': 'Reviews',
+    'Рассылка с выгодными билетами': 'Newsletter with cheap tickets',
+    'Ваш email': 'Your email',
+    'Соглашаюсь получать рекламу': 'I agree to receive ads',
+    'Мы в соц сетях': 'Social Media',
+    'Способы оплаты': 'Payment Methods',
+    
+    // Cookie
+    'Мы используем': 'We use ',
+    'cookie-файлы': 'cookies',
+    'для улучшения работы сайта.': 'to improve the site.',
+    'Продолжая пользоваться сайтом, вы соглашаетесь с их использованием.': 'By continuing to use the site, you agree to their use.',
+    'Принять': 'Accept',
+    
+    // Поиск
+    'Тип вагона': 'Wagon Type',
+    'Все типы': 'All Types',
+    'Сидячий': 'Sitting',
+    'Плацкарт': 'Reserved Seat',
+    'Купе': 'Compart.',
+    'Люкс': 'Luxury',
+    'Мягкий': 'Soft',
+    'СВ': 'SV',
+    'Время отпр./приб.': 'Dep./Arr. Time',
+    'Любое': 'Any',
+    'Утро 06:00–12:00': 'Morning 06:00–12:00',
+    'День 12:00–18:00': 'Afternoon 12:00–18:00',
+    'Вечер 18:00–00:00': 'Evening 18:00–00:00',
+    'Ночь 00:00–06:00': 'Night 00:00–06:00',
+    'Цена': 'Price',
+    'До': 'To',
+    'Применить': 'Apply',
+    'Сначала ранние': 'Earliest First',
+    'Сначала поздние': 'Latest First',
+    'Сначала дешёвые': 'Cheapest First',
+    'Сначала дорогие': 'Most Expensive',
+    'Билетов не найдено': 'No Tickets Found',
+    'Попробуйте изменить параметры поиска': 'Try changing search parameters',
+    'Выбрать место': 'Select Seat',
+    'Выбрать поезд туда': 'Select Forward',
+    'Выбрать поезд обратно': 'Select Return',
+    'Введите город отправления и город прибытия': 'Enter departure and arrival cities',
+    'Без пересадок': 'No Transfers',
+    'С пересадкой': 'With Transfer',
+    'Нет мест': 'No Seats',
+    'из': 'of',
+    'место': 'seat',
+    'места': 'seats',
+    'мест': 'seats',
+    'Ваш поезд туда': 'Your Forward Train',
+    'Изменить выбор': 'Change',
+    'Сначала выберите поезд туда': 'Select forward train first',
+    
+    // Выбор мест
+    'Стоимость билетов': 'Ticket Price',
+    'Итого': 'Total',
+    'Далее': 'Next',
+    'Изменить поезд туда': 'Change Forward',
+    'Изменить поезд обратно': 'Change Return',
+    'Укажите количество билетов': 'Number of Tickets',
+    'Выберите тип вагона и место': 'Select Wagon Type & Seat',
+    'Загрузка схемы вагона...': 'Loading Scheme...',
+    'Будет известна после выбора мест': 'Available after seat selection',
+    'Места туда': 'Forward Seats',
+    'Места обратно': 'Return Seats',
+    'Место не выбрано': 'Seat Not Selected',
+    'Ошибка загрузки схемы': 'Scheme Load Error',
+    'Взрослый': 'Adult',
+    'Детский': 'Child',
+    'Вагон': 'Wagon',
+    'Свободно': 'Free',
+    'ваг.': 'wag.',
+    'Ваг.': 'Wag.',
+    'Язык': 'Language',
+    'Валюта': 'Currency',
+    'Русский': 'Russian',
+    'English': 'English',
+    'Российский рубль': 'Russian Ruble',
+    'Доллар США': 'US Dollar',
+    'Евро': 'Euro',
+};
+
+function translatePage(lang) {
+    if (lang === 'ru') {
+        location.reload();
+        return;
+    }
+    
+    const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null, false);
+    const textNodes = [];
+    while (walker.nextNode()) textNodes.push(walker.currentNode);
+    
+    textNodes.forEach(node => {
+        let text = node.textContent;
+        if (translations[text.trim()]) {
+            node.textContent = translations[text.trim()];
+            return;
+        }
+        let translated = text;
+        Object.keys(translations).forEach(ru => {
+            if (text.includes(ru)) {
+                translated = translated.replace(new RegExp(ru.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), translations[ru]);
+            }
+        });
+        if (translated !== text) node.textContent = translated;
+    });
+    
+    document.querySelectorAll('[placeholder]').forEach(el => {
+        const p = el.getAttribute('placeholder');
+        if (p && translations[p]) el.setAttribute('placeholder', translations[p]);
+    });
+}
+
+// ============================================
+// ВСЁ В ОДНОМ DOMContentLoaded
+// ============================================
+document.addEventListener('DOMContentLoaded', function() {
+    // --- Язык и валюта ---
+    const langCur = document.getElementById('langCur');
+    if (langCur) {
+        const savedLang = getCookie('brt_lang') || 'ru';
+        const savedCur = getCookie('brt_cur') || 'RUB';
+        
+        applyLang(savedLang);
+        applyCur(savedCur);
+        updateActiveOptions(savedLang, savedCur);
+        
+        if (savedLang === 'en') {
+            setTimeout(() => translatePage('en'), 200);
+        }
+        
+        langCur.addEventListener('click', function(e) {
+            e.stopPropagation();
+            langCur.classList.toggle('open');
+        });
+        
+        document.addEventListener('click', function() {
+            langCur.classList.remove('open');
+        });
+        
+        langCur.querySelectorAll('.lang-cur__option').forEach(option => {
+            option.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const type = this.dataset.type;
+                const value = this.dataset.value;
+                
+                langCur.querySelectorAll(`.lang-cur__option[data-type="${type}"]`).forEach(opt => opt.classList.remove('lang-cur__option--active'));
+                this.classList.add('lang-cur__option--active');
+                
+                if (type === 'lang') {
+                    applyLang(value);
+                    setCookie('brt_lang', value, 30);
+                    translatePage(value);
+                } else if (type === 'cur') {
+                    applyCur(value);
+                    setCookie('brt_cur', value, 30);
+                }
+            });
+        });
+        
+        function applyLang(lang) {
+            const langSpan = langCur.querySelector('.lang-cur__current .lang');
+            if (lang === 'ru') langSpan.textContent = 'ru';
+            else if (lang === 'en') langSpan.textContent = 'en';
+        }
+        
+        function applyCur(cur) {
+            const curSpan = langCur.querySelector('.lang-cur__current .cur');
+            if (cur === 'RUB') curSpan.textContent = '₽';
+            else if (cur === 'USD') curSpan.textContent = '$';
+            else if (cur === 'EUR') curSpan.textContent = '€';
+        }
+        
+        function updateActiveOptions(lang, cur) {
+            langCur.querySelectorAll('.lang-cur__option').forEach(opt => {
+                opt.classList.remove('lang-cur__option--active');
+                if (opt.dataset.value === lang || opt.dataset.value === cur) {
+                    opt.classList.add('lang-cur__option--active');
+                }
+            });
+        }
+    }
+});
+</script>
+
+</body>
+</html>

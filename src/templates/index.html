@@ -1,0 +1,484 @@
+{% extends 'base.html' %}
+
+{% block title %}
+BRT
+{% endblock %}
+
+{% block body %}
+<div class="hero-block">
+    <img src="{{ url_for('static', filename='img/background-main.png') }}" alt="">
+    <h1>В путь без переплат.</h1>
+    
+    <div class="hero-block--navigation">
+        <form action="{{ url_for('search') }}" method="get" class="liquid-nav">
+            <div class="liquid-nav--trip">
+                <input type="text" class="liquid-nav__input" id="inputFrom" name="from" placeholder="Откуда">
+                <div class="liquid-nav__separator"></div>
+                <button class="liquid-nav__swap" id="swapBtn" type="button">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M7 3L3 7L7 11" stroke="#BCBCBC" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M17 21L21 17L17 13" stroke="#BCBCBC" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <line x1="3" y1="7" x2="21" y2="7" stroke="#BCBCBC" stroke-width="2" stroke-linecap="round"/>
+                        <line x1="21" y1="17" x2="3" y2="17" stroke="#BCBCBC" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                </button>
+                <div class="liquid-nav__separator"></div>
+                <input type="text" class="liquid-nav__input" id="inputTo" name="to" placeholder="Куда">
+            </div>
+            
+            <div class="liquid-glass--info">
+                <div class="liquid-nav__item">
+                    <input type="date" class="liquid-nav__input liquid-nav__input--date liquid-nav__input--divider" name="date_from" placeholder="Когда">
+                </div>
+                <div class="liquid-nav__item">
+                    <input type="date" class="liquid-nav__input liquid-nav__input--date liquid-nav__input--divider" name="date_to" placeholder="Обратно">
+                </div>
+                
+                <div class="liquid-nav__item">
+                    <div class="passenger-select" id="passengerSelect">
+                        <span class="passenger-select__text"><p>1</p>пассажир</span>
+                        <span class="passenger-select__arrow">
+                            <img src="{{ url_for('static', filename='icons/arrow-short.svg') }}" alt="">
+                        </span>
+                    </div>
+                    <input type="hidden" name="adults" id="hiddenAdults" value="1">
+                    <input type="hidden" name="children" id="hiddenChildren" value="0">
+                    <input type="hidden" name="infants" id="hiddenInfants" value="0">
+                </div>
+            </div>
+    
+            <button type="submit" class="liquid-nav__button">Найти</button>
+        </form>
+    </div>
+</div>
+
+<div class="content-block">
+    <div class="content-block-bg">
+        <div class="content">
+            <h1>Популярные маршруты</h1>
+            
+            <div class="popular-routes">
+                <div class="route-card">
+                    <div class="route-card__bg-image">
+                        <img src="{{ url_for('static', filename='img/popular_cities/Спб.png') }}" alt="">
+                    </div>
+                    <div class="route-card__image">
+                        <img src="{{ url_for('static', filename='img/popular_cities/Спб.png') }}" alt="Санкт-Петербург">
+                        <div class="route-card__gradient"></div>
+                    </div>
+                    <div class="route-card__content">
+                        <h2 class="route-card__city">Питер</h2>
+                        <div class="route-card__country">
+                            <span>Россия</span>
+                            <img src="{{ url_for('static', filename='icons/flags/Flag Russia.png') }}" alt="Флаг России">
+                        </div>
+                        <p class="route-card__price">От 6 846₽</p>
+                    </div>
+                    <div class="route-card__glass-icon">
+                        <img src="{{ url_for('static', filename='icons/arrow-mid-white.svg') }}" alt="">
+                    </div>
+                </div>
+                
+                <div class="route-card">
+                    <div class="route-card__bg-image">
+                        <img src="{{ url_for('static', filename='img/popular_cities/Москва.png') }}" alt="">
+                    </div>
+                    <div class="route-card__image">
+                        <img src="{{ url_for('static', filename='img/popular_cities/Москва.png') }}" alt="Москва">
+                        <div class="route-card__gradient"></div>
+                    </div>
+                    <div class="route-card__content">
+                        <h2 class="route-card__city">Москва</h2>
+                        <div class="route-card__country">
+                            <span>Россия</span>
+                            <img src="{{ url_for('static', filename='icons/flags/Flag Russia.png') }}" alt="Флаг России">
+                        </div>
+                        <p class="route-card__price">От 4 532₽</p>
+                    </div>
+                    <div class="route-card__glass-icon">
+                        <img src="{{ url_for('static', filename='icons/arrow-mid-white.svg') }}" alt="">
+                    </div>
+                </div>
+                
+                <div class="route-card">
+                    <div class="route-card__bg-image">
+                        <img src="{{ url_for('static', filename='img/popular_cities/Казань.png') }}" alt="">
+                    </div>
+                    <div class="route-card__image">
+                        <img src="{{ url_for('static', filename='img/popular_cities/Казань.png') }}" alt="Казань">
+                        <div class="route-card__gradient"></div>
+                    </div>
+                    <div class="route-card__content">
+                        <h2 class="route-card__city">Казань</h2>
+                        <div class="route-card__country">
+                            <span>Россия</span>
+                            <img src="{{ url_for('static', filename='icons/flags/Flag Russia.png') }}" alt="Флаг России">
+                        </div>
+                        <p class="route-card__price">От 5 120₽</p>
+                    </div>
+                    <div class="route-card__glass-icon">
+                        <img src="{{ url_for('static', filename='icons/arrow-mid-white.svg') }}" alt="">
+                    </div>
+                </div>
+                
+                <div class="route-card">
+                    <div class="route-card__bg-image">
+                        <img src="{{ url_for('static', filename='img/popular_cities/Варшава.png') }}" alt="">
+                    </div>
+                    <div class="route-card__image">
+                        <img src="{{ url_for('static', filename='img/popular_cities/Варшава.png') }}" alt="Варшава">
+                        <div class="route-card__gradient"></div>
+                    </div>
+                    <div class="route-card__content">
+                        <h2 class="route-card__city">Варшава</h2>
+                        <div class="route-card__country">
+                            <span>Польша</span>
+                            <img src="{{ url_for('static', filename='icons/flags/Poland 1.png') }}" alt="Флаг Польши">
+                        </div>
+                        <p class="route-card__price">От 7 340₽</p>
+                    </div>
+                    <div class="route-card__glass-icon">
+                        <img src="{{ url_for('static', filename='icons/arrow-mid-white.svg') }}" alt="">
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="quick-routes">
+            <div class="quick-route-card">
+                <div class="quick-route-card__image">
+                    <img src="{{ url_for('static', filename='img/cities_photos/144x144 1.png') }}" alt="">
+                </div>
+                <div class="quick-route-card__content">
+                    <span>Москва 
+                        <img src="{{ url_for('static', filename='icons/arrow-mid.svg') }}" alt="">
+                        Воронеж</span>
+                    <span>от 4 846₽</span>
+                </div>
+            </div>
+            <div class="quick-route-card">
+                <div class="quick-route-card__image">
+                    <img src="{{ url_for('static', filename='img/cities_photos/144x144 1-7.png') }}" alt="">
+                </div>
+                <div class="quick-route-card__content">
+                    <span>Москва 
+                        <img src="{{ url_for('static', filename='icons/arrow-mid.svg') }}" alt="">
+                        Иваново</span>
+                    <span>от 3 120₽</span>
+                </div>
+            </div>
+            <div class="quick-route-card">
+                <div class="quick-route-card__image">
+                    <img src="{{ url_for('static', filename='img/cities_photos/144x144 1-3.png') }}" alt="">
+                </div>
+                <div class="quick-route-card__content">
+                    <span>Калуга 
+                        <img src="{{ url_for('static', filename='icons/arrow-mid.svg') }}" alt="">
+                        Москва</span>
+                    <span>от 7 340₽</span>
+                </div>
+            </div>
+            <div class="quick-route-card">
+                <div class="quick-route-card__image">
+                    <img src="{{ url_for('static', filename='img/cities_photos/144x144 1-6.png') }}" alt="">
+                </div>
+                <div class="quick-route-card__content">
+                    <span>Ростов 
+                        <img src="{{ url_for('static', filename='icons/arrow-mid.svg') }}" alt="">
+                        Краснодар</span>
+                    <span>от 5 200₽</span>
+                </div>
+            </div>
+            <div class="quick-route-card">
+                <div class="quick-route-card__image">
+                    <img src="{{ url_for('static', filename='img/cities_photos/144x144 1-1.png') }}" alt="">
+                </div>
+                <div class="quick-route-card__content">
+                    <span>Краснодар 
+                        <img src="{{ url_for('static', filename='icons/arrow-mid.svg') }}" alt="">
+                        Адлер</span>
+                    <span>от 8 100₽</span>
+                </div>
+            </div>
+            <div class="quick-route-card">
+                <div class="quick-route-card__image">
+                    <img src="{{ url_for('static', filename='img/cities_photos/144x144 1-2.png') }}" alt="">
+                </div>
+                <div class="quick-route-card__content">
+                    <span>Владимир 
+                        <img src="{{ url_for('static', filename='icons/arrow-mid.svg') }}" alt="">
+                        Москва</span>
+                    <span>от 6 450₽</span>
+                </div>
+            </div>
+            <div class="quick-route-card">
+                <div class="quick-route-card__image">
+                    <img src="{{ url_for('static', filename='img/cities_photos/144x144 1-4.png') }}" alt="">
+                </div>
+                <div class="quick-route-card__content">
+                    <span>Москва 
+                        <img src="{{ url_for('static', filename='icons/arrow-mid.svg') }}" alt="">
+                        Минск</span>
+                    <span>от 4 890₽</span>
+                </div>
+            </div>
+            <div class="quick-route-card">
+                <div class="quick-route-card__image">
+                    <img src="{{ url_for('static', filename='img/cities_photos/144x144 1-5.png') }}" alt="">
+                </div>
+                <div class="quick-route-card__content">
+                    <span>Москва 
+                        <img src="{{ url_for('static', filename='icons/arrow-mid.svg') }}" alt="">
+                        Казань</span>
+                    <span>от 5 670₽</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="info-block">
+            <div class="info-block__large">
+                <div class="info-block__large-content">
+                    <h3>Справочный раздел</h3>
+                    <p>С ответами на часто задаваемые<br>вопросы</p>
+                </div>
+                <div class="info-block__large-arrow">
+                    <img src="{{ url_for('static', filename='icons/arrow-mid-white.svg') }}" alt="">
+                </div>
+            </div>
+            <div class="info-block__small-row">
+                <div class="info-block__small">
+                    <span>Вернуть билет</span>
+                    <div class="info-block__small-arrow">
+                        <img src="{{ url_for('static', filename='icons/arrow-mid.svg') }}" alt="">
+                    </div>
+                </div>
+                <div class="info-block__small">
+                    <span>Перевозка животных</span>
+                    <div class="info-block__small-arrow">
+                        <img src="{{ url_for('static', filename='icons/arrow-mid.svg') }}" alt="">
+                    </div>
+                </div>
+            </div>
+            <div class="info-block__small-row">
+                <div class="info-block__small">
+                    <span>Провоз багажа</span>
+                    <div class="info-block__small-arrow">
+                        <img src="{{ url_for('static', filename='icons/arrow-mid.svg') }}" alt="">
+                    </div>
+                </div>
+                <div class="info-block__small">
+                    <span>Обратная связь</span>
+                    <div class="info-block__small-arrow">
+                        <img src="{{ url_for('static', filename='icons/arrow-mid.svg') }}" alt="">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Выпадающее меню пассажиров -->
+<div class="passenger-select__dropdown" id="passengerDropdown" style="display: none;">
+    <div class="dropdown__header">Количество пассажиров</div>
+    
+    <div class="dropdown__row">
+        <div class="dropdown__info">
+            <span class="dropdown__label">Взрослые</span>
+            <span class="dropdown__sublabel">12 лет и старше</span>
+        </div>
+        <div class="dropdown__counter">
+            <button class="counter__btn counter__btn--minus" data-target="adults">−</button>
+            <span class="counter__value" id="count-adults">1</span>
+            <button class="counter__btn counter__btn--plus" data-target="adults">+</button>
+        </div>
+    </div>
+    
+    <div class="dropdown__divider"></div>
+    
+    <div class="dropdown__row">
+        <div class="dropdown__info">
+            <span class="dropdown__label">Дети</span>
+            <span class="dropdown__sublabel">От 2 до 11 лет</span>
+        </div>
+        <div class="dropdown__counter">
+            <button class="counter__btn counter__btn--minus" data-target="children">−</button>
+            <span class="counter__value" id="count-children">0</span>
+            <button class="counter__btn counter__btn--plus" data-target="children">+</button>
+        </div>
+    </div>
+    
+    <div class="dropdown__divider"></div>
+    
+    <div class="dropdown__row">
+        <div class="dropdown__info">
+            <span class="dropdown__label">Младенцы</span>
+            <span class="dropdown__sublabel">Младше 2 лет, без места</span>
+        </div>
+        <div class="dropdown__counter">
+            <button class="counter__btn counter__btn--minus" data-target="infants">−</button>
+            <span class="counter__value" id="count-infants">0</span>
+            <button class="counter__btn counter__btn--plus" data-target="infants">+</button>
+        </div>
+    </div>
+    
+    <div class="dropdown__divider"></div>
+    
+    <div class="dropdown__header dropdown__header--class">Класс обслуживания</div>
+    
+    <div class="dropdown__row dropdown__row--radio">
+        <span class="dropdown__label">Эконом</span>
+        <label class="dropdown__checkbox">
+            <input type="checkbox" class="class-checkbox" name="class" value="economy" checked>
+            <span class="checkmark">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+            </span>
+        </label>
+    </div>
+    
+    <div class="dropdown__row dropdown__row--radio">
+        <span class="dropdown__label">Бизнес</span>
+        <label class="dropdown__checkbox">
+            <input type="checkbox" class="class-checkbox" name="class" value="business">
+            <span class="checkmark">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+            </span>
+        </label>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const passengerSelect = document.getElementById('passengerSelect');
+    const passengerDropdown = document.getElementById('passengerDropdown');
+    const passengerText = passengerSelect.querySelector('.passenger-select__text');
+    const arrow = passengerSelect.querySelector('.passenger-select__arrow');
+    
+    let isOpen = false;
+    
+    function positionDropdown() {
+        if (!isOpen) return;
+        const rect = passengerSelect.getBoundingClientRect();
+        passengerDropdown.style.top = (rect.bottom + window.scrollY + 10) + 'px';
+        passengerDropdown.style.left = (rect.right + window.scrollX - 360) + 'px';
+    }
+
+    passengerSelect.addEventListener('click', function(e) {
+        e.stopPropagation();
+        isOpen = !isOpen;
+        
+        if (isOpen) {
+            const rect = passengerSelect.getBoundingClientRect();
+            passengerDropdown.style.display = 'block';
+            passengerDropdown.style.position = 'absolute';
+            passengerDropdown.style.top = (rect.bottom + window.scrollY + 10) + 'px';
+            passengerDropdown.style.left = (rect.right + window.scrollX - 360) + 'px';
+            arrow.classList.add('open');
+        } else {
+            passengerDropdown.style.display = 'none';
+            arrow.classList.remove('open');
+        }
+    });
+
+    window.addEventListener('scroll', positionDropdown);
+    window.addEventListener('resize', positionDropdown);
+    
+    document.addEventListener('click', function() {
+        passengerDropdown.style.display = 'none';
+        arrow.classList.remove('open');
+        isOpen = false;
+    });
+    
+    // Счётчики пассажиров
+    const counters = {
+        adults: 1,
+        children: 0,
+        infants: 0
+    };
+
+    document.querySelectorAll('.counter__btn--plus').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const target = this.dataset.target;
+            counters[target]++;
+            document.getElementById('count-' + target).textContent = counters[target];
+            document.getElementById('hidden' + target.charAt(0).toUpperCase() + target.slice(1)).value = counters[target];
+            updatePassengerText();
+        });
+    });
+
+    document.querySelectorAll('.counter__btn--minus').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const target = this.dataset.target;
+            if (target === 'adults' && counters[target] <= 1) return;
+            if (counters[target] <= 0) return;
+            counters[target]--;
+            document.getElementById('count-' + target).textContent = counters[target];
+            document.getElementById('hidden' + target.charAt(0).toUpperCase() + target.slice(1)).value = counters[target];
+            updatePassengerText();
+        });
+    });
+
+    document.querySelectorAll('.class-checkbox').forEach(checkbox => {
+        checkbox.addEventListener('click', function(e) {
+            e.stopPropagation();
+            document.querySelectorAll('.class-checkbox').forEach(cb => {
+                cb.checked = false;
+            });
+            this.checked = true;
+        });
+    });
+
+    function updatePassengerText() {
+        const total = counters.adults + counters.children + counters.infants;
+        let word = 'пассажир';
+        if (total >= 2 && total <= 4) word = 'пассажира';
+        else if (total >= 5 || total === 0) word = 'пассажиров';
+        passengerText.innerHTML = '<p>' + total + '</p>' + word;
+    }
+
+    passengerDropdown.addEventListener('click', function(e) {
+        e.stopPropagation();
+    });
+});
+
+// Смена хедера при скролле
+window.addEventListener('scroll', function() {
+    const header = document.getElementById('header');
+    const logoWhite = header.querySelector('.header__logo--white');
+    const logoDark = header.querySelector('.header__logo--dark');
+    const supportImg = header.querySelector('.support img');
+    const langSeparator = header.querySelector('.lang-cur img');
+    const favImg = header.querySelector('.fav');
+    
+    if (window.scrollY > 50) {
+        header.classList.add('scrolled');
+        logoWhite.style.display = 'none';
+        logoDark.style.display = 'block';
+        supportImg.src = "/static/icons/support.svg";
+        langSeparator.src = "/static/icons/v-line-18.png";
+        favImg.src = "/static/icons/fav.svg";
+    } else {
+        header.classList.remove('scrolled');
+        logoWhite.style.display = 'block';
+        logoDark.style.display = 'none';
+        supportImg.src = "/static/icons/support_white.svg";
+        langSeparator.src = "/static/icons/v-line-18-white.png";
+        favImg.src = "/static/icons/fav_white.svg";
+    }
+});
+
+// Свап полей Откуда/Куда
+document.getElementById('swapBtn').addEventListener('click', function() {
+    const inputFrom = document.getElementById('inputFrom');
+    const inputTo = document.getElementById('inputTo');
+    const temp = inputFrom.value;
+    inputFrom.value = inputTo.value;
+    inputTo.value = temp;
+});
+</script>
+{% endblock %}
