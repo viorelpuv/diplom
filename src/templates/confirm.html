@@ -1,0 +1,313 @@
+{% extends 'base.html' %}
+
+{% block title %}
+Подтверждение заказа — BRT
+{% endblock %}
+
+{% block body %}
+<div class="seat-selection">
+    <div class="seat-selection__container">
+        <div class="seat-selection__tickets">
+            <!-- Билет "Туда" -->
+            <div class="ticket-card ticket-card--selected">
+                <div class="ticket-card__left">
+                    <div class="ticket-card__route">
+                        <h1 class="ticket-card__from">{{ trip_info.get('from_city', '—') }}</h1>
+                        <img src="{{ url_for('static', filename='icons/arrow-short.svg') }}" alt="" class="ticket-card__route-arrow">
+                        <h1 class="ticket-card__to">{{ trip_info.get('to_city', '—') }}</h1>
+                    </div>
+                    <div class="ticket-card__details">
+                        <span class="ticket-card__train">{{ trip_info.get('train_number', '—') }}</span>
+                        <span class="ticket-card__separator">|</span>
+                        <span class="ticket-card__duration">{{ trip_info.get('duration', '—') }}</span>
+                        <span class="ticket-card__transfer transfer--{{ 'none' if 'Без' in trip_info.get('transfer_text', '') else 'one' }}">
+                            <span class="transfer-text">{{ trip_info.get('transfer_text', '—') }}</span>
+                        </span>
+                    </div>
+                    <a href="/select-seats?from={{ trip_info.get('from_city', '')|urlencode }}&to={{ trip_info.get('to_city', '')|urlencode }}&date_from={{ trip_info.get('dep_date', '')|urlencode }}&trip_index=0" class="ticket-card__change">Изменить место</a>
+                </div>
+                <div class="ticket-card__right">
+                    <div class="ticket-card__time-block">
+                        <div class="ticket-card__time">{{ trip_info.get('departure', '—') }}</div>
+                        <div class="ticket-card__date">{{ trip_info.get('dep_date', '—') }}</div>
+                        <div class="ticket-card__station">{{ trip_info.get('from_station', '—') }}</div>
+                    </div>
+                    <div class="ticket-card__travel-info">
+                        <img src="{{ url_for('static', filename='icons/arrow-long.svg') }}" alt="" class="ticket-card__travel-arrow">
+                        <span class="ticket-card__travel-duration">{{ trip_info.get('duration', '—') }}</span>
+                    </div>
+                    <div class="ticket-card__time-block">
+                        <div class="ticket-card__time">{{ trip_info.get('arrival', '—') }}</div>
+                        <div class="ticket-card__date">{{ trip_info.get('arr_date', '—') }}</div>
+                        <div class="ticket-card__station">{{ trip_info.get('to_station', '—') }}</div>
+                    </div>
+                </div>
+            </div>
+
+            {% if trip_info.get('has_return') == '1' %}
+            <div class="ticket-card">
+                <div class="ticket-card__left">
+                    <div class="ticket-card__route">
+                        <h1 class="ticket-card__from">{{ trip_info.get('return_from_city', '—') }}</h1>
+                        <img src="{{ url_for('static', filename='icons/arrow-short.svg') }}" alt="" class="ticket-card__route-arrow">
+                        <h1 class="ticket-card__to">{{ trip_info.get('return_to_city', '—') }}</h1>
+                    </div>
+                    <div class="ticket-card__details">
+                        <span class="ticket-card__train">{{ trip_info.get('return_train_number', '—') }}</span>
+                        <span class="ticket-card__separator">|</span>
+                        <span class="ticket-card__duration">{{ trip_info.get('return_duration', '—') }}</span>
+                        <span class="ticket-card__transfer">
+                            <span class="transfer-text">{{ trip_info.get('return_transfer_text', '—') }}</span>
+                        </span>
+                    </div>
+                    <a href="/select-seats?from={{ trip_info.get('to_city', '')|urlencode }}&to={{ trip_info.get('from_city', '')|urlencode }}&date_from={{ trip_info.get('return_dep_date', '')|urlencode }}&trip_index=1" class="ticket-card__change">Изменить место</a>
+                </div>
+                <div class="ticket-card__right">
+                    <div class="ticket-card__time-block">
+                        <div class="ticket-card__time">{{ trip_info.get('return_departure', '—') }}</div>
+                        <div class="ticket-card__date">{{ trip_info.get('return_dep_date', '—') }}</div>
+                        <div class="ticket-card__station">{{ trip_info.get('return_from_station', '—') }}</div>
+                    </div>
+                    <div class="ticket-card__travel-info">
+                        <img src="{{ url_for('static', filename='icons/arrow-long.svg') }}" alt="" class="ticket-card__travel-arrow">
+                        <span class="ticket-card__travel-duration">{{ trip_info.get('return_duration', '—') }}</span>
+                    </div>
+                    <div class="ticket-card__time-block">
+                        <div class="ticket-card__time">{{ trip_info.get('return_arrival', '—') }}</div>
+                        <div class="ticket-card__date">{{ trip_info.get('return_arr_date', '—') }}</div>
+                        <div class="ticket-card__station">{{ trip_info.get('return_to_station', '—') }}</div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Схема вагона и выбранные места -->
+            <div class="confirm-section">
+                <h3 class="confirm-section__title">Выбранные места</h3>
+                <div class="confirm-seats">
+                    {% if seats.get('forward') %}
+                    <div class="confirm-seats__block">
+                        <h4 class="confirm-seats__direction">Туда</h4>
+                        {% for seat in seats.get('forward', []) %}
+                        <div class="confirm-seat-card">
+                            <span class="confirm-seat-card__info">Вагон {{ seat.get('wagon', '—') }}, место {{ seat.get('seat', '—') }}</span>
+                            <span class="confirm-seat-card__price">{{ "{:,}".format(seat.get('price', 0)).replace(',', ' ') }} ₽</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    
+                    {% if seats.get('backward') %}
+                    <div class="confirm-seats__block">
+                        <h4 class="confirm-seats__direction">Обратно</h4>
+                        {% for seat in seats.get('backward', []) %}
+                        <div class="confirm-seat-card">
+                            <span class="confirm-seat-card__info">Вагон {{ seat.get('wagon', '—') }}, место {{ seat.get('seat', '—') }}</span>
+                            <span class="confirm-seat-card__price">{{ "{:,}".format(seat.get('price', 0)).replace(',', ' ') }} ₽</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Данные пассажиров -->
+            <div class="confirm-section">
+                <h3 class="confirm-section__title">Данные пассажиров</h3>
+                <div class="confirm-passengers">
+                    {% for p in passengers %}
+                    <div class="confirm-passenger-card">
+                        <div class="confirm-passenger-card__header">
+                            <span class="confirm-passenger-card__number">{{ loop.index }}</span>
+                            <span class="confirm-passenger-card__type">{{ 'Детский билет' if p.get('doc_type') == 'birth_cert' and not loop.first else 'Взрослый пассажир' }}</span>
+                        </div>
+                        <div class="confirm-passenger-card__fields">
+                            <div class="confirm-passenger-card__row">
+                                <span class="confirm-passenger-card__label">ФИО</span>
+                                <span class="confirm-passenger-card__value">
+                                    {{ p.get('last_name', '—') }} {{ p.get('first_name', '—') }}
+                                    {% if not p.get('no_patronymic') %}{{ p.get('patronymic', '') }}{% endif %}
+                                </span>
+                            </div>
+                            <div class="confirm-passenger-card__row">
+                                <span class="confirm-passenger-card__label">Пол</span>
+                                <span class="confirm-passenger-card__value">{{ 'Мужской' if p.get('gender') == 'male' else 'Женский' }}</span>
+                            </div>
+                            <div class="confirm-passenger-card__row">
+                                <span class="confirm-passenger-card__label">Дата рождения</span>
+                                <span class="confirm-passenger-card__value">{{ p.get('birth_date', '—') }}</span>
+                            </div>
+                            <div class="confirm-passenger-card__row">
+                                <span class="confirm-passenger-card__label">Документ</span>
+                                <span class="confirm-passenger-card__value">
+                                    {{ p.get('doc_type', '—') | replace('passport_rf', 'Паспорт РФ') | replace('passport_int', 'Загранпаспорт') | replace('birth_cert', 'Свидетельство о рождении') | replace('seaman', 'Паспорт моряка') | replace('military', 'Военный билет') | replace('military_id', 'Удостоверение военнослужащего') | replace('foreign_doc', 'Иностранный документ') }}
+                                    — {{ p.get('doc_number', '—') }}
+                                </span>
+                            </div>
+                            {% if p.get('citizenship') %}
+                            <div class="confirm-passenger-card__row">
+                                <span class="confirm-passenger-card__label">Гражданство</span>
+                                <span class="confirm-passenger-card__value">{{ p.get('citizenship', '—') }}</span>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Контактная информация -->
+            <div class="contact-info">
+                <div class="contact-info__header">
+                    <h3 class="contact-info__title">Контактная информация покупателя</h3>
+                    <p class="contact-info__subtitle">Информацию о бронировании направим на вашу электронную почту</p>
+                </div>
+                <div class="contact-info__fields">
+                    <div class="contact-info__row">
+                        <div class="contact-info__group">
+                            <label class="contact-info__label">Эл. почта</label>
+                            <div class="contact-info__value">{{ contact.get('email', '—') }}</div>
+                        </div>
+                        <div class="contact-info__group">
+                            <label class="contact-info__label">Телефон</label>
+                            <div class="contact-info__value">{{ contact.get('phone', '—') }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Сайдбар -->
+        <div class="seat-selection__sidebar">
+            <h2 class="sidebar__title">Стоимость билетов</h2>
+            <div class="sidebar__route">
+                <span>{{ trip_info.get('from_city', '—') }}</span>
+                <img src="{{ url_for('static', filename='icons/arrow-short-gray.svg') }}" alt="">
+                <span>{{ trip_info.get('to_city', '—') }}</span>
+            </div>
+            <div class="sidebar__passengers">
+                {% set total = namespace(value=0) %}
+                {% if seats.get('forward') %}
+                <div style="margin-bottom: 0px; font-weight: 600; font-size: 17px; color: #A3A3A3; font-family: \'Commissioner\', sans-serif;">Места туда</div>
+                {% for seat in seats.get('forward', []) %}
+                <div class="sidebar__passenger-row">
+                    <span class="sidebar__passenger-type">{{ 'Взрослый' if loop.index <= passengers|selectattr('doc_type', 'ne', 'birth_cert')|list|length else 'Детский' }}</span>
+                    <span class="sidebar__passenger-place">Ваг.{{ seat.get('wagon', '—') }}, место {{ seat.get('seat', '—') }}</span>
+                    <span class="sidebar__passenger-price">{{ "{:,}".format(seat.get('price', 0)).replace(',', ' ') }} ₽</span>
+                </div>
+                {% set total.value = total.value + seat.get('price', 0) %}
+                {% endfor %}
+                {% endif %}
+                
+                {% if seats.get('backward') %}
+                <div style="margin-top:12px;margin-bottom:0;font-weight:600;font-size:17px;color:#A3A3A3;">Места обратно</div>
+                {% for seat in seats.get('backward', []) %}
+                <div class="sidebar__passenger-row">
+                    <span class="sidebar__passenger-type">{{ 'Взрослый' if loop.index <= passengers|selectattr('doc_type', 'ne', 'birth_cert')|list|length else 'Детский' }}</span>
+                    <span class="sidebar__passenger-place">Ваг.{{ seat.get('wagon', '—') }}, место {{ seat.get('seat', '—') }}</span>
+                    <span class="sidebar__passenger-price">{{ "{:,}".format(seat.get('price', 0)).replace(',', ' ') }} ₽</span>
+                </div>
+                {% set total.value = total.value + seat.get('price', 0) %}
+                {% endfor %}
+                {% endif %}
+            </div>
+            
+            <div class="sidebar__total-row">
+                <span class="sidebar__total-label">Итого</span>
+                <span class="sidebar__total-price">{{ "{:,}".format(total.value).replace(',', ' ') }} ₽</span>
+            </div>
+            
+            <!-- Промокод -->
+            <div class="sidebar__promo">
+                <label class="sidebar__promo-label">Промокод</label>
+                <div class="sidebar__promo-row">
+                    <input type="text" class="sidebar__promo-input" id="promoInputField" placeholder="Введите промокод">
+                    <button class="sidebar__promo-btn" id="applyPromoBtn">Применить</button>
+                </div>
+                <span class="sidebar__promo-message" id="promoMessage"></span>
+            </div>
+            
+            <button class="sidebar__continue-btn">Оплатить</button>
+            <div class="sidebar__payment">
+                <p class="sidebar__subtitle">Способы оплаты</p>
+                <div class="sidebar__payment-icons">
+                    <img src="{{ url_for('static', filename='icons/payment/mir.svg') }}" alt="Мир">
+                    <img src="{{ url_for('static', filename='icons/payment/sbp.svg') }}" alt="СБП">
+                    <img src="{{ url_for('static', filename='icons/payment/sberpay.svg') }}" alt="Сберпэй">
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const header = document.getElementById('header');
+    if (header) {
+        header.classList.add('scrolled');
+        header.style.boxShadow = 'none';
+        
+        const logoWhite = header.querySelector('.header__logo--white');
+        const logoDark = header.querySelector('.header__logo--dark');
+        if (logoWhite) logoWhite.style.display = 'none';
+        if (logoDark) logoDark.style.display = 'block';
+        
+        const sepImg = header.querySelector('.lang-cur img');
+        const favImg = header.querySelector('.fav');
+        const supportImg = header.querySelector('.support-image');
+        
+        if (sepImg) sepImg.src = '/static/icons/v-line-18.png';
+        if (favImg) favImg.src = '/static/icons/fav.svg';
+        if (supportImg) supportImg.src = '/static/icons/support.svg';
+        
+        window.addEventListener('scroll', function() {
+            if (window.scrollY > 50) {
+                header.style.background = '#EFF1F4';
+                header.style.boxShadow = '0 2px 20px rgba(0, 0, 0, 0.15)';
+            } else {
+                header.style.boxShadow = 'none';
+            }
+        });
+    }
+    
+    // Обработчик промокода
+    const applyPromoBtn = document.getElementById('applyPromoBtn');
+    const promoInput = document.getElementById('promoInputField');
+    const promoMessage = document.getElementById('promoMessage');
+    const totalPriceEl = document.querySelector('.sidebar__total-price');
+    
+    if (applyPromoBtn && promoInput) {
+        applyPromoBtn.addEventListener('click', function() {
+            const promoCode = promoInput.value.trim();
+            
+            if (!promoCode) {
+                promoMessage.textContent = 'Введите промокод';
+                promoMessage.style.color = '#FF3B30';
+                return;
+            }
+            
+            if (promoCode === 'BRT2026') {
+                promoMessage.textContent = 'Промокод применён! Скидка 10%';
+                promoMessage.style.color = '#34C759';
+                
+                const totalText = totalPriceEl.textContent;
+                const currentTotal = parseInt(totalText.replace(/[^\d]/g, ''));
+                const discounted = Math.round(currentTotal * 0.9);
+                totalPriceEl.textContent = discounted.toLocaleString('ru-RU') + ' ₽';
+            } else {
+                promoMessage.textContent = 'Промокод недействителен';
+                promoMessage.style.color = '#FF3B30';
+            }
+        });
+    }
+    
+    // Кнопка "Оплатить"
+    const payBtn = document.querySelector('.sidebar__continue-btn');
+    if (payBtn) {
+        payBtn.addEventListener('click', function() {
+            alert('Оплата временно недоступна. Спасибо за заказ!');
+        });
+    }
+});
+</script>
+{% endblock %}

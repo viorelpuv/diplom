@@ -120,7 +120,15 @@
                 <span class="sidebar__total-label">Итого</span>
                 <span class="sidebar__total-price" id="sidebarTotalPrice">0 ₽</span>
             </div>
-            <button class="sidebar__continue-btn">Перейти к оплате</button>
+            <form id="paymentForm" method="POST" action="/confirm">
+                <input type="hidden" name="passengers_data" id="passengersDataInput">
+                <input type="hidden" name="contact_data" id="contactDataInput">
+                <input type="hidden" name="seats" id="seatsDataInput">
+                <input type="hidden" name="trip_info" id="tripInfoInput">
+                <input type="hidden" name="promo" id="promoInput" value="">
+                <button type="submit" class="sidebar__continue-btn" id="submitBtn">Перейти к оплате</button>
+            </form>
+            
             <div class="sidebar__payment">
                 <p class="sidebar__subtitle">Способы оплаты</p>
                 <div class="sidebar__payment-icons">
@@ -201,6 +209,16 @@ document.addEventListener('DOMContentLoaded', function() {
         '<span class="ticket-card__transfer ' + transferClass + '">' +
             '<span class="transfer-text">' + transferText + '</span>' +
         '</span>';
+
+    // Кнопка "Изменить место" для билета туда
+    const fwdChangeBtn = document.createElement('a');
+    fwdChangeBtn.href = '/select-seats?from=' + encodeURIComponent(urlParams.get('from_city') || '') + 
+        '&to=' + encodeURIComponent(urlParams.get('to_city') || '') + 
+        '&date_from=' + encodeURIComponent(urlParams.get('date_from') || '') + 
+        '&adults=' + adults + '&children=' + children + '&infants=' + infants + '&trip_index=0';
+    fwdChangeBtn.className = 'ticket-card__change';
+    fwdChangeBtn.textContent = 'Изменить место';
+    document.getElementById('forwardCard').querySelector('.ticket-card__left').appendChild(fwdChangeBtn);
     
     // Билет "Обратно"
     if (hasBackward) {
@@ -223,6 +241,15 @@ document.addEventListener('DOMContentLoaded', function() {
             '<span class="ticket-card__transfer ' + retTransferClass + '">' +
                 '<span class="transfer-text">' + retTransferText + '</span>' +
             '</span>';
+            
+        const bwdChangeBtn = document.createElement('a');
+        bwdChangeBtn.href = '/select-seats?from=' + encodeURIComponent(urlParams.get('to_city') || '') + 
+            '&to=' + encodeURIComponent(urlParams.get('from_city') || '') + 
+            '&date_from=' + encodeURIComponent(urlParams.get('return_date') || '') + 
+            '&adults=' + adults + '&children=' + children + '&infants=' + infants + '&trip_index=1';
+        bwdChangeBtn.className = 'ticket-card__change';
+        bwdChangeBtn.textContent = 'Изменить место';
+        document.getElementById('backwardCard').querySelector('.ticket-card__left').appendChild(bwdChangeBtn);
     }
     
     // Сайдбар
@@ -382,10 +409,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 break;
         }
         
-        // Находим форму пассажира
         const passengerForm = docRow.closest('.passenger-form__fields');
-        
-        // Удаляем старые дополнительные поля
         const oldExtra = passengerForm.querySelector('.doc-extra-fields');
         if (oldExtra) oldExtra.remove();
         
@@ -606,6 +630,149 @@ document.addEventListener('DOMContentLoaded', function() {
             setTimeout(() => {
                 e.target.blur();
             }, 10);
+        }
+    });
+
+    // Отправка формы
+    document.getElementById('submitBtn').addEventListener('click', function(e) {
+        e.preventDefault();
+        
+        const passengerForms = document.querySelectorAll('.passenger-form');
+        const passengers = [];
+        let allValid = true;
+        
+        passengerForms.forEach((form) => {
+            const passenger = {};
+            
+            const fioInputs = form.querySelectorAll('.passenger-form__row--fio .passenger-form__input');
+            passenger.last_name = fioInputs[0]?.value?.trim() || '';
+            passenger.first_name = fioInputs[1]?.value?.trim() || '';
+            passenger.patronymic = fioInputs[2]?.value?.trim() || '';
+            
+            if (!passenger.last_name || !passenger.first_name) {
+                allValid = false;
+                fioInputs[0].style.borderColor = !passenger.last_name ? '#FF3B30' : '#D9D9D9';
+                fioInputs[1].style.borderColor = !passenger.first_name ? '#FF3B30' : '#D9D9D9';
+            }
+            
+            const noPatronymicCheckbox = form.querySelector('.passenger-form__checkbox');
+            if (!noPatronymicCheckbox?.checked && !passenger.patronymic) {
+                allValid = false;
+                fioInputs[2].style.borderColor = '#FF3B30';
+            }
+            
+            const genderBtn = form.querySelector('.passenger-form__gender-btn--active');
+            passenger.gender = genderBtn?.dataset.gender || 'male';
+            
+            const dateInput = form.querySelector('input[type="date"]');
+            passenger.birth_date = dateInput?.value || '';
+            
+            if (!passenger.birth_date) {
+                allValid = false;
+                if (dateInput) dateInput.style.borderColor = '#FF3B30';
+            }
+            
+            const docSelect = form.querySelector('.doc-type-select');
+            passenger.doc_type = docSelect?.value || '';
+            const docInput = form.querySelector('.doc-number-input');
+            passenger.doc_number = docInput?.value?.trim() || '';
+            
+            if (!passenger.doc_number) {
+                allValid = false;
+                if (docInput) docInput.style.borderColor = '#FF3B30';
+            }
+            
+            const extraFields = form.querySelector('.doc-extra-fields');
+            if (extraFields) {
+                const extraInputs = extraFields.querySelectorAll('.passenger-form__input');
+                const extraSelects = extraFields.querySelectorAll('.passenger-form__select');
+                if (passenger.doc_type === 'military' || passenger.doc_type === 'military_id') {
+                    passenger.military_category = extraSelects[0]?.value || '';
+                    passenger.military_date = extraInputs[0]?.value || '';
+                } else if (passenger.doc_type === 'foreign_doc') {
+                    passenger.citizenship = extraInputs[0]?.value?.trim() || '';
+                }
+            }
+            
+            passenger.no_patronymic = noPatronymicCheckbox?.checked || false;
+            
+            passengers.push(passenger);
+        });
+        
+        const emailInput = document.querySelector('.contact-info__input[type="email"]');
+        const phoneInput = document.getElementById('phoneInput');
+        
+        const email = emailInput?.value?.trim() || '';
+        const phone = phoneInput?.value?.trim() || '';
+        
+        if (!email) {
+            allValid = false;
+            if (emailInput) emailInput.style.borderColor = '#FF3B30';
+        }
+        
+        if (!phone || phone === '+7') {
+            allValid = false;
+            if (phoneInput) phoneInput.style.borderColor = '#FF3B30';
+        }
+        
+        if (!allValid) {
+            alert('Пожалуйста, заполните все обязательные поля');
+            return;
+        }
+        
+        document.getElementById('passengersDataInput').value = JSON.stringify(passengers);
+        document.getElementById('contactDataInput').value = JSON.stringify({ email, phone });
+        document.getElementById('seatsDataInput').value = JSON.stringify(seats);
+        document.getElementById('tripInfoInput').value = JSON.stringify({
+            from_city: urlParams.get('from_city'),
+            to_city: urlParams.get('to_city'),
+            from_station: urlParams.get('from_station'),
+            to_station: urlParams.get('to_station'),
+            train_number: urlParams.get('train_number'),
+            departure: urlParams.get('departure'),
+            arrival: urlParams.get('arrival'),
+            duration: urlParams.get('duration'),
+            dep_date: urlParams.get('dep_date'),
+            arr_date: urlParams.get('arr_date'),
+            transfer_text: urlParams.get('transfer_text'),
+            has_return: hasBackward ? '1' : '0'
+        });
+        document.getElementById('promoInput').value = document.getElementById('promoInputField')?.value || '';
+        
+        document.getElementById('paymentForm').submit();
+    });
+
+    // Обработчик промокода
+    document.getElementById('applyPromoBtn')?.addEventListener('click', function() {
+        const promoCode = document.getElementById('promoInputField')?.value?.trim();
+        const messageEl = document.getElementById('promoMessage');
+        
+        if (!promoCode) {
+            messageEl.textContent = 'Введите промокод';
+            messageEl.style.color = '#FF3B30';
+            return;
+        }
+        
+        if (promoCode === 'BRT2026') {
+            messageEl.textContent = 'Промокод применён! Скидка 10%';
+            messageEl.style.color = '#34C759';
+        } else {
+            messageEl.textContent = 'Промокод недействителен';
+            messageEl.style.color = '#FF3B30';
+        }
+    });
+
+    // Плавное исчезновение красной подсветки при вводе
+    document.addEventListener('input', function(e) {
+        const target = e.target;
+        
+        // Поля ФИО, дата, документ, email
+        if (target.classList.contains('passenger-form__input') || 
+            target.classList.contains('contact-info__input')) {
+            if (target.value.trim().length > 0) {
+                target.style.setProperty('transition', 'border-color 0.3s ease');
+                target.style.setProperty('border-color', '#D9D9D9');
+            }
         }
     });
 });

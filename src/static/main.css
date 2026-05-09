@@ -3,6 +3,7 @@
 @import 'search.css';
 @import 'select_seats.css';
 @import 'payment.css';
+@import 'confirm.css';
 @import url('https://fonts.googleapis.com/css2?family=Commissioner:wght@100..900&display=swap');
 
 ::-webkit-scrollbar {

@@ -607,5 +607,36 @@ def payment():
     )
 
 
+@app.route('/confirm', methods=['GET', 'POST'])
+def confirm():
+    if request.method == 'POST':
+        # Получаем данные пассажиров и контакты
+        passengers_data = request.form.get('passengers_data', '{}')
+        contact_data = request.form.get('contact_data', '{}')
+        
+        import json
+        passengers = json.loads(passengers_data) if passengers_data else []
+        contact = json.loads(contact_data) if contact_data else {}
+        
+        seats_json = request.form.get('seats', '{}')
+        seats = json.loads(seats_json) if seats_json else {}
+        
+        trip_json = request.form.get('trip_info', '{}')
+        trip_info = json.loads(trip_json) if trip_json else {}
+        
+        promo = request.form.get('promo', '')
+        
+        return render_template(
+            'confirm.html',
+            passengers=passengers,
+            contact=contact,
+            seats=seats,
+            trip_info=trip_info,
+            promo=promo
+        )
+    
+    return redirect('/')
+
+
 if __name__ == '__main__':
     app.run(debug=True)
