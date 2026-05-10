@@ -152,6 +152,14 @@
     </div>
 </div>
 
+<!-- Прелоадер -->
+<div id="preloader" class="preloader">
+    <div class="preloader__logo">
+        <img src="{{ url_for('static', filename='icons/logotype_white.svg') }}" alt="BRT">
+    </div>
+    <div class="preloader__spinner"></div>
+</div>
+
 <script>
 // ============================================
 // COOKIE HELPER
@@ -406,6 +414,72 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 });
+
+(function() {
+    var preloader = document.getElementById('preloader');
+    if (!preloader) return;
+    
+    // Показываем прелоадер при ЛЮБОМ действии, ведущем к переходу
+    function showPreloader() {
+        preloader.style.display = 'flex';
+        preloader.classList.add('preloader--show');
+        preloader.classList.remove('preloader--hide');
+        
+        // Сохраняем флаг в sessionStorage что прелоадер активен
+        sessionStorage.setItem('preloader_active', '1');
+    }
+    
+    // Отправка формы (поиск)
+    document.addEventListener('submit', function() {
+        showPreloader();
+    });
+    
+    // Клик по ссылкам и кнопкам перехода
+    document.addEventListener('click', function(e) {
+        var el = e.target.closest('a, button, .route-card, .quick-route-card, .info-block__large, .info-block__small');
+        if (el) {
+            showPreloader();
+        }
+    });
+    
+    // Скрываем при загрузке НОВОЙ страницы
+    function hidePreloader() {
+        // Если пришли с другой страницы — прелоадер был активен
+        if (sessionStorage.getItem('preloader_active') === '1') {
+            sessionStorage.removeItem('preloader_active');
+            // Даём странице отрендериться
+            setTimeout(function() {
+                preloader.classList.add('preloader--hide');
+                preloader.classList.remove('preloader--show');
+                setTimeout(function() {
+                    preloader.style.display = 'none';
+                }, 300);
+            }, 200);
+        } else {
+            // Первая загрузка — просто скрываем
+            preloader.classList.add('preloader--hide');
+            preloader.classList.remove('preloader--show');
+            setTimeout(function() {
+                preloader.style.display = 'none';
+            }, 300);
+        }
+    }
+    
+    // Скрываем когда всё загрузилось
+    window.addEventListener('load', function() {
+        // Небольшая задержка чтобы страница отрендерилась
+        setTimeout(hidePreloader, 100);
+    });
+    
+    // Принудительно скрываем через 20 секунд
+    setTimeout(hidePreloader, 20000);
+    
+    // Показываем прелоадер сразу при загрузке страницы (на случай перехода)
+    if (sessionStorage.getItem('preloader_active') === '1') {
+        preloader.style.display = 'flex';
+        preloader.classList.add('preloader--show');
+    }
+})();
 </script>
 
 </body>
