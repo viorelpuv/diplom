@@ -163,6 +163,7 @@
                     <div class="trip-card__details">
                         <span class="trip-card__train">{{ trip.train_number }}</span>
                         {% if trip.train_name %}
+                        <span class="trip-card__separator">|</span>
                         <span class="trip-card__comment">{{ trip.train_name }}</span>
                         {% endif %}
                         <span class="trip-card__separator">|</span>
@@ -405,6 +406,11 @@
         </div>
     </div>
 </div>
+
+<!-- Кнопка прокрутки вверх -->
+<button id="scrollToTopBtn" class="scroll-to-top" title="Наверх">
+    <img src="{{ url_for('static', filename='icons/arrow-mid.svg') }}" alt="Наверх">
+</button>
 
 <script>
 // Глобальная переменная для индекса выбранного поезда туда
@@ -941,5 +947,49 @@ if (dateFromInput && dateToInput) {
         }
     });
 }
+
+// ============================================
+// КНОПКА ПРОКРУТКИ ВВЕРХ
+// ============================================
+(function() {
+    const scrollBtn = document.getElementById('scrollToTopBtn');
+    if (!scrollBtn) return;
+    
+    let scrollTimeout;
+    
+    window.addEventListener('scroll', function() {
+        if (window.scrollY > 300) {
+            scrollBtn.classList.add('visible');
+        } else {
+            scrollBtn.classList.remove('visible');
+        }
+        
+        // Прячем при бездействии
+        clearTimeout(scrollTimeout);
+        if (window.scrollY > 300) {
+            scrollTimeout = setTimeout(function() {
+                scrollBtn.classList.remove('visible');
+            }, 3000);
+        }
+    });
+    
+    // Показываем снова при движении мыши
+    document.addEventListener('mousemove', function(e) {
+        if (e.clientY < window.innerHeight - 100 && window.scrollY > 300) {
+            scrollBtn.classList.add('visible');
+            clearTimeout(scrollTimeout);
+            scrollTimeout = setTimeout(function() {
+                scrollBtn.classList.remove('visible');
+            }, 3000);
+        }
+    });
+    
+    scrollBtn.addEventListener('click', function() {
+        window.scrollTo({
+            top: 0,
+            behavior: 'smooth'
+        });
+    });
+})();
 </script>
 {% endblock %}

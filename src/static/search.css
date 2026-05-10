@@ -967,3 +967,49 @@ body:has(#search-page) header .lang-cur {
     padding-bottom: 20px;
 }
 
+/* Кнопка прокрутки вверх */
+.scroll-to-top {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: #1E1E1E;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(20px);
+    transition: all 0.3s ease;
+    z-index: 999;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.scroll-to-top.visible {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.scroll-to-top:hover {
+    background: #4672FF;
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(70, 114, 255, 0.4);
+}
+
+.scroll-to-top img {
+    width: 18px;
+    height: 18px;
+    transform: rotate(-90deg);
+    filter: brightness(0) invert(1);
+    transition: transform 0.3s ease;
+}
+
+.scroll-to-top:hover img {
+    transform: rotate(-90deg);
+    filter: brightness(0) invert(1);
+}

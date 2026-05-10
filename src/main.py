@@ -1,12 +1,20 @@
+# app.py — полный код
 from flask import Flask, render_template, request, redirect
 from datetime import datetime, date
 from utils.rail_api import RZDApi
 from utils.currency import format_price
 from flask_babel import Babel, _
 
+from utils.database.database import (
+    init_db, save_passenger, create_order, save_ticket, 
+    save_transaction, update_order_status, save_train_full
+)
+
 app = Flask(__name__)
 
 api = RZDApi()
+
+init_db()
 
 WAGON_TYPES = {
     'sitting': 'Сидячий',
@@ -50,7 +58,6 @@ def build_prices_from_cars(cars_data):
         if price <= 0:
             price = 0
         
-        # Группируем по wagon_type
         if wagon_type not in grouped:
             grouped[wagon_type] = {
                 'wagon_type': wagon_type,
@@ -62,10 +69,8 @@ def build_prices_from_cars(cars_data):
                 'total_seats': free_seats,
             }
         else:
-            # Суммируем места
             grouped[wagon_type]['free_seats'] += free_seats
             grouped[wagon_type]['total_seats'] += free_seats
-            # Берём минимальную цену
             if price > 0 and (grouped[wagon_type]['price'] == 0 or price < grouped[wagon_type]['price']):
                 grouped[wagon_type]['price'] = price
                 grouped[wagon_type]['class_name'] = class_name or 'economy'
@@ -82,7 +87,6 @@ def get_min_price(prices):
 
 
 def check_seats(prices, total_passengers):
-    """Проверяет, есть ли хотя бы один вагон с нужным количеством мест."""
     for p in prices.values():
         if p['free_seats'] >= total_passengers:
             return True
@@ -90,7 +94,6 @@ def check_seats(prices, total_passengers):
 
 
 def format_train(train, from_city, to_city, total_passengers):
-    """Форматирует один поезд для вывода."""
     trip = api.format_trip_for_card(train)
     if not trip.get('train_number'):
         return None
@@ -108,7 +111,6 @@ def format_train(train, from_city, to_city, total_passengers):
     cars = trip.get('cars', [])
     prices = build_prices_from_cars(car_groups if car_groups else cars)
     
-    # Проверка мест
     if total_passengers > 0 and not check_seats(prices, total_passengers):
         return None
     
@@ -118,26 +120,6 @@ def format_train(train, from_city, to_city, total_passengers):
     transfer_count = len(transfers) if transfers else (1 if trip.get('has_transfer') else 0)
     
     days = ['пн', 'вт', 'ср', 'чт', 'пт', 'сб', 'вс']
-
-    schemes = None
-    cars = trip.get('cars', [])
-
-    print(f"[DEBUG format_train] Количество вагонов: {len(cars)}")
-    if cars:
-        first_car = cars[0] if isinstance(cars, list) else cars
-        print(f"[DEBUG format_train] Ключи первого вагона: {list(first_car.keys())[:15]}")
-        if 'Seats' in first_car:
-            print(f"[DEBUG format_train] Seats: {first_car['Seats']}")
-        if 'Places' in first_car:
-            print(f"[DEBUG format_train] Places (первые 5): {first_car['Places'][:5]}")
-        if 'PlaceQuantity' in first_car:
-            print(f"[DEBUG format_train] PlaceQuantity: {first_car['PlaceQuantity']}")
-        if 'FreePlaces' in first_car:
-            print(f"[DEBUG format_train] FreePlaces: {first_car['FreePlaces']}")
-
-    if cars:
-        first_car = cars[0] if isinstance(cars, list) else cars
-        schemes = first_car.get('schemes', None)
     
     return {
         'id': trip.get('trip_id', abs(hash(f"{trip.get('train_number')}_{dep_dt}"))),
@@ -163,7 +145,6 @@ def format_train(train, from_city, to_city, total_passengers):
         'min_price': min_price,
         'schemes': trip.get('schemes', None),
     }
-    
 
 
 @app.route('/')
@@ -207,8 +188,6 @@ def search():
     try:
         return_date = date_to if date_to and date_to != date_from else None
         
-        print(f"  Запрос к API: {from_city} → {to_city}, дата: {date_from}, обратно: {return_date}")
-        
         tickets_data = api.search_tickets(
             from_station=from_city,
             to_station=to_city,
@@ -234,6 +213,9 @@ def search():
             formatted = format_train(train, from_city, to_city, total_passengers)
             if formatted:
                 results.append(formatted)
+                print(f"  📝 Вызов save_train_full для {formatted.get('train_number')}")
+                result = save_train_full(formatted, from_city, to_city)
+                print(f"  📝 Результат: {result}")
         
         return_results = []
         for train in backward_trains:
@@ -241,6 +223,10 @@ def search():
             if formatted:
                 formatted['from_station'], formatted['to_station'] = formatted['to_station'], formatted['from_station']
                 return_results.append(formatted)
+                try:
+                    save_train_full(formatted, to_city, from_city)
+                except Exception as e:
+                    print(f"  ⚠️ Ошибка сохранения: {e}")
         
         print(f"  Итого: туда={len(results)}, обратно={len(return_results)}")
         
@@ -312,22 +298,17 @@ def select_seats():
     infants = int(request.args.get('infants', 0))
     total_passengers = adults + children
 
-    print(f"[select-seats] from='{from_city}' to='{to_city}' date_from='{date_from}' trip_idx='{trip_index}' ret_idx='{return_trip_index}'")
-
     if not from_city or not to_city:
-        return redirect(url_for('main'))
-    
-    if not from_city or not to_city:
-        return "Ошибка: не указаны города отправления/прибытия. Вернитесь к поиску.", 400
+        return redirect('/')
 
     try:
         trip_idx = int(trip_index)
-    except (ValueError, TypeError):
+    except:
         trip_idx = 0
 
     try:
         ret_idx = int(return_trip_index) if return_trip_index else None
-    except (ValueError, TypeError):
+    except:
         ret_idx = None
 
     try:
@@ -356,6 +337,10 @@ def select_seats():
             formatted = format_train(train, from_city, to_city, total_passengers)
             if formatted:
                 results.append(formatted)
+                try:
+                    save_train_full(formatted, from_city, to_city)
+                except:
+                    pass
 
         return_results = []
         for train in backward_trains:
@@ -363,29 +348,18 @@ def select_seats():
             if formatted:
                 formatted['from_station'], formatted['to_station'] = formatted['to_station'], formatted['from_station']
                 return_results.append(formatted)
+                try:
+                    save_train_full(formatted, to_city, from_city)
+                except:
+                    pass
 
-        trip = None
-        if 0 <= trip_idx < len(results):
-            trip = results[trip_idx]
-        else:
-            if results:
-                trip = results[0]
-
-        return_trip = None
-        if ret_idx is not None and 0 <= ret_idx < len(return_results):
-            return_trip = return_results[ret_idx]
-        elif ret_idx is not None and return_results:
-            return_trip = return_results[0]
+        trip = results[trip_idx] if 0 <= trip_idx < len(results) else (results[0] if results else None)
+        return_trip = return_results[ret_idx] if ret_idx is not None and 0 <= ret_idx < len(return_results) else (return_results[0] if ret_idx is not None and return_results else None)
 
         if not trip:
-            return "Билет не найден. Вернитесь к поиску и выберите поезд.", 404
+            return "Билет не найден", 404
 
         total_price = (trip.get('min_price') or 0) + (return_trip.get('min_price') or 0 if return_trip else 0)
-        
-        # Конвертация валют
-        price_rub = trip.get('min_price', 0)
-        price_usd = format_price(price_rub, 'USD')
-        price_eur = format_price(price_rub, 'EUR')
 
         return render_template(
             'select_seats.html',
@@ -399,55 +373,29 @@ def select_seats():
             to_city=to_city,
             date_from=date_from,
             date_to=date_to,
-            price_usd=price_usd,
-            price_eur=price_eur,
         )
     except Exception as e:
         print(f"Ошибка в select_seats: {e}")
-        import traceback
-        traceback.print_exc()
         return f"Ошибка: {str(e)}", 500
 
 
 @app.template_filter('day_of_week')
 def day_of_week(date_str):
-    """Возвращает день недели по дате."""
     if not date_str:
         return ''
     try:
-        from datetime import datetime
         days = ['пн', 'вт', 'ср', 'чт', 'пт', 'сб', 'вс']
-        
-        dt = None
-        for fmt in ['%Y-%m-%d', '%d.%m.%Y', '%Y-%m-%dT%H:%M:%S']:
-            try:
-                dt = datetime.strptime(date_str.strip(), fmt)
-                break
-            except ValueError:
-                continue
-        
-        if dt is None:
-            try:
-                dt = datetime.fromisoformat(date_str.strip())
-            except:
-                return ''
-        
+        dt = datetime.fromisoformat(date_str.strip()) if 'T' in str(date_str) else datetime.strptime(date_str.strip(), '%Y-%m-%d')
         return days[dt.weekday()]
-    except Exception as e:
-        print(f"Ошибка day_of_week для '{date_str}': {e}")
+    except:
         return ''
-    
+
 
 @app.template_filter('short_station')
 def short_station(name):
-    """Обрезает название вокзала: убирает текст в скобках."""
     if not name:
         return ''
-    if '(' in name:
-        name = name.split('(')[0].strip()
-    if ' (' in name:
-        name = name.split(' (')[0].strip()
-    return name
+    return name.split('(')[0].strip()
 
 
 @app.template_filter('group_wagons')
@@ -488,25 +436,16 @@ def api_wagon_scheme():
     
     result = generate_interactive_scheme(wagon_type, prices_data, seed_str)
     
-    return {
-        'success': True,
-        'scheme_html': result,
-    }
+    return {'success': True, 'scheme_html': result}
 
 
 @app.route('/api/currency-rates')
 def api_currency_rates():
     from utils.currency import get_rate
-    return {
-        'RUB': 1,
-        'USD': get_rate('USD'),
-        'EUR': get_rate('EUR'),
-    }
+    return {'RUB': 1, 'USD': get_rate('USD'), 'EUR': get_rate('EUR')}
 
 
 def generate_interactive_scheme(wagon_type, prices_data=None, seed_str=''):
-    """Генерирует схему вагонов. В каждом вагоне фиксированное количество мест."""
-    
     total_free = 22
     total_all = 36
     
@@ -522,67 +461,39 @@ def generate_interactive_scheme(wagon_type, prices_data=None, seed_str=''):
         'luxury': 18, 'sv': 18, 'soft': 18
     }
     seats_per_wagon = wagon_capacity.get(wagon_type, 36)
-    
     num_wagons = max(1, (total_free + seats_per_wagon - 1) // seats_per_wagon)
     
     import hashlib, random
     
-    html = '<div class="scheme-container" style="padding: 20px;">'
+    html = f'<div class="scheme-container" style="padding: 20px;">'
     html += f'<h4 style="text-align:center;margin-bottom:10px;">{WAGON_TYPES.get(wagon_type, "Вагон")}</h4>'
     html += f'<p style="text-align:center;color:#A3A3A3;margin-bottom:15px;">Свободно {total_free} мест ({num_wagons} ваг.)</p>'
-    
-    seats_per_row = {'compartment': 4, 'reserved_seat': 6, 'sitting': 4, 'luxury': 2, 'sv': 2, 'soft': 2}
-    total_rows = {'compartment': 9, 'reserved_seat': 9, 'sitting': 16, 'luxury': 9, 'sv': 9, 'soft': 9}
-    
-    cols = seats_per_row.get(wagon_type, 4)
-    rows = total_rows.get(wagon_type, 9)
     
     free_left = total_free
     
     for wagon_num in range(1, num_wagons + 1):
         wagon_free = min(seats_per_wagon, free_left)
-        wagon_total = seats_per_wagon
-        wagon_occupied = wagon_total - wagon_free
+        wagon_occupied = seats_per_wagon - wagon_free
         
         wagon_seed = int(hashlib.md5(f"{seed_str}_w{wagon_num}".encode()).hexdigest()[:8], 16)
         wagon_rng = random.Random(wagon_seed)
         
-        occupied_seats = set()
-        all_seats = list(range(1, wagon_total + 1))
+        all_seats = list(range(1, seats_per_wagon + 1))
         wagon_rng.shuffle(all_seats)
         occupied_seats = set(all_seats[:wagon_occupied])
         
-        actual_rows = min(rows, max(1, (wagon_total + cols - 1) // cols))
-        
         html += f'<div style="text-align:center;margin-top:20px;margin-bottom:5px;font-weight:600;font-size:16px;color:#1E1E1E;">Вагон {wagon_num}</div>'
-        html += f'<p style="text-align:center;color:#A3A3A3;font-size:13px;margin-bottom:10px;">Свободно {wagon_free} из {wagon_total}</p>'
+        html += f'<p style="text-align:center;color:#A3A3A3;font-size:13px;margin-bottom:10px;">Свободно {wagon_free} из {seats_per_wagon}</p>'
         
-        if wagon_type == 'reserved_seat':
-            for row in range(actual_rows):
-                html += '<div class="scheme-row" style="display:flex;gap:8px;justify-content:center;margin-bottom:8px;">'
-                html += f'<span style="width:30px;color:#A3A3A3;font-size:14px;text-align:right;line-height:44px;">{row+1}</span>'
-                for i in range(4):
-                    seat_num = row * 6 + i + 1
-                    if seat_num > wagon_total: break
-                    is_occ = seat_num in occupied_seats
-                    html += f'<div class="scheme-seat{" scheme-seat--occupied" if is_occ else ""}" data-seat="{seat_num}" data-wagon="{wagon_num}" style="width:44px;height:44px;background:{"#E8E8E8" if is_occ else "#E8F0FE"};border:2px solid {"#BCBCBC" if is_occ else "#4672FF"};border-radius:8px;cursor:{"default" if is_occ else "pointer"};display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:500;color:{"#A3A3A3" if is_occ else "#4672FF"};">{seat_num}</div>'
-                html += '<div style="width:20px;"></div>'
-                for i in range(4, 6):
-                    seat_num = row * 6 + i + 1
-                    if seat_num > wagon_total: break
-                    is_occ = seat_num in occupied_seats
-                    html += f'<div class="scheme-seat{" scheme-seat--occupied" if is_occ else ""}" data-seat="{seat_num}" data-wagon="{wagon_num}" style="width:44px;height:44px;background:{"#E8E8E8" if is_occ else "#E8F0FE"};border:2px solid {"#BCBCBC" if is_occ else "#4672FF"};border-radius:8px;cursor:{"default" if is_occ else "pointer"};display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:500;color:{"#A3A3A3" if is_occ else "#4672FF"};">{seat_num}</div>'
-                html += '</div>'
-        else:
-            for row in range(actual_rows):
-                html += '<div class="scheme-row" style="display:flex;gap:8px;justify-content:center;margin-bottom:8px;">'
-                html += f'<span style="width:30px;color:#A3A3A3;font-size:14px;text-align:right;line-height:44px;">{row+1}</span>'
-                for col in range(cols):
-                    seat_num = row * cols + col + 1
-                    if seat_num > wagon_total: break
-                    is_occ = seat_num in occupied_seats
-                    html += f'<div class="scheme-seat{" scheme-seat--occupied" if is_occ else ""}" data-seat="{seat_num}" data-wagon="{wagon_num}" style="width:44px;height:44px;background:{"#E8E8E8" if is_occ else "#E8F0FE"};border:2px solid {"#BCBCBC" if is_occ else "#4672FF"};border-radius:8px;cursor:{"default" if is_occ else "pointer"};display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:500;color:{"#A3A3A3" if is_occ else "#4672FF"};">{seat_num}</div>'
-                html += '</div>'
+        for row in range(9):
+            html += '<div class="scheme-row" style="display:flex;gap:8px;justify-content:center;margin-bottom:8px;">'
+            html += f'<span style="width:30px;color:#A3A3A3;font-size:14px;text-align:right;line-height:44px;">{row+1}</span>'
+            for col in range(4):
+                seat_num = row * 4 + col + 1
+                if seat_num > seats_per_wagon: break
+                is_occ = seat_num in occupied_seats
+                html += f'<div class="scheme-seat{" scheme-seat--occupied" if is_occ else ""}" data-seat="{seat_num}" data-wagon="{wagon_num}" style="width:44px;height:44px;background:{"#E8E8E8" if is_occ else "#E8F0FE"};border:2px solid {"#BCBCBC" if is_occ else "#4672FF"};border-radius:8px;cursor:{"default" if is_occ else "pointer"};display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:500;color:{"#A3A3A3" if is_occ else "#4672FF"};">{seat_num}</div>'
+            html += '</div>'
         
         free_left -= wagon_free
     
@@ -592,9 +503,6 @@ def generate_interactive_scheme(wagon_type, prices_data=None, seed_str=''):
 
 @app.route('/payment')
 def payment():
-    # Получаем данные из query string
-    trip_index = request.args.get('trip_index', '0')
-    return_trip_index = request.args.get('return_trip_index', '')
     adults = int(request.args.get('adults', 1))
     children = int(request.args.get('children', 0))
     infants = int(request.args.get('infants', 0))
@@ -610,11 +518,11 @@ def payment():
 @app.route('/confirm', methods=['GET', 'POST'])
 def confirm():
     if request.method == 'POST':
-        # Получаем данные пассажиров и контакты
+        import json
+        
         passengers_data = request.form.get('passengers_data', '{}')
         contact_data = request.form.get('contact_data', '{}')
         
-        import json
         passengers = json.loads(passengers_data) if passengers_data else []
         contact = json.loads(contact_data) if contact_data else {}
         
@@ -640,3 +548,21 @@ def confirm():
 
 if __name__ == '__main__':
     app.run(debug=True)
+
+    
+@app.route('/test-db')
+def test_db():
+    from utils.database.database import get_db
+    conn = get_db()
+    cursor = conn.cursor()
+    
+    # Считаем записи во всех таблицах
+    tables = ['stations', 'routes', 'trains', 'trips', 'wagons', 'seats', 'trip_seats']
+    result = {}
+    for table in tables:
+        cursor.execute(f"SELECT COUNT(*) as cnt FROM {table}")
+        result[table] = cursor.fetchone()['cnt']
+    
+    conn.close()
+    return result
+    
