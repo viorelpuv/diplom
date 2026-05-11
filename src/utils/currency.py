@@ -3,32 +3,33 @@ from typing import Dict
 import functools
 
 
+import functools
+from typing import Dict
+import json
+import urllib.request
+
 @functools.lru_cache(maxsize=1)
 def _get_rates() -> Dict[str, float]:
     """Получает актуальные курсы валют от ЦБ РФ."""
     try:
-        import cbrapi
+        # Прямой запрос к API ЦБ
+        url = 'https://www.cbr-xml-daily.ru/daily_json.js'
+        with urllib.request.urlopen(url, timeout=10) as response:
+            data = json.loads(response.read().decode('utf-8'))
         
-        # Получаем список всех валют
-        currencies = cbrapi.get_currencies_list()
+        rates = {'RUB': 1.0}
+        for code, info in data.get('Valute', {}).items():
+            value = info.get('Value', 0)
+            nominal = info.get('Nominal', 1)
+            if value and nominal:
+                rates[code] = float(value) / float(nominal)
         
-        rates = {}
-        for currency in currencies:
-            char_code = getattr(currency, 'charcode', None) or getattr(currency, 'iso', None) or ''
-            value = getattr(currency, 'value', None) or getattr(currency, 'rate', 0)
-            nominal = getattr(currency, 'nominal', 1)
-            
-            if char_code and value:
-                rates[str(char_code).upper()] = float(value) / float(nominal)
-        
+        print(f"[CURRENCY] Курсы загружены: USD={rates.get('USD')}, EUR={rates.get('EUR')}")
         return rates
         
     except Exception as e:
-        print(f"[CURRENCY] Ошибка получения курсов: {e}")
-        return {
-            'USD': 96.5,
-            'EUR': 105.3,
-        }
+        print(f"[CURRENCY] Ошибка загрузки курсов: {e}")
+        return {'USD': 96.5, 'EUR': 105.3, 'RUB': 1.0}
 
 
 def get_rate(currency: str) -> float:

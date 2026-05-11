@@ -24,38 +24,38 @@
         <li>
             <div class="lang-cur" id="langCur">
                 <span class="lang-cur__current">
-                    <span class="lang">ru</span>
-                    <img class="lang-cur__separator" src="{{ url_for('static', filename='icons/v-line-18-white.png') }}" alt="">
-                    <span class="cur">₽</span>
+                    <span class="lang" id="currentLang">ru</span>
+                    <img class="lang-cur__separator" id="langSeparator" src="{{ url_for('static', filename='icons/v-line-18-white.png') }}" alt="">
+                    <span class="cur" id="currentCur">₽</span>
                 </span>
                 
                 <div class="lang-cur__dropdown">
                     <div class="lang-cur__section">
                         <span class="lang-cur__section-title">Язык</span>
-                        <div class="lang-cur__option lang-cur__option--active" data-type="lang" data-value="ru">
+                        <a href="?lang=ru" class="lang-cur__option" data-lang="ru">
                             <span>Русский</span>
                             <span class="lang-cur__check">✓</span>
-                        </div>
-                        <div class="lang-cur__option" data-type="lang" data-value="en">
+                        </a>
+                        <a href="?lang=en" class="lang-cur__option" data-lang="en">
                             <span>English</span>
                             <span class="lang-cur__check">✓</span>
-                        </div>
+                        </a>
                     </div>
                     <div class="lang-cur__divider"></div>
                     <div class="lang-cur__section">
                         <span class="lang-cur__section-title">Валюта</span>
-                        <div class="lang-cur__option lang-cur__option--active" data-type="cur" data-value="RUB">
+                        <a href="?cur=RUB" class="lang-cur__option" data-cur="RUB">
                             <span>₽ Российский рубль</span>
                             <span class="lang-cur__check">✓</span>
-                        </div>
-                        <div class="lang-cur__option" data-type="cur" data-value="USD">
+                        </a>
+                        <a href="?cur=USD" class="lang-cur__option" data-cur="USD">
                             <span>$ Доллар США</span>
                             <span class="lang-cur__check">✓</span>
-                        </div>
-                        <div class="lang-cur__option" data-type="cur" data-value="EUR">
+                        </a>
+                        <a href="?cur=EUR" class="lang-cur__option" data-cur="EUR">
                             <span>€ Евро</span>
                             <span class="lang-cur__check">✓</span>
-                        </div>
+                        </a>
                     </div>
                 </div>
             </div>
@@ -184,10 +184,7 @@ function getCookie(name) {
 // TRANSLATIONS
 // ============================================
 const translations = {
-    // Шапка
     'Служба поддержки': 'Support',
-    
-    // Главная страница
     'В путь без переплат.': 'Travel without overpay.',
     'Найти': 'Search',
     'Откуда': 'From',
@@ -218,8 +215,6 @@ const translations = {
     'Класс обслуживания': 'Service Class',
     'Эконом': 'Economy',
     'Бизнес': 'Business',
-    
-    // Футер
     'Клиентам': 'For Clients',
     'Частые вопросы': 'FAQ',
     'Контакты': 'Contacts',
@@ -235,17 +230,14 @@ const translations = {
     'Рассылка с выгодными билетами': 'Newsletter with cheap tickets',
     'Ваш email': 'Your email',
     'Соглашаюсь получать рекламу': 'I agree to receive ads',
+    'нескучные письма, подборки билетов и другие полезности': 'interesting emails, ticket selections and other useful stuff',
     'Мы в соц сетях': 'Social Media',
     'Способы оплаты': 'Payment Methods',
-    
-    // Cookie
     'Мы используем': 'We use ',
     'cookie-файлы': 'cookies',
     'для улучшения работы сайта.': 'to improve the site.',
     'Продолжая пользоваться сайтом, вы соглашаетесь с их использованием.': 'By continuing to use the site, you agree to their use.',
     'Принять': 'Accept',
-    
-    // Поиск
     'Тип вагона': 'Wagon Type',
     'Все типы': 'All Types',
     'Сидячий': 'Sitting',
@@ -283,8 +275,6 @@ const translations = {
     'Ваш поезд туда': 'Your Forward Train',
     'Изменить выбор': 'Change',
     'Сначала выберите поезд туда': 'Select forward train first',
-    
-    // Выбор мест
     'Стоимость билетов': 'Ticket Price',
     'Итого': 'Total',
     'Далее': 'Next',
@@ -311,6 +301,71 @@ const translations = {
     'Российский рубль': 'Russian Ruble',
     'Доллар США': 'US Dollar',
     'Евро': 'Euro',
+    'Данные пассажиров': 'Passenger Data',
+    'Контактная информация покупателя': 'Buyer Contact Info',
+    'Информацию о бронировании направим на вашу электронную почту': 'Booking info will be sent to your email',
+    'Эл. почта': 'Email',
+    'Телефон': 'Phone',
+    'Перейти к оплате': 'Proceed to Payment',
+    'Фамилия': 'Last Name',
+    'Имя': 'First Name',
+    'Отчество': 'Patronymic',
+    'Нет отчества': 'No Patronymic',
+    'Пол': 'Gender',
+    'Мужской': 'Male',
+    'Женский': 'Female',
+    'Дата рождения': 'Date of Birth',
+    'Документ': 'Document',
+    'Серия и номер': 'Series and Number',
+    'Паспорт РФ': 'Russian Passport',
+    'Загранпаспорт': 'International Passport',
+    'Свидетельство о рождении': 'Birth Certificate',
+    'Паспорт моряка': 'Seaman Passport',
+    'Военный билет': 'Military ID',
+    'Удостоверение военнослужащего': 'Military Personnel ID',
+    'Иностранный документ': 'Foreign Document',
+    'Гражданство': 'Citizenship',
+    'Категория военнослужащего': 'Military Category',
+    'Контрактник': 'Contractor',
+    'Призывник': 'Conscript',
+    'Мобилизованный': 'Mobilized',
+    'Курсант': 'Cadet',
+    'Дата начала военной службы': 'Military Service Start Date',
+    'Изменить место': 'Change Seat',
+    'Промокод': 'Promo Code',
+    'Введите промокод': 'Enter Promo Code',
+    'Промокод применён! Скидка 10%': 'Promo Applied! 10% Off',
+    'Промокод недействителен': 'Invalid Promo Code',
+    'Пожалуйста, заполните все обязательные поля': 'Please fill in all required fields',
+    'Места не выбраны': 'No Seats Selected',
+    'Подтверждение заказа': 'Order Confirmation',
+    'Выбранные места': 'Selected Seats',
+    'Туда': 'Forward',
+    'Детский билет': 'Child Ticket',
+    'Взрослый пассажир': 'Adult Passenger',
+    'ФИО': 'Full Name',
+    'Оплатить': 'Pay',
+    'Детали заказа': 'Order Details',
+    'Загрузка данных...': 'Loading...',
+    'Заказ': 'Order',
+    'Сумма к оплате': 'Amount to Pay',
+    'Статус': 'Status',
+    'Платёжный шлюз временно отключён': 'Payment Gateway Temporarily Unavailable',
+    'Вернуться на главную': 'Back to Home',
+    'ч': 'h',
+    'мин': 'min',
+    'янв': 'jan',
+    'фев': 'feb',
+    'мар': 'mar',
+    'апр': 'apr',
+    'мая': 'may',
+    'июн': 'jun',
+    'июл': 'jul',
+    'авг': 'aug',
+    'сен': 'sep',
+    'окт': 'oct',
+    'ноя': 'nov',
+    'дек': 'dec'
 };
 
 function translatePage(lang) {
@@ -345,22 +400,50 @@ function translatePage(lang) {
 }
 
 // ============================================
-// ВСЁ В ОДНОМ DOMContentLoaded
+// DOMContentLoaded
 // ============================================
 document.addEventListener('DOMContentLoaded', function() {
-    // --- Язык и валюта ---
     const langCur = document.getElementById('langCur');
     if (langCur) {
-        const savedLang = getCookie('brt_lang') || 'ru';
-        const savedCur = getCookie('brt_cur') || 'RUB';
+        const urlParams = new URLSearchParams(window.location.search);
+        const currentLang = urlParams.get('lang') || getCookie('brt_lang') || 'ru';
+        const currentCur = urlParams.get('cur') || getCookie('brt_cur') || 'RUB';
         
-        applyLang(savedLang);
-        applyCur(savedCur);
-        updateActiveOptions(savedLang, savedCur);
+        setCookie('brt_lang', currentLang, 30);
+        setCookie('brt_cur', currentCur, 30);
         
-        if (savedLang === 'en') {
-            setTimeout(() => translatePage('en'), 200);
+        const langSpan = document.getElementById('currentLang');
+        const curSpan = document.getElementById('currentCur');
+        if (currentLang === 'en') langSpan.textContent = 'en';
+        else langSpan.textContent = 'ru';
+        
+        if (currentCur === 'USD') curSpan.textContent = '$';
+        else if (currentCur === 'EUR') curSpan.textContent = '€';
+        else curSpan.textContent = '₽';
+        
+        langCur.querySelectorAll('.lang-cur__option').forEach(opt => {
+            opt.classList.remove('lang-cur__option--active');
+            if (opt.dataset.lang === currentLang || opt.dataset.cur === currentCur) {
+                opt.classList.add('lang-cur__option--active');
+            }
+        });
+        
+        function updateLangCurLinks() {
+            const params = new URLSearchParams(window.location.search);
+            langCur.querySelectorAll('.lang-cur__option').forEach(opt => {
+                const newParams = new URLSearchParams(params.toString());
+                if (opt.dataset.lang) {
+                    newParams.set('lang', opt.dataset.lang);
+                    if (!newParams.has('cur')) newParams.set('cur', currentCur);
+                }
+                if (opt.dataset.cur) {
+                    newParams.set('cur', opt.dataset.cur);
+                    if (!newParams.has('lang')) newParams.set('lang', currentLang);
+                }
+                opt.href = '?' + newParams.toString();
+            });
         }
+        updateLangCurLinks();
         
         langCur.addEventListener('click', function(e) {
             e.stopPropagation();
@@ -371,77 +454,36 @@ document.addEventListener('DOMContentLoaded', function() {
             langCur.classList.remove('open');
         });
         
-        langCur.querySelectorAll('.lang-cur__option').forEach(option => {
-            option.addEventListener('click', function(e) {
-                e.stopPropagation();
-                const type = this.dataset.type;
-                const value = this.dataset.value;
-                
-                langCur.querySelectorAll(`.lang-cur__option[data-type="${type}"]`).forEach(opt => opt.classList.remove('lang-cur__option--active'));
-                this.classList.add('lang-cur__option--active');
-                
-                if (type === 'lang') {
-                    applyLang(value);
-                    setCookie('brt_lang', value, 30);
-                    translatePage(value);
-                } else if (type === 'cur') {
-                    applyCur(value);
-                    setCookie('brt_cur', value, 30);
-                }
-            });
-        });
-        
-        function applyLang(lang) {
-            const langSpan = langCur.querySelector('.lang-cur__current .lang');
-            if (lang === 'ru') langSpan.textContent = 'ru';
-            else if (lang === 'en') langSpan.textContent = 'en';
-        }
-        
-        function applyCur(cur) {
-            const curSpan = langCur.querySelector('.lang-cur__current .cur');
-            if (cur === 'RUB') curSpan.textContent = '₽';
-            else if (cur === 'USD') curSpan.textContent = '$';
-            else if (cur === 'EUR') curSpan.textContent = '€';
-        }
-        
-        function updateActiveOptions(lang, cur) {
-            langCur.querySelectorAll('.lang-cur__option').forEach(opt => {
-                opt.classList.remove('lang-cur__option--active');
-                if (opt.dataset.value === lang || opt.dataset.value === cur) {
-                    opt.classList.add('lang-cur__option--active');
-                }
-            });
+        if (currentLang === 'en') {
+            setTimeout(() => translatePage('en'), 200);
         }
     }
 });
 
+// ============================================
+// PRELOADER
+// ============================================
 (function() {
     var preloader = document.getElementById('preloader');
     if (!preloader) return;
     
-    // НЕ показываем прелоадер при загрузке страницы
-    // Сразу скрываем его всегда
     function hideNow() {
         preloader.style.display = 'none';
         preloader.classList.remove('preloader--show');
         sessionStorage.removeItem('preloader_active');
     }
     
-    // Скрываем мгновенно при любом открытии страницы
     hideNow();
     
-    // Показываем только при ЯВНОМ переходе вперёд (не назад)
     document.addEventListener('click', function(e) {
         var el = e.target.closest('a, button, .route-card, .quick-route-card, .info-block__large, .info-block__small, .sidebar__continue-btn, .ticket-card__change');
         if (el && !el.closest('#scrollToTopBtn')) {
             var href = el.getAttribute('href');
-            // Не показываем для якорей и javascript: ссылок
             if (href && href !== '#' && !href.startsWith('javascript:')) {
                 preloader.style.display = 'flex';
                 preloader.classList.add('preloader--show');
                 preloader.classList.remove('preloader--hide');
                 sessionStorage.setItem('preloader_active', '1');
-                // Принудительно скрываем через 5 секунд
                 setTimeout(hideNow, 5000);
             }
         }
@@ -455,7 +497,6 @@ document.addEventListener('DOMContentLoaded', function() {
         setTimeout(hideNow, 5000);
     });
     
-    // При загрузке страницы всегда скрываем
     window.addEventListener('pageshow', hideNow);
     window.addEventListener('load', hideNow);
 })();

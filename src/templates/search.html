@@ -9,10 +9,13 @@
 {% endblock %}
 
 {% block body %}
+
 <div id="search-page">
     <div class="search-header">
         <div class="search-header__nav">
             <form action="{{ url_for('search') }}" method="get" class="hero-block--navigation">
+                <input type="hidden" name="cur" value="{{ g.cur }}">
+                <input type="hidden" name="lang" value="{{ g.lang }}">    
                 <div class="liquid-nav">
                     <div class="liquid-nav--trip">
                         <input type="text" class="liquid-nav__input" id="inputFrom" name="from" placeholder="Откуда" value="{{ from_city }}">
@@ -92,12 +95,12 @@
                                 <div class="price-input-group">
                                     <label class="price-label">От</label>
                                     <input type="number" class="price-field" id="priceFrom" value="500" min="0" max="50000" step="100">
-                                    <span class="price-currency">₽</span>
+                                    <span class="price-currency">{% if g.cur == 'USD' %}${% elif g.cur == 'EUR' %}€{% else %}₽{% endif %}</span>
                                 </div>
                                 <div class="price-input-group">
                                     <label class="price-label">До</label>
                                     <input type="number" class="price-field" id="priceTo" value="15000" min="0" max="50000" step="100">
-                                    <span class="price-currency">₽</span>
+                                    <span class="price-currency">{% if g.cur == 'USD' %}${% elif g.cur == 'EUR' %}€{% else %}₽{% endif %}</span>
                                 </div>
                             </div>
                             <div class="price-slider-wrapper">
@@ -136,9 +139,11 @@
             </div>
         {% endif %}
 
+        {% set cur_sym = '$' if g.cur == 'USD' else '€' if g.cur == 'EUR' else '₽' %}
+
         {% if not date_to %}
             {% for trip in results %}
-            <div class="trip-card" data-min-price="{{ trip.min_price }}">
+            <div class="trip-card" data-min-price="{{ trip.min_price | convert_price }}">
                 <div class="trip-card__main">
                     <div class="trip-card__time-block">
                         <div class="trip-card__time-row">
@@ -180,7 +185,7 @@
                         {% if price_data.free_seats > 0 %}
                         <div class="trip-card__class" data-wagon="{{ price_data.wagon_type }}" data-class="{{ price_data.class }}">
                             <div class="class-name">{{ price_data.wagon_name }}</div>
-                            <div class="class-price">от {{ "{:,}".format(price_data.price).replace(',', ' ') }}₽</div>
+                            <div class="class-price">от {{ "{:,}".format(price_data.price | convert_price).replace(',', ' ') }} {{ cur_sym }}</div>
                             <div class="class-seats">
                                 {% if price_data.free_seats == price_data.total_seats %}
                                     {{ price_data.free_seats }} {{ 'место' if price_data.free_seats == 1 else 'места' if price_data.free_seats in [2,3,4] else 'мест' }}
@@ -197,7 +202,7 @@
                     
                     <div class="trip-card__price-block">
                         {% if trip.min_price %}
-                        <div class="trip-card__price">от {{ "{:,}".format(trip.min_price).replace(',', ' ') }}₽</div>
+                        <div class="trip-card__price">от {{ "{:,}".format(trip.min_price | convert_price).replace(',', ' ') }} {{ cur_sym }}</div>
                         {% else %}
                         <div class="trip-card__price">Нет мест</div>
                         {% endif %}
@@ -214,7 +219,7 @@
         {% else %}
             <div id="forward-results">
                 {% for trip in results %}
-                <div class="trip-card forward-trip-card" data-min-price="{{ trip.min_price }}" data-trip-id="{{ trip.id }}">
+                <div class="trip-card forward-trip-card" data-min-price="{{ trip.min_price | convert_price }}" data-trip-id="{{ trip.id }}">
                     <div class="trip-card__main">
                         <div class="trip-card__time-block">
                             <div class="trip-card__time-row">
@@ -255,7 +260,7 @@
                             {% if price_data.free_seats > 0 %}
                             <div class="trip-card__class" data-wagon="{{ price_data.wagon_type }}" data-class="{{ price_data.class }}">
                                 <div class="class-name">{{ price_data.wagon_name }}</div>
-                                <div class="class-price">от {{ "{:,}".format(price_data.price).replace(',', ' ') }}₽</div>
+                                <div class="class-price">от {{ "{:,}".format(price_data.price | convert_price).replace(',', ' ') }} {{ cur_sym }}</div>
                                 <div class="class-seats">
                                     {% if price_data.free_seats == price_data.total_seats %}
                                         {{ price_data.free_seats }} {{ 'место' if price_data.free_seats == 1 else 'места' if price_data.free_seats in [2,3,4] else 'мест' }}
@@ -272,7 +277,7 @@
                         
                         <div class="trip-card__price-block">
                             {% if trip.min_price %}
-                            <div class="trip-card__price">от {{ "{:,}".format(trip.min_price).replace(',', ' ') }}₽</div>
+                            <div class="trip-card__price">от {{ "{:,}".format(trip.min_price | convert_price).replace(',', ' ') }} {{ cur_sym }}</div>
                             {% else %}
                             <div class="trip-card__price">Нет мест</div>
                             {% endif %}
@@ -289,7 +294,7 @@
                 <h2 class="section-title" style="margin-top: 30px;">Выбрать поезд обратно</h2>
                 <div id="backward-results">
                     {% for trip in return_results %}
-                    <div class="trip-card backward-trip-card" data-min-price="{{ trip.min_price }}" data-trip-id="{{ trip.id }}">
+                    <div class="trip-card backward-trip-card" data-min-price="{{ trip.min_price | convert_price }}" data-trip-id="{{ trip.id }}">
                         <div class="trip-card__main">
                             <div class="trip-card__time-block">
                                 <div class="trip-card__time-row">
@@ -330,7 +335,7 @@
                                 {% if price_data.free_seats > 0 %}
                                 <div class="trip-card__class" data-wagon="{{ price_data.wagon_type }}" data-class="{{ price_data.class }}">
                                     <div class="class-name">{{ price_data.wagon_name }}</div>
-                                    <div class="class-price">от {{ "{:,}".format(price_data.price).replace(',', ' ') }}₽</div>
+                                    <div class="class-price">от {{ "{:,}".format(price_data.price | convert_price).replace(',', ' ') }} {{ cur_sym }}</div>
                                     <div class="class-seats">
                                         {% if price_data.free_seats == price_data.total_seats %}
                                             {{ price_data.free_seats }} {{ 'место' if price_data.free_seats == 1 else 'места' if price_data.free_seats in [2,3,4] else 'мест' }}
@@ -347,7 +352,7 @@
                             
                             <div class="trip-card__price-block">
                                 {% if trip.min_price %}
-                                <div class="trip-card__price">от {{ "{:,}".format(trip.min_price).replace(',', ' ') }}₽</div>
+                                <div class="trip-card__price">от {{ "{:,}".format(trip.min_price | convert_price).replace(',', ' ') }} {{ cur_sym }}</div>
                                 {% else %}
                                 <div class="trip-card__price">Нет мест</div>
                                 {% endif %}
@@ -413,8 +418,8 @@
 </button>
 
 <script>
-// Глобальная переменная для индекса выбранного поезда туда
 var selectedForwardIndex = null;
+var currentCurrencySymbol = '{% if g.cur == "USD" %}${% elif g.cur == "EUR" %}€{% else %}₽{% endif %}';
 
 document.addEventListener('DOMContentLoaded', function() {
     const passengerSelect = document.getElementById('passengerSelect');
@@ -455,7 +460,6 @@ document.addEventListener('DOMContentLoaded', function() {
         isOpen = false;
     });
     
-    // Счётчики пассажиров
     const counters = { 
         adults: parseInt('{{ adults }}') || 1, 
         children: parseInt('{{ children }}') || 0, 
@@ -498,7 +502,6 @@ document.addEventListener('DOMContentLoaded', function() {
         passengerText.innerHTML = '<p>' + total + '</p>' + word;
     }
     
-    // Свап полей
     const swapBtn = document.getElementById('swapBtn');
     if (swapBtn) {
         swapBtn.addEventListener('click', function() {
@@ -512,9 +515,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // ============================================
-    // ФИЛЬТРЫ
-    // ============================================
     document.querySelectorAll('.filter-chip--dropdown').forEach(chip => {
         chip.addEventListener('click', function(e) {
             e.stopPropagation();
@@ -541,17 +541,11 @@ document.addEventListener('DOMContentLoaded', function() {
                                         '<span style="font-family: \'Commissioner\', sans-serif; font-weight: 500;">' + timeRange + '</span>';
                     } else {
                         label.textContent = text;
-                        label.style.fontFamily = "'Lack', sans-serif";
-                        label.style.fontWeight = '';
                     }
                 } else if (label && chip.dataset.filter === 'sort') {
                     label.textContent = this.textContent;
-                    label.style.fontFamily = '';
-                    label.style.fontWeight = '';
                 } else if (label) {
                     label.textContent = this.textContent;
-                    label.style.fontFamily = '';
-                    label.style.fontWeight = '';
                 }
                 
                 chip.classList.remove('open');
@@ -561,9 +555,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     document.addEventListener('click', function() {
-        document.querySelectorAll('.filter-chip--dropdown.open').forEach(chip => {
-            chip.classList.remove('open');
-        });
+        document.querySelectorAll('.filter-chip--dropdown.open').forEach(chip => chip.classList.remove('open'));
     });
     
     function applyAllFilters() {
@@ -611,9 +603,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 visible = hasValidPrice;
             } else if (visible) {
-                card.querySelectorAll('.trip-card__class').forEach(item => {
-                    item.style.display = 'flex';
-                });
+                card.querySelectorAll('.trip-card__class').forEach(item => item.style.display = 'flex');
             }
             
             card.style.display = visible ? 'flex' : 'none';
@@ -632,21 +622,13 @@ document.addEventListener('DOMContentLoaded', function() {
         
         const sortFn = (a, b) => {
             if (activeSort === 'early') {
-                const timeA = getTimeInMinutes(a);
-                const timeB = getTimeInMinutes(b);
-                return timeA - timeB;
+                return getTimeInMinutes(a) - getTimeInMinutes(b);
             } else if (activeSort === 'late') {
-                const timeA = getTimeInMinutes(a);
-                const timeB = getTimeInMinutes(b);
-                return timeB - timeA;
+                return getTimeInMinutes(b) - getTimeInMinutes(a);
             } else if (activeSort === 'cheapest') {
-                const priceA = parseInt(a.dataset.minPrice) || 0;
-                const priceB = parseInt(b.dataset.minPrice) || 0;
-                return priceA - priceB;
+                return (parseInt(a.dataset.minPrice) || 0) - (parseInt(b.dataset.minPrice) || 0);
             } else if (activeSort === 'expensive') {
-                const priceA = parseInt(a.dataset.minPrice) || 0;
-                const priceB = parseInt(b.dataset.minPrice) || 0;
-                return priceB - priceA;
+                return (parseInt(b.dataset.minPrice) || 0) - (parseInt(a.dataset.minPrice) || 0);
             }
             return 0;
         };
@@ -675,15 +657,9 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!timeEl) return 0;
         const timeText = timeEl.textContent.trim();
         const parts = timeText.split(':');
-        if (parts.length >= 2) {
-            return parseInt(parts[0]) * 60 + parseInt(parts[1]);
-        }
-        return 0;
+        return parts.length >= 2 ? parseInt(parts[0]) * 60 + parseInt(parts[1]) : 0;
     }
     
-    // ============================================
-    // СЛАЙДЕР ЦЕН
-    // ============================================
     (function() {
         const priceFrom = document.getElementById('priceFrom');
         const priceTo = document.getElementById('priceTo');
@@ -703,8 +679,7 @@ document.addEventListener('DOMContentLoaded', function() {
             let minPrice = 999999999;
             
             document.querySelectorAll('#forward-results .trip-card, #backward-results .trip-card, .search-results > .trip-card').forEach(card => {
-                const priceElements = card.querySelectorAll('.class-price');
-                priceElements.forEach(el => {
+                card.querySelectorAll('.class-price').forEach(el => {
                     const text = el.textContent.trim();
                     const match = text.match(/\d[\d\s]*\d/);
                     if (match) {
@@ -717,39 +692,25 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
             });
             
-            if (maxPrice === 0 || minPrice === 999999999) {
-                maxPrice = 50000;
-                minPrice = 0;
-            }
-            
+            if (maxPrice === 0 || minPrice === 999999999) { maxPrice = 50000; minPrice = 0; }
             absoluteMax = Math.ceil(maxPrice / 1000) * 1000;
             absoluteMin = Math.floor(minPrice / 100) * 100;
-            
-            if (absoluteMin >= absoluteMax || absoluteMax - absoluteMin < 1000) {
-                absoluteMax = absoluteMin + 1000;
-            }
+            if (absoluteMin >= absoluteMax || absoluteMax - absoluteMin < 1000) absoluteMax = absoluteMin + 1000;
         }
         
         function applyAbsoluteBounds() {
-            priceRangeMin.min = absoluteMin;
-            priceRangeMin.max = absoluteMax;
-            priceRangeMax.min = absoluteMin;
-            priceRangeMax.max = absoluteMax;
-            priceFrom.min = absoluteMin;
-            priceFrom.max = absoluteMax;
-            priceTo.min = absoluteMin;
-            priceTo.max = absoluteMax;
+            priceRangeMin.min = absoluteMin; priceRangeMin.max = absoluteMax;
+            priceRangeMax.min = absoluteMin; priceRangeMax.max = absoluteMax;
+            priceFrom.min = absoluteMin; priceFrom.max = absoluteMax;
+            priceTo.min = absoluteMin; priceTo.max = absoluteMax;
         }
         
         window.updatePriceLimits = function() {
             if (!window.currentPriceRange) {
                 initAbsoluteBounds();
                 applyAbsoluteBounds();
-                
-                priceFrom.value = absoluteMin;
-                priceTo.value = absoluteMax;
-                priceRangeMin.value = absoluteMin;
-                priceRangeMax.value = absoluteMax;
+                priceFrom.value = absoluteMin; priceTo.value = absoluteMax;
+                priceRangeMin.value = absoluteMin; priceRangeMax.value = absoluteMax;
                 updateSliderFill();
             }
         };
@@ -758,10 +719,8 @@ document.addEventListener('DOMContentLoaded', function() {
             if (!priceSliderFill) return;
             const fromVal = parseInt(priceFrom.value) || absoluteMin;
             const toVal = parseInt(priceTo.value) || absoluteMax;
-            
             const fromPercent = ((fromVal - absoluteMin) / (absoluteMax - absoluteMin)) * 100;
             const toPercent = ((toVal - absoluteMin) / (absoluteMax - absoluteMin)) * 100;
-            
             priceSliderFill.style.left = fromPercent + '%';
             priceSliderFill.style.width = (toPercent - fromPercent) + '%';
         }
@@ -772,8 +731,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (val >= toVal - 100) val = toVal - 100;
             if (val < absoluteMin) val = absoluteMin;
             if (val > absoluteMax) val = absoluteMax;
-            this.value = val;
-            priceRangeMin.value = val;
+            this.value = val; priceRangeMin.value = val;
             updateSliderFill();
         });
         
@@ -783,8 +741,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (val <= fromVal + 100) val = fromVal + 100;
             if (val < absoluteMin) val = absoluteMin;
             if (val > absoluteMax) val = absoluteMax;
-            this.value = val;
-            priceRangeMax.value = val;
+            this.value = val; priceRangeMax.value = val;
             updateSliderFill();
         });
         
@@ -794,8 +751,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (val >= toVal - 100) val = toVal - 100;
             if (val < absoluteMin) val = absoluteMin;
             if (val > absoluteMax) val = absoluteMax;
-            priceFrom.value = val;
-            updateSliderFill();
+            priceFrom.value = val; updateSliderFill();
         });
         
         priceRangeMax.addEventListener('input', function() {
@@ -804,20 +760,14 @@ document.addEventListener('DOMContentLoaded', function() {
             if (val <= fromVal + 100) val = fromVal + 100;
             if (val < absoluteMin) val = absoluteMin;
             if (val > absoluteMax) val = absoluteMax;
-            priceTo.value = val;
-            updateSliderFill();
+            priceTo.value = val; updateSliderFill();
         });
         
-        if (priceDropdown) {
-            priceDropdown.addEventListener('click', function(e) {
-                e.stopPropagation();
-            });
-        }
+        if (priceDropdown) priceDropdown.addEventListener('click', function(e) { e.stopPropagation(); });
         
         if (priceApplyBtn) {
             priceApplyBtn.addEventListener('click', function(e) {
                 e.stopPropagation();
-                
                 const minPrice = parseInt(priceFrom.value) || absoluteMin;
                 const maxPrice = parseInt(priceTo.value) || absoluteMax;
                 
@@ -825,7 +775,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (chip) {
                     const label = chip.querySelector('.filter-chip__label');
                     if (label) {
-                        label.textContent = 'От ' + minPrice + '₽ до ' + maxPrice + '₽';
+                        label.textContent = 'От ' + minPrice + currentCurrencySymbol + ' до ' + maxPrice + currentCurrencySymbol;
                         label.style.fontFamily = "'Commissioner', sans-serif";
                         label.style.fontWeight = '500';
                     }
@@ -838,23 +788,15 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         setTimeout(function() {
-            initAbsoluteBounds();
-            applyAbsoluteBounds();
-            
+            initAbsoluteBounds(); applyAbsoluteBounds();
             if (!window.currentPriceRange) {
-                priceFrom.value = absoluteMin;
-                priceTo.value = absoluteMax;
-                priceRangeMin.value = absoluteMin;
-                priceRangeMax.value = absoluteMax;
+                priceFrom.value = absoluteMin; priceTo.value = absoluteMax;
+                priceRangeMin.value = absoluteMin; priceRangeMax.value = absoluteMax;
             }
-            
             updateSliderFill();
         }, 200);
     })();
     
-    // ============================================
-    // ВЫБОР ПОЕЗДА ТУДА
-    // ============================================
     document.querySelectorAll('.forward-select-btn').forEach(btn => {
         btn.addEventListener('click', function() {
             const card = this.closest('.forward-trip-card');
@@ -875,15 +817,11 @@ document.addEventListener('DOMContentLoaded', function() {
             
             document.getElementById('selected-forward-card').innerHTML = '';
             document.getElementById('selected-forward-card').appendChild(selectedCard);
-            
             document.getElementById('forward-results').style.display = 'none';
             document.getElementById('selected-forward').style.display = 'block';
         });
     });
     
-    // ============================================
-    // ВЫБОР ПОЕЗДА ОБРАТНО
-    // ============================================
     document.querySelectorAll('.backward-select-btn').forEach(btn => {
         btn.addEventListener('click', function() {
             if (selectedForwardIndex === null) {
@@ -892,7 +830,6 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             const returnIndex = parseInt(this.getAttribute('data-return-index'));
-            
             const params = new URLSearchParams({
                 trip_index: selectedForwardIndex,
                 return_trip_index: returnIndex,
@@ -923,34 +860,24 @@ window.addEventListener('scroll', function() {
     }
 });
 
-// Валидация дат
 const dateFromInput = document.querySelector('input[name="date_from"]');
 const dateToInput = document.querySelector('input[name="date_to"]');
 
 if (dateFromInput && dateToInput) {
-    if (dateFromInput.value) {
-        dateToInput.setAttribute('min', dateFromInput.value);
-    }
+    if (dateFromInput.value) dateToInput.setAttribute('min', dateFromInput.value);
     
     dateFromInput.addEventListener('change', function() {
         if (this.value) {
             dateToInput.setAttribute('min', this.value);
-            if (dateToInput.value && dateToInput.value < this.value) {
-                dateToInput.value = this.value;
-            }
+            if (dateToInput.value && dateToInput.value < this.value) dateToInput.value = this.value;
         }
     });
     
     dateToInput.addEventListener('change', function() {
-        if (dateFromInput.value && this.value && this.value < dateFromInput.value) {
-            this.value = dateFromInput.value;
-        }
+        if (dateFromInput.value && this.value && this.value < dateFromInput.value) this.value = dateFromInput.value;
     });
 }
 
-// ============================================
-// КНОПКА ПРОКРУТКИ ВВЕРХ
-// ============================================
 (function() {
     const scrollBtn = document.getElementById('scrollToTopBtn');
     if (!scrollBtn) return;
@@ -958,37 +885,25 @@ if (dateFromInput && dateToInput) {
     let scrollTimeout;
     
     window.addEventListener('scroll', function() {
-        if (window.scrollY > 300) {
-            scrollBtn.classList.add('visible');
-        } else {
-            scrollBtn.classList.remove('visible');
-        }
+        if (window.scrollY > 300) scrollBtn.classList.add('visible');
+        else scrollBtn.classList.remove('visible');
         
-        // Прячем при бездействии
         clearTimeout(scrollTimeout);
         if (window.scrollY > 300) {
-            scrollTimeout = setTimeout(function() {
-                scrollBtn.classList.remove('visible');
-            }, 3000);
+            scrollTimeout = setTimeout(function() { scrollBtn.classList.remove('visible'); }, 3000);
         }
     });
     
-    // Показываем снова при движении мыши
     document.addEventListener('mousemove', function(e) {
         if (e.clientY < window.innerHeight - 100 && window.scrollY > 300) {
             scrollBtn.classList.add('visible');
             clearTimeout(scrollTimeout);
-            scrollTimeout = setTimeout(function() {
-                scrollBtn.classList.remove('visible');
-            }, 3000);
+            scrollTimeout = setTimeout(function() { scrollBtn.classList.remove('visible'); }, 3000);
         }
     });
     
     scrollBtn.addEventListener('click', function() {
-        window.scrollTo({
-            top: 0,
-            behavior: 'smooth'
-        });
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     });
 })();
 </script>

@@ -264,7 +264,7 @@ document.addEventListener('DOMContentLoaded', function() {
     let sidebarHTML = '';
     let total = 0;
     if (seats.forward && seats.forward.length > 0) {
-        sidebarHTML += '<div style="margin-bottom:0;font-weight:600;font-size:17px;color:#A3A3A3;">Места туда</div>';
+        sidebarHTML += '<div style="margin-bottom: 0px; font-weight: 600; font-size: 17px; color: #A3A3A3; font-family: \'Commissioner\', sans-serif;">Места туда</div>';
         seats.forward.forEach(s => {
             sidebarHTML += '<div class="sidebar__passenger-row"><span class="sidebar__passenger-place">Ваг.' + s.wagon + ', место ' + s.seat + '</span><span class="sidebar__passenger-price">' + (s.price || 0).toLocaleString('ru-RU') + ' ₽</span></div>';
             total += s.price || 0;

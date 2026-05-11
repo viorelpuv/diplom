@@ -655,7 +655,7 @@ header {
     z-index: 10;
     margin-top: 180px;
     background: rgba(221, 221, 221, 0.1);
-    backdrop-filter: blur(20px) saturate(100%);
+    backdrop-filter: blur(2px) saturate(100%);
     -webkit-backdrop-filter: blur(8px) saturate(100%) contrast(110%);
     padding: 13px;
     
@@ -710,8 +710,7 @@ header {
     user-select: none;
     width: 405px;
     height: 445px;
-    background: #EFF1F4;
-    backdrop-filter: blur(8px) saturate(100%);
+    /*backdrop-filter: blur(8px) saturate(100%);*/
     -webkit-backdrop-filter: blur(8px) saturate(100%) contrast(110%);
     
     box-shadow: 
@@ -933,7 +932,7 @@ header {
     align-items: center;
     
     background: rgba(221, 221, 221, 0.1);
-    backdrop-filter: blur(8px) saturate(100%);
+    /*backdrop-filter: blur(8px) saturate(100%);*/
     -webkit-backdrop-filter: blur(8px) saturate(100%) contrast(110%);
     
     border-radius: 50px;
@@ -1045,7 +1044,7 @@ header {
     flex: 1;
     height: 285px;
     background: linear-gradient(135deg, #003CFF 0%, #7192FF 100%);
-    backdrop-filter: blur(8px) saturate(100%);
+   /* backdrop-filter: blur(8px) saturate(100%);*/
     -webkit-backdrop-filter: blur(8px) saturate(100%) contrast(110%);
     
     box-shadow: 
@@ -1127,7 +1126,7 @@ header {
 .info-block__small {
     height: 130px;
     background: #E4E5E8;
-    backdrop-filter: blur(8px) saturate(100%);
+    /*backdrop-filter: blur(8px) saturate(100%);*/
     -webkit-backdrop-filter: blur(8px) saturate(100%) contrast(110%);
     
     box-shadow: 
@@ -1406,7 +1405,7 @@ header {
     justify-content: space-between;
     gap: 24px;
     background: rgba(30, 30, 30, 0.95);
-    backdrop-filter: blur(20px);
+    /*backdrop-filter: blur(20px);*/
     -webkit-backdrop-filter: blur(20px);
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 20px;

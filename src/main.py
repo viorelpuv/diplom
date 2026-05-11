@@ -1,10 +1,9 @@
 # app.py — полный код
-from flask import Flask, render_template, request, redirect
+from flask import Flask, render_template, request, redirect, g
 from datetime import datetime, date
 from utils.rail_api import RZDApi
 from utils.currency import format_price
 from flask_babel import Babel, _
-from utils.payment import create_payment_for_order
 
 from utils.database.database import (
     init_db, save_passenger, create_order, save_ticket, 
@@ -26,6 +25,50 @@ WAGON_TYPES = {
     'soft': 'Мягкий',
     'sv': 'СВ'
 }
+
+
+@app.context_processor
+def inject_utils():
+    from utils.currency import get_rate
+    return dict(get_rate=get_rate)
+
+
+@app.before_request
+def set_lang_currency():
+    lang = request.args.get('lang') or request.cookies.get('brt_lang') or 'ru'
+    g.lang = lang
+    
+    cur = request.args.get('cur') or request.cookies.get('brt_cur') or 'RUB'
+    g.cur = cur
+
+
+@app.template_filter('convert_price')
+def convert_price(price_rub):
+    if not price_rub or price_rub == 0:
+        return 0
+    
+    currency = getattr(g, 'cur', 'RUB')
+    
+    if currency == 'RUB':
+        return int(price_rub)
+    
+    try:
+        from utils.currency import get_rate
+        rate = get_rate(currency)
+        if rate and rate > 0:
+            converted = float(price_rub) / rate
+            return int(round(converted))
+    except Exception as e:
+        print(f"[CONVERT] Ошибка: {e}")
+    
+    return int(price_rub)
+
+
+@app.template_filter('currency_symbol')
+def currency_symbol(dummy=None):
+    currency = getattr(g, 'cur', 'RUB')
+    symbols = {'RUB': '₽', 'USD': '$', 'EUR': '€'}
+    return symbols.get(currency, '₽')
 
 
 def build_prices_from_cars(cars_data):
@@ -215,9 +258,7 @@ def search():
             formatted = format_train(train, from_city, to_city, total_passengers)
             if formatted:
                 results.append(formatted)
-                print(f"  📝 Вызов save_train_full для {formatted.get('train_number')}")
                 result = save_train_full(formatted, from_city, to_city)
-                print(f"  📝 Результат: {result}")
         
         return_results = []
         for train in backward_trains:
@@ -227,8 +268,8 @@ def search():
                 return_results.append(formatted)
                 try:
                     save_train_full(formatted, to_city, from_city)
-                except Exception as e:
-                    print(f"  ⚠️ Ошибка сохранения: {e}")
+                except:
+                    pass
         
         print(f"  Итого: туда={len(results)}, обратно={len(return_results)}")
         
@@ -444,7 +485,11 @@ def api_wagon_scheme():
 @app.route('/api/currency-rates')
 def api_currency_rates():
     from utils.currency import get_rate
-    return {'RUB': 1, 'USD': get_rate('USD'), 'EUR': get_rate('EUR')}
+    return {
+        'RUB': 1,
+        'USD': get_rate('USD'),
+        'EUR': get_rate('EUR'),
+    }
 
 
 def generate_interactive_scheme(wagon_type, prices_data=None, seed_str=''):
@@ -532,7 +577,6 @@ def confirm():
         seats = json.loads(seats_json) if seats_json else {}
         trip_info = json.loads(trip_json) if trip_json else {}
         
-        # Сохраняем в БД
         email = contact.get('email', '')
         phone = contact.get('phone', '')
         
@@ -600,17 +644,12 @@ def pay_order(order_number):
     """
 
 
-if __name__ == '__main__':
-    app.run(debug=True)
-
-    
 @app.route('/test-db')
 def test_db():
     from utils.database.database import get_db
     conn = get_db()
     cursor = conn.cursor()
     
-    # Считаем записи во всех таблицах
     tables = ['stations', 'routes', 'trains', 'trips', 'wagons', 'seats', 'trip_seats']
     result = {}
     for table in tables:
@@ -619,4 +658,7 @@ def test_db():
     
     conn.close()
     return result
-    
+
+
+if __name__ == '__main__':
+    app.run(debug=True)

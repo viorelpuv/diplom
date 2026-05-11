@@ -66,7 +66,6 @@
             </div>
 
             {% if return_trip %}
-            <!-- Билет "Обратно" -->
             <div class="ticket-card" id="returnTicket">
                 <div class="ticket-card__left">
                     <div class="ticket-card__route">
@@ -74,7 +73,6 @@
                         <img src="{{ url_for('static', filename='icons/arrow-short.svg') }}" alt="" class="ticket-card__route-arrow">
                         <h1 class="ticket-card__to">{{ return_trip.get('to_city', return_trip.get('to', '')) }}</h1>
                     </div>
-                    
                     <div class="ticket-card__details">
                         <span class="ticket-card__train">{{ return_trip.get('train_number', '') }}</span>
                         {% if return_trip.get('train_name') %}
@@ -87,10 +85,8 @@
                             <span class="transfer-text">{{ 'Без пересадок' if return_trip.get('transfer_count', 0) == 0 else 'С пересадкой' }}</span>
                         </span>
                     </div>
-                    
                     <a href="{{ url_for('search', from=to_city, to=from_city, date_from=date_to) }}" class="ticket-card__change">Изменить поезд обратно</a>
                 </div>
-                
                 <div class="ticket-card__right">
                     <div class="ticket-card__time-block">
                         {% set dep = return_trip.get('departure', return_trip.get('departure_time', '')) %}
@@ -103,12 +99,10 @@
                         {% endif %}
                         <div class="ticket-card__station" title="{{ return_trip.get('from_station', '') }}">{{ return_trip.get('from_station', '')|short_station }}</div>
                     </div>
-                    
                     <div class="ticket-card__travel-info">
                         <img src="{{ url_for('static', filename='icons/arrow-long.svg') }}" alt="" class="ticket-card__travel-arrow">
                         <span class="ticket-card__travel-duration">{{ return_trip.get('duration', '') }}</span>
                     </div>
-                    
                     <div class="ticket-card__time-block">
                         {% set arr = return_trip.get('arrival', return_trip.get('arrival_time', '')) %}
                         <div class="ticket-card__time">{{ arr[:5] if arr else '' }}</div>
@@ -123,10 +117,8 @@
             </div>
             {% endif %}
             
-            <!-- Блок управления количеством билетов -->
             <div class="tickets-control">
                 <h3 class="tickets-control__title">Укажите количество билетов</h3>
-                
                 <div class="tickets-control__categories">
                     <div class="tickets-control__category">
                         <div class="tickets-control__info">
@@ -139,7 +131,6 @@
                             <button class="counter__btn counter__btn--plus" data-target="adults-control">+</button>
                         </div>
                     </div>
-                    
                     <div class="tickets-control__category">
                         <div class="tickets-control__info">
                             <span class="tickets-control__label">Дети</span>
@@ -151,7 +142,6 @@
                             <button class="counter__btn counter__btn--plus" data-target="children-control">+</button>
                         </div>
                     </div>
-                    
                     <div class="tickets-control__category">
                         <div class="tickets-control__info">
                             <span class="tickets-control__label">Младенцы</span>
@@ -166,7 +156,6 @@
                 </div>
             </div>
             
-            <!-- Блок выбора типа вагона и мест -->
             <div class="wagon-select" id="wagonSelectBlock" 
                 data-train-number="{{ trip.get('train_number', '') }}"
                 data-from-station="{{ trip.get('from_station', '') }}"
@@ -186,16 +175,17 @@
                 <div class="wagon-select__types" id="wagonTypesContainer">
                     {% set grouped = trip.get('prices', {}) | group_wagons %}
                     {% set wagon_order = ['reserved_seat', 'compartment', 'sitting', 'luxury', 'soft', 'sv'] %}
+                    {% set cur_sym = '$' if g.cur == 'USD' else '€' if g.cur == 'EUR' else '₽' %}
                     {% for wagon_type in wagon_order %}
                         {% set data = grouped.get(wagon_type) %}
                         {% if data and data.price > 0 %}
-                        <div class="wagon-type-card" data-wagon="{{ wagon_type }}">
+                        <div class="wagon-type-card" data-wagon="{{ wagon_type }}" data-price="{{ data.price | convert_price }}">
                             <div class="wagon-type-card__header">
                                 <span class="wagon-type-card__name">{{ data.wagon_name }}</span>
                                 <span class="wagon-type-card__dash">—</span>
                                 <span class="wagon-type-card__seats">{{ data.free_seats }}</span>
                             </div>
-                            <div class="wagon-type-card__price">{{ "{:,}".format(data.price).replace(',', ' ') }} ₽</div>
+                            <div class="wagon-type-card__price">{{ "{:,}".format(data.price | convert_price).replace(',', ' ') }} {{ cur_sym }}</div>
                         </div>
                         {% endif %}
                     {% endfor %}
@@ -236,7 +226,7 @@
             </div>
             <div class="sidebar__total-row">
                 <span class="sidebar__total-label">Итого</span>
-                <span class="sidebar__total-price" id="sidebarTotalPrice">0 ₽</span>
+                <span class="sidebar__total-price" id="sidebarTotalPrice">0 {{ cur_sym }}</span>
             </div>
             <button class="sidebar__continue-btn" id="continueBtn">Далее</button>
             <div class="sidebar__payment">
@@ -251,10 +241,13 @@
     </div>
 </div>
 
+<meta name="currency-symbol" content="{{ cur_sym }}">
+
 <script>
 // Глобальные переменные
 let activeTicket = 'forward';
 let pricePerSeat = 0;
+var currentCurrencySymbol = document.querySelector('meta[name="currency-symbol"]')?.content || '₽';
 
 const selectedSeatsStore = {
     forward: [],
@@ -381,23 +374,15 @@ document.addEventListener('DOMContentLoaded', function() {
         card.addEventListener('click', function() {
             document.querySelectorAll('.wagon-type-card').forEach(c => c.classList.remove('wagon-type-card--selected'));
             this.classList.add('wagon-type-card--selected');
-            updatePriceFromCard(this);
+            pricePerSeat = parseInt(this.dataset.price) || 0;
             loadWagonScheme(this.dataset.wagon);
         });
     });
     
-    function updatePriceFromCard(card) {
-        const priceText = card.querySelector('.wagon-type-card__price')?.textContent || '';
-        const priceMatch = priceText.match(/[\d\s]+/);
-        if (priceMatch) {
-            pricePerSeat = parseInt(priceMatch[0].replace(/\s/g, '')) || 0;
-        }
-    }
-    
     const firstWagonCard = document.querySelector('.wagon-type-card');
     if (firstWagonCard) {
         firstWagonCard.classList.add('wagon-type-card--selected');
-        updatePriceFromCard(firstWagonCard);
+        pricePerSeat = parseInt(firstWagonCard.dataset.price) || 0;
         loadWagonScheme(firstWagonCard.dataset.wagon);
     }
     
@@ -419,11 +404,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
             
-            // Сохраняем в sessionStorage
             sessionStorage.setItem('selectedSeats', JSON.stringify(selectedSeatsStore));
             sessionStorage.setItem('ticketCounts', JSON.stringify(ticketCounts));
             
-            // Читаем данные из HTML
             const forwardCard = document.getElementById('forwardTicket');
             const returnCard = document.getElementById('returnTicket');
             
@@ -482,7 +465,7 @@ function handleSeatClick(seat) {
     } else {
         if (store.length >= maxSeats) {
             const removed = store.shift();
-            const removedSeat = container.querySelector(`[data-seat="${removed.seat}"][data-wagon="${removed.wagon}"]`);
+            const removedSeat = container.querySelector('[data-seat="' + removed.seat + '"][data-wagon="' + removed.wagon + '"]');
             if (removedSeat) {
                 removedSeat.classList.remove('seat--selected');
                 removedSeat.style.background = '#E8F0FE';
@@ -513,11 +496,7 @@ function updateSidebarWithSeats() {
         html += '<div style="margin-bottom: 0px; font-weight: 600; font-size: 17px; color: #A3A3A3; font-family: \'Commissioner\', sans-serif;">Места туда</div>';
         selectedSeatsStore.forward.forEach((s, i) => {
             const type = i < counts.forward.adults ? 'Взрослый' : 'Детский';
-            html += `<div class="sidebar__passenger-row">
-                <span class="sidebar__passenger-type">${type}</span>
-                <span class="sidebar__passenger-place">Ваг.${s.wagon}, место ${s.seat}</span>
-                <span class="sidebar__passenger-price">${s.price.toLocaleString('ru-RU')} ₽</span>
-            </div>`;
+            html += '<div class="sidebar__passenger-row"><span class="sidebar__passenger-type">' + type + '</span><span class="sidebar__passenger-place">Ваг.' + s.wagon + ', место ' + s.seat + '</span><span class="sidebar__passenger-price">' + s.price.toLocaleString('ru-RU') + ' ' + currentCurrencySymbol + '</span></div>';
             totalPrice += s.price;
         });
     }
@@ -526,23 +505,17 @@ function updateSidebarWithSeats() {
         html += '<div style="margin-top: 12px; margin-bottom: 0px; font-weight: 600; font-size: 17px; color: #A3A3A3; font-family: \'Commissioner\', sans-serif;">Места обратно</div>';
         selectedSeatsStore.backward.forEach((s, i) => {
             const type = i < counts.backward.adults ? 'Взрослый' : 'Детский';
-            html += `<div class="sidebar__passenger-row">
-                <span class="sidebar__passenger-type">${type}</span>
-                <span class="sidebar__passenger-place">Ваг.${s.wagon}, место ${s.seat}</span>
-                <span class="sidebar__passenger-price">${s.price.toLocaleString('ru-RU')} ₽</span>
-            </div>`;
+            html += '<div class="sidebar__passenger-row"><span class="sidebar__passenger-type">' + type + '</span><span class="sidebar__passenger-place">Ваг.' + s.wagon + ', место ' + s.seat + '</span><span class="sidebar__passenger-price">' + s.price.toLocaleString('ru-RU') + ' ' + currentCurrencySymbol + '</span></div>';
             totalPrice += s.price;
         });
     }
     
     if (!html) {
-        html = `<div class="sidebar__passenger-row sidebar__passenger-row--empty">
-            <span class="sidebar__passenger-place" style="color: #A3A3A3; font-size: 16px; width: 100%;">Будет известна после выбора мест</span>
-        </div>`;
+        html = '<div class="sidebar__passenger-row sidebar__passenger-row--empty"><span class="sidebar__passenger-place" style="color: #A3A3A3; font-size: 16px; width: 100%;">Будет известна после выбора мест</span></div>';
     }
     
     passengerContainer.innerHTML = html;
-    totalPriceEl.textContent = totalPrice.toLocaleString('ru-RU') + ' ₽';
+    totalPriceEl.textContent = totalPrice.toLocaleString('ru-RU') + ' ' + currentCurrencySymbol;
 }
 
 function loadWagonScheme(wagonType) {
@@ -582,7 +555,7 @@ function loadWagonScheme(wagonType) {
         actualTotalSeats = actualFreeSeats + Math.ceil(actualFreeSeats * 0.15);
     }
     
-    fetch(`/api/wagon-scheme?wagon_type=${wagonType}&free_seats=${actualFreeSeats}&total_seats=${actualTotalSeats}&train_number=${encodeURIComponent(trainNumber)}&date=${date}&time=${time}`)
+    fetch('/api/wagon-scheme?wagon_type=' + wagonType + '&free_seats=' + actualFreeSeats + '&total_seats=' + actualTotalSeats + '&train_number=' + encodeURIComponent(trainNumber) + '&date=' + date + '&time=' + time)
         .then(response => response.json())
         .then(data => {
             if (data.scheme_html) {
@@ -590,7 +563,7 @@ function loadWagonScheme(wagonType) {
                 
                 const store = selectedSeatsStore[activeTicket];
                 store.forEach(s => {
-                    const seat = schemeContainer.querySelector(`[data-seat="${s.seat}"][data-wagon="${s.wagon}"]`);
+                    const seat = schemeContainer.querySelector('[data-seat="' + s.seat + '"][data-wagon="' + s.wagon + '"]');
                     if (seat && !seat.classList.contains('scheme-seat--occupied')) {
                         seat.classList.add('seat--selected');
                         seat.style.background = '#4672FF';
@@ -659,14 +632,7 @@ function renderWagonCards(grouped) {
     for (const wt of wagonOrder) {
         const data = grouped[wt];
         if (data && data.price > 0) {
-            html += `<div class="wagon-type-card" data-wagon="${wt}">
-                <div class="wagon-type-card__header">
-                    <span class="wagon-type-card__name">${data.wagon_name}</span>
-                    <span class="wagon-type-card__dash">—</span>
-                    <span class="wagon-type-card__seats">${data.free_seats}</span>
-                </div>
-                <div class="wagon-type-card__price">${data.price.toLocaleString('ru-RU')} ₽</div>
-            </div>`;
+            html += '<div class="wagon-type-card" data-wagon="' + wt + '" data-price="' + data.price + '"><div class="wagon-type-card__header"><span class="wagon-type-card__name">' + data.wagon_name + '</span><span class="wagon-type-card__dash">—</span><span class="wagon-type-card__seats">' + data.free_seats + '</span></div><div class="wagon-type-card__price">' + data.price.toLocaleString('ru-RU') + ' ' + currentCurrencySymbol + '</div></div>';
         }
     }
     
@@ -676,7 +642,7 @@ function renderWagonCards(grouped) {
         card.addEventListener('click', function() {
             container.querySelectorAll('.wagon-type-card').forEach(c => c.classList.remove('wagon-type-card--selected'));
             this.classList.add('wagon-type-card--selected');
-            updatePriceFromCard(this);
+            pricePerSeat = parseInt(this.dataset.price) || 0;
             loadWagonScheme(this.dataset.wagon);
         });
     });
@@ -684,16 +650,8 @@ function renderWagonCards(grouped) {
     const firstCard = container.querySelector('.wagon-type-card');
     if (firstCard) {
         firstCard.classList.add('wagon-type-card--selected');
-        updatePriceFromCard(firstCard);
+        pricePerSeat = parseInt(firstCard.dataset.price) || 0;
         loadWagonScheme(firstCard.dataset.wagon);
-    }
-}
-
-function updatePriceFromCard(card) {
-    const priceText = card.querySelector('.wagon-type-card__price')?.textContent || '';
-    const priceMatch = priceText.match(/[\d\s]+/);
-    if (priceMatch) {
-        pricePerSeat = parseInt(priceMatch[0].replace(/\s/g, '')) || 0;
     }
 }
 
