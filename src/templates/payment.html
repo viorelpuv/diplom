@@ -126,7 +126,14 @@
                 <input type="hidden" name="seats" id="seatsDataInput">
                 <input type="hidden" name="trip_info" id="tripInfoInput">
                 <input type="hidden" name="promo" id="promoInput" value="">
-                <button type="submit" class="sidebar__continue-btn" id="submitBtn">Перейти к оплате</button>
+                <form id="paymentForm">
+                    <input type="hidden" name="passengers_data" id="passengersDataInput">
+                    <input type="hidden" name="contact_data" id="contactDataInput">
+                    <input type="hidden" name="seats" id="seatsDataInput">
+                    <input type="hidden" name="trip_info" id="tripInfoInput">
+                    <input type="hidden" name="promo" id="promoInput" value="">
+                    <button type="button" class="sidebar__continue-btn" id="submitBtn">Перейти к оплате</button>
+                </form>
             </form>
             
             <div class="sidebar__payment">
@@ -651,14 +658,15 @@ document.addEventListener('DOMContentLoaded', function() {
             
             if (!passenger.last_name || !passenger.first_name) {
                 allValid = false;
-                fioInputs[0].style.borderColor = !passenger.last_name ? '#FF3B30' : '#D9D9D9';
-                fioInputs[1].style.borderColor = !passenger.first_name ? '#FF3B30' : '#D9D9D9';
+                if (fioInputs[0]) fioInputs[0].style.borderColor = !passenger.last_name ? '#FF3B30' : '#D9D9D9';
+                if (fioInputs[1]) fioInputs[1].style.borderColor = !passenger.first_name ? '#FF3B30' : '#D9D9D9';
             }
             
             const noPatronymicCheckbox = form.querySelector('.passenger-form__checkbox');
-            if (!noPatronymicCheckbox?.checked && !passenger.patronymic) {
+            passenger.no_patronymic = noPatronymicCheckbox?.checked || false;
+            if (!passenger.no_patronymic && !passenger.patronymic) {
                 allValid = false;
-                fioInputs[2].style.borderColor = '#FF3B30';
+                if (fioInputs[2]) fioInputs[2].style.borderColor = '#FF3B30';
             }
             
             const genderBtn = form.querySelector('.passenger-form__gender-btn--active');
@@ -694,8 +702,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
             
-            passenger.no_patronymic = noPatronymicCheckbox?.checked || false;
-            
             passengers.push(passenger);
         });
         
@@ -720,10 +726,11 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
-        document.getElementById('passengersDataInput').value = JSON.stringify(passengers);
-        document.getElementById('contactDataInput').value = JSON.stringify({ email, phone });
-        document.getElementById('seatsDataInput').value = JSON.stringify(seats);
-        document.getElementById('tripInfoInput').value = JSON.stringify({
+        // Сохраняем данные в sessionStorage для confirm
+        sessionStorage.setItem('confirm_passengers', JSON.stringify(passengers));
+        sessionStorage.setItem('confirm_contact', JSON.stringify({ email, phone }));
+        sessionStorage.setItem('confirm_seats', JSON.stringify(seats));
+        sessionStorage.setItem('confirm_trip', JSON.stringify({
             from_city: urlParams.get('from_city'),
             to_city: urlParams.get('to_city'),
             from_station: urlParams.get('from_station'),
@@ -735,11 +742,22 @@ document.addEventListener('DOMContentLoaded', function() {
             dep_date: urlParams.get('dep_date'),
             arr_date: urlParams.get('arr_date'),
             transfer_text: urlParams.get('transfer_text'),
-            has_return: hasBackward ? '1' : '0'
-        });
-        document.getElementById('promoInput').value = document.getElementById('promoInputField')?.value || '';
+            has_return: hasBackward ? '1' : '0',
+            return_from_city: urlParams.get('return_from_city'),
+            return_to_city: urlParams.get('return_to_city'),
+            return_from_station: urlParams.get('return_from_station'),
+            return_to_station: urlParams.get('return_to_station'),
+            return_train_number: urlParams.get('return_train_number'),
+            return_departure: urlParams.get('return_departure'),
+            return_arrival: urlParams.get('return_arrival'),
+            return_duration: urlParams.get('return_duration'),
+            return_dep_date: urlParams.get('return_dep_date'),
+            return_arr_date: urlParams.get('return_arr_date'),
+            return_transfer_text: urlParams.get('return_transfer_text')
+        }));
         
-        document.getElementById('paymentForm').submit();
+        // Переходим на confirm
+        window.location.href = '/confirm';
     });
 
     // Обработчик промокода

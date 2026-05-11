@@ -9,215 +9,107 @@
     <div class="seat-selection__container">
         <div class="seat-selection__tickets">
             <!-- Билет "Туда" -->
-            <div class="ticket-card ticket-card--selected">
+            <div class="ticket-card ticket-card--selected" id="forwardTicket">
                 <div class="ticket-card__left">
                     <div class="ticket-card__route">
-                        <h1 class="ticket-card__from">{{ trip_info.get('from_city', '—') }}</h1>
+                        <h1 class="ticket-card__from" id="fwdFrom">—</h1>
                         <img src="{{ url_for('static', filename='icons/arrow-short.svg') }}" alt="" class="ticket-card__route-arrow">
-                        <h1 class="ticket-card__to">{{ trip_info.get('to_city', '—') }}</h1>
+                        <h1 class="ticket-card__to" id="fwdTo">—</h1>
                     </div>
-                    <div class="ticket-card__details">
-                        <span class="ticket-card__train">{{ trip_info.get('train_number', '—') }}</span>
+                    <div class="ticket-card__details" id="fwdDetails">
+                        <span class="ticket-card__train">—</span>
                         <span class="ticket-card__separator">|</span>
-                        <span class="ticket-card__duration">{{ trip_info.get('duration', '—') }}</span>
-                        <span class="ticket-card__transfer transfer--{{ 'none' if 'Без' in trip_info.get('transfer_text', '') else 'one' }}">
-                            <span class="transfer-text">{{ trip_info.get('transfer_text', '—') }}</span>
-                        </span>
-                    </div>
-                    <a href="/select-seats?from={{ trip_info.get('from_city', '')|urlencode }}&to={{ trip_info.get('to_city', '')|urlencode }}&date_from={{ trip_info.get('dep_date', '')|urlencode }}&trip_index=0" class="ticket-card__change">Изменить место</a>
-                </div>
-                <div class="ticket-card__right">
-                    <div class="ticket-card__time-block">
-                        <div class="ticket-card__time">{{ trip_info.get('departure', '—') }}</div>
-                        <div class="ticket-card__date">{{ trip_info.get('dep_date', '—') }}</div>
-                        <div class="ticket-card__station">{{ trip_info.get('from_station', '—') }}</div>
-                    </div>
-                    <div class="ticket-card__travel-info">
-                        <img src="{{ url_for('static', filename='icons/arrow-long.svg') }}" alt="" class="ticket-card__travel-arrow">
-                        <span class="ticket-card__travel-duration">{{ trip_info.get('duration', '—') }}</span>
-                    </div>
-                    <div class="ticket-card__time-block">
-                        <div class="ticket-card__time">{{ trip_info.get('arrival', '—') }}</div>
-                        <div class="ticket-card__date">{{ trip_info.get('arr_date', '—') }}</div>
-                        <div class="ticket-card__station">{{ trip_info.get('to_station', '—') }}</div>
-                    </div>
-                </div>
-            </div>
-
-            {% if trip_info.get('has_return') == '1' %}
-            <div class="ticket-card">
-                <div class="ticket-card__left">
-                    <div class="ticket-card__route">
-                        <h1 class="ticket-card__from">{{ trip_info.get('return_from_city', '—') }}</h1>
-                        <img src="{{ url_for('static', filename='icons/arrow-short.svg') }}" alt="" class="ticket-card__route-arrow">
-                        <h1 class="ticket-card__to">{{ trip_info.get('return_to_city', '—') }}</h1>
-                    </div>
-                    <div class="ticket-card__details">
-                        <span class="ticket-card__train">{{ trip_info.get('return_train_number', '—') }}</span>
-                        <span class="ticket-card__separator">|</span>
-                        <span class="ticket-card__duration">{{ trip_info.get('return_duration', '—') }}</span>
+                        <span class="ticket-card__duration">—</span>
                         <span class="ticket-card__transfer">
-                            <span class="transfer-text">{{ trip_info.get('return_transfer_text', '—') }}</span>
+                            <span class="transfer-text">—</span>
                         </span>
                     </div>
-                    <a href="/select-seats?from={{ trip_info.get('to_city', '')|urlencode }}&to={{ trip_info.get('from_city', '')|urlencode }}&date_from={{ trip_info.get('return_dep_date', '')|urlencode }}&trip_index=1" class="ticket-card__change">Изменить место</a>
+                    <a href="#" class="ticket-card__change" id="fwdChange">Изменить место</a>
                 </div>
                 <div class="ticket-card__right">
                     <div class="ticket-card__time-block">
-                        <div class="ticket-card__time">{{ trip_info.get('return_departure', '—') }}</div>
-                        <div class="ticket-card__date">{{ trip_info.get('return_dep_date', '—') }}</div>
-                        <div class="ticket-card__station">{{ trip_info.get('return_from_station', '—') }}</div>
+                        <div class="ticket-card__time" id="fwdDep">—</div>
+                        <div class="ticket-card__date" id="fwdDepDate">—</div>
+                        <div class="ticket-card__station" id="fwdFromStation">—</div>
                     </div>
                     <div class="ticket-card__travel-info">
                         <img src="{{ url_for('static', filename='icons/arrow-long.svg') }}" alt="" class="ticket-card__travel-arrow">
-                        <span class="ticket-card__travel-duration">{{ trip_info.get('return_duration', '—') }}</span>
+                        <span class="ticket-card__travel-duration" id="fwdDuration">—</span>
                     </div>
                     <div class="ticket-card__time-block">
-                        <div class="ticket-card__time">{{ trip_info.get('return_arrival', '—') }}</div>
-                        <div class="ticket-card__date">{{ trip_info.get('return_arr_date', '—') }}</div>
-                        <div class="ticket-card__station">{{ trip_info.get('return_to_station', '—') }}</div>
+                        <div class="ticket-card__time" id="fwdArr">—</div>
+                        <div class="ticket-card__date" id="fwdArrDate">—</div>
+                        <div class="ticket-card__station" id="fwdToStation">—</div>
                     </div>
                 </div>
             </div>
-            {% endif %}
 
-            <!-- Схема вагона и выбранные места -->
+            <!-- Билет "Обратно" -->
+            <div class="ticket-card" id="backwardTicket" style="display:none;">
+                <div class="ticket-card__left">
+                    <div class="ticket-card__route">
+                        <h1 class="ticket-card__from" id="bwdFrom">—</h1>
+                        <img src="{{ url_for('static', filename='icons/arrow-short.svg') }}" alt="" class="ticket-card__route-arrow">
+                        <h1 class="ticket-card__to" id="bwdTo">—</h1>
+                    </div>
+                    <div class="ticket-card__details" id="bwdDetails">
+                        <span class="ticket-card__train">—</span>
+                        <span class="ticket-card__separator">|</span>
+                        <span class="ticket-card__duration">—</span>
+                        <span class="ticket-card__transfer">
+                            <span class="transfer-text">—</span>
+                        </span>
+                    </div>
+                    <a href="#" class="ticket-card__change" id="bwdChange">Изменить место</a>
+                </div>
+                <div class="ticket-card__right">
+                    <div class="ticket-card__time-block">
+                        <div class="ticket-card__time" id="bwdDep">—</div>
+                        <div class="ticket-card__date" id="bwdDepDate">—</div>
+                        <div class="ticket-card__station" id="bwdFromStation">—</div>
+                    </div>
+                    <div class="ticket-card__travel-info">
+                        <img src="{{ url_for('static', filename='icons/arrow-long.svg') }}" alt="" class="ticket-card__travel-arrow">
+                        <span class="ticket-card__travel-duration" id="bwdDuration">—</span>
+                    </div>
+                    <div class="ticket-card__time-block">
+                        <div class="ticket-card__time" id="bwdArr">—</div>
+                        <div class="ticket-card__date" id="bwdArrDate">—</div>
+                        <div class="ticket-card__station" id="bwdToStation">—</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Выбранные места -->
             <div class="confirm-section">
                 <h3 class="confirm-section__title">Выбранные места</h3>
-                <div class="confirm-seats">
-                    {% if seats.get('forward') %}
-                    <div class="confirm-seats__block">
-                        <h4 class="confirm-seats__direction">Туда</h4>
-                        {% for seat in seats.get('forward', []) %}
-                        <div class="confirm-seat-card">
-                            <span class="confirm-seat-card__info">Вагон {{ seat.get('wagon', '—') }}, место {{ seat.get('seat', '—') }}</span>
-                            <span class="confirm-seat-card__price">{{ "{:,}".format(seat.get('price', 0)).replace(',', ' ') }} ₽</span>
-                        </div>
-                        {% endfor %}
-                    </div>
-                    {% endif %}
-                    
-                    {% if seats.get('backward') %}
-                    <div class="confirm-seats__block">
-                        <h4 class="confirm-seats__direction">Обратно</h4>
-                        {% for seat in seats.get('backward', []) %}
-                        <div class="confirm-seat-card">
-                            <span class="confirm-seat-card__info">Вагон {{ seat.get('wagon', '—') }}, место {{ seat.get('seat', '—') }}</span>
-                            <span class="confirm-seat-card__price">{{ "{:,}".format(seat.get('price', 0)).replace(',', ' ') }} ₽</span>
-                        </div>
-                        {% endfor %}
-                    </div>
-                    {% endif %}
-                </div>
+                <div class="confirm-seats" id="confirmSeats"></div>
             </div>
 
             <!-- Данные пассажиров -->
             <div class="confirm-section">
                 <h3 class="confirm-section__title">Данные пассажиров</h3>
-                <div class="confirm-passengers">
-                    {% for p in passengers %}
-                    <div class="confirm-passenger-card">
-                        <div class="confirm-passenger-card__header">
-                            <span class="confirm-passenger-card__number">{{ loop.index }}</span>
-                            <span class="confirm-passenger-card__type">{{ 'Детский билет' if p.get('doc_type') == 'birth_cert' and not loop.first else 'Взрослый пассажир' }}</span>
-                        </div>
-                        <div class="confirm-passenger-card__fields">
-                            <div class="confirm-passenger-card__row">
-                                <span class="confirm-passenger-card__label">ФИО</span>
-                                <span class="confirm-passenger-card__value">
-                                    {{ p.get('last_name', '—') }} {{ p.get('first_name', '—') }}
-                                    {% if not p.get('no_patronymic') %}{{ p.get('patronymic', '') }}{% endif %}
-                                </span>
-                            </div>
-                            <div class="confirm-passenger-card__row">
-                                <span class="confirm-passenger-card__label">Пол</span>
-                                <span class="confirm-passenger-card__value">{{ 'Мужской' if p.get('gender') == 'male' else 'Женский' }}</span>
-                            </div>
-                            <div class="confirm-passenger-card__row">
-                                <span class="confirm-passenger-card__label">Дата рождения</span>
-                                <span class="confirm-passenger-card__value">{{ p.get('birth_date', '—') }}</span>
-                            </div>
-                            <div class="confirm-passenger-card__row">
-                                <span class="confirm-passenger-card__label">Документ</span>
-                                <span class="confirm-passenger-card__value">
-                                    {{ p.get('doc_type', '—') | replace('passport_rf', 'Паспорт РФ') | replace('passport_int', 'Загранпаспорт') | replace('birth_cert', 'Свидетельство о рождении') | replace('seaman', 'Паспорт моряка') | replace('military', 'Военный билет') | replace('military_id', 'Удостоверение военнослужащего') | replace('foreign_doc', 'Иностранный документ') }}
-                                    — {{ p.get('doc_number', '—') }}
-                                </span>
-                            </div>
-                            {% if p.get('citizenship') %}
-                            <div class="confirm-passenger-card__row">
-                                <span class="confirm-passenger-card__label">Гражданство</span>
-                                <span class="confirm-passenger-card__value">{{ p.get('citizenship', '—') }}</span>
-                            </div>
-                            {% endif %}
-                        </div>
-                    </div>
-                    {% endfor %}
-                </div>
+                <div class="confirm-passengers" id="confirmPassengers"></div>
             </div>
 
             <!-- Контактная информация -->
-            <div class="contact-info">
-                <div class="contact-info__header">
-                    <h3 class="contact-info__title">Контактная информация покупателя</h3>
-                    <p class="contact-info__subtitle">Информацию о бронировании направим на вашу электронную почту</p>
-                </div>
-                <div class="contact-info__fields">
-                    <div class="contact-info__row">
-                        <div class="contact-info__group">
-                            <label class="contact-info__label">Эл. почта</label>
-                            <div class="contact-info__value">{{ contact.get('email', '—') }}</div>
-                        </div>
-                        <div class="contact-info__group">
-                            <label class="contact-info__label">Телефон</label>
-                            <div class="contact-info__value">{{ contact.get('phone', '—') }}</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            <div class="contact-info" id="confirmContact"></div>
         </div>
 
         <!-- Сайдбар -->
         <div class="seat-selection__sidebar">
             <h2 class="sidebar__title">Стоимость билетов</h2>
             <div class="sidebar__route">
-                <span>{{ trip_info.get('from_city', '—') }}</span>
+                <span id="sidebarFrom">—</span>
                 <img src="{{ url_for('static', filename='icons/arrow-short-gray.svg') }}" alt="">
-                <span>{{ trip_info.get('to_city', '—') }}</span>
+                <span id="sidebarTo">—</span>
             </div>
-            <div class="sidebar__passengers">
-                {% set total = namespace(value=0) %}
-                {% if seats.get('forward') %}
-                <div style="margin-bottom: 0px; font-weight: 600; font-size: 17px; color: #A3A3A3; font-family: \'Commissioner\', sans-serif;">Места туда</div>
-                {% for seat in seats.get('forward', []) %}
-                <div class="sidebar__passenger-row">
-                    <span class="sidebar__passenger-type">{{ 'Взрослый' if loop.index <= passengers|selectattr('doc_type', 'ne', 'birth_cert')|list|length else 'Детский' }}</span>
-                    <span class="sidebar__passenger-place">Ваг.{{ seat.get('wagon', '—') }}, место {{ seat.get('seat', '—') }}</span>
-                    <span class="sidebar__passenger-price">{{ "{:,}".format(seat.get('price', 0)).replace(',', ' ') }} ₽</span>
-                </div>
-                {% set total.value = total.value + seat.get('price', 0) %}
-                {% endfor %}
-                {% endif %}
-                
-                {% if seats.get('backward') %}
-                <div style="margin-top:12px;margin-bottom:0;font-weight:600;font-size:17px;color:#A3A3A3;">Места обратно</div>
-                {% for seat in seats.get('backward', []) %}
-                <div class="sidebar__passenger-row">
-                    <span class="sidebar__passenger-type">{{ 'Взрослый' if loop.index <= passengers|selectattr('doc_type', 'ne', 'birth_cert')|list|length else 'Детский' }}</span>
-                    <span class="sidebar__passenger-place">Ваг.{{ seat.get('wagon', '—') }}, место {{ seat.get('seat', '—') }}</span>
-                    <span class="sidebar__passenger-price">{{ "{:,}".format(seat.get('price', 0)).replace(',', ' ') }} ₽</span>
-                </div>
-                {% set total.value = total.value + seat.get('price', 0) %}
-                {% endfor %}
-                {% endif %}
-            </div>
-            
+            <div class="sidebar__passengers" id="sidebarPassengers"></div>
             <div class="sidebar__total-row">
                 <span class="sidebar__total-label">Итого</span>
-                <span class="sidebar__total-price">{{ "{:,}".format(total.value).replace(',', ' ') }} ₽</span>
+                <span class="sidebar__total-price" id="sidebarTotal">0 ₽</span>
             </div>
             
-            <!-- Промокод -->
             <div class="sidebar__promo">
                 <label class="sidebar__promo-label">Промокод</label>
                 <div class="sidebar__promo-row">
@@ -227,7 +119,15 @@
                 <span class="sidebar__promo-message" id="promoMessage"></span>
             </div>
             
-            <button class="sidebar__continue-btn">Оплатить</button>
+            <form id="confirmPostForm" method="POST" action="/confirm" style="display:none;">
+                <input type="hidden" name="passengers_data" id="confirmPassengersData">
+                <input type="hidden" name="contact_data" id="confirmContactData">
+                <input type="hidden" name="seats" id="confirmSeatsData">
+                <input type="hidden" name="trip_info" id="confirmTripData">
+                <input type="hidden" name="promo" id="confirmPromoData">
+            </form>
+            
+            <button class="sidebar__continue-btn" id="confirmPayBtn">Оплатить</button>
             <div class="sidebar__payment">
                 <p class="sidebar__subtitle">Способы оплаты</p>
                 <div class="sidebar__payment-icons">
@@ -246,20 +146,16 @@ document.addEventListener('DOMContentLoaded', function() {
     if (header) {
         header.classList.add('scrolled');
         header.style.boxShadow = 'none';
-        
         const logoWhite = header.querySelector('.header__logo--white');
         const logoDark = header.querySelector('.header__logo--dark');
         if (logoWhite) logoWhite.style.display = 'none';
         if (logoDark) logoDark.style.display = 'block';
-        
         const sepImg = header.querySelector('.lang-cur img');
         const favImg = header.querySelector('.fav');
         const supportImg = header.querySelector('.support-image');
-        
         if (sepImg) sepImg.src = '/static/icons/v-line-18.png';
         if (favImg) favImg.src = '/static/icons/fav.svg';
         if (supportImg) supportImg.src = '/static/icons/support.svg';
-        
         window.addEventListener('scroll', function() {
             if (window.scrollY > 50) {
                 header.style.background = '#EFF1F4';
@@ -270,44 +166,138 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Обработчик промокода
-    const applyPromoBtn = document.getElementById('applyPromoBtn');
-    const promoInput = document.getElementById('promoInputField');
-    const promoMessage = document.getElementById('promoMessage');
-    const totalPriceEl = document.querySelector('.sidebar__total-price');
+    // Читаем данные из sessionStorage
+    const passengers = JSON.parse(sessionStorage.getItem('confirm_passengers') || '[]');
+    const contact = JSON.parse(sessionStorage.getItem('confirm_contact') || '{}');
+    const seats = JSON.parse(sessionStorage.getItem('confirm_seats') || '{}');
+    const trip = JSON.parse(sessionStorage.getItem('confirm_trip') || '{}');
     
-    if (applyPromoBtn && promoInput) {
-        applyPromoBtn.addEventListener('click', function() {
-            const promoCode = promoInput.value.trim();
-            
-            if (!promoCode) {
-                promoMessage.textContent = 'Введите промокод';
-                promoMessage.style.color = '#FF3B30';
-                return;
-            }
-            
-            if (promoCode === 'BRT2026') {
-                promoMessage.textContent = 'Промокод применён! Скидка 10%';
-                promoMessage.style.color = '#34C759';
-                
-                const totalText = totalPriceEl.textContent;
-                const currentTotal = parseInt(totalText.replace(/[^\d]/g, ''));
-                const discounted = Math.round(currentTotal * 0.9);
-                totalPriceEl.textContent = discounted.toLocaleString('ru-RU') + ' ₽';
-            } else {
-                promoMessage.textContent = 'Промокод недействителен';
-                promoMessage.style.color = '#FF3B30';
-            }
+    // Заполняем скрытую форму
+    document.getElementById('confirmPassengersData').value = JSON.stringify(passengers);
+    document.getElementById('confirmContactData').value = JSON.stringify(contact);
+    document.getElementById('confirmSeatsData').value = JSON.stringify(seats);
+    document.getElementById('confirmTripData').value = JSON.stringify(trip);
+    
+    // Заполняем билет "Туда"
+    document.getElementById('fwdFrom').textContent = trip.from_city || '—';
+    document.getElementById('fwdTo').textContent = trip.to_city || '—';
+    document.getElementById('fwdDep').textContent = trip.departure || '—';
+    document.getElementById('fwdArr').textContent = trip.arrival || '—';
+    document.getElementById('fwdDuration').textContent = trip.duration || '—';
+    document.getElementById('fwdDepDate').textContent = trip.dep_date || '—';
+    document.getElementById('fwdArrDate').textContent = trip.arr_date || '—';
+    document.getElementById('fwdFromStation').textContent = trip.from_station || '—';
+    document.getElementById('fwdToStation').textContent = trip.to_station || '—';
+    document.getElementById('fwdDetails').innerHTML = 
+        '<span class="ticket-card__train">' + (trip.train_number || '—') + '</span>' +
+        '<span class="ticket-card__separator">|</span>' +
+        '<span class="ticket-card__duration">' + (trip.duration || '—') + '</span>' +
+        '<span class="ticket-card__transfer"><span class="transfer-text">' + (trip.transfer_text || '—') + '</span></span>';
+    document.getElementById('fwdChange').href = '/select-seats?from=' + encodeURIComponent(trip.from_city || '') + '&to=' + encodeURIComponent(trip.to_city || '') + '&date_from=' + encodeURIComponent(trip.dep_date || '') + '&trip_index=0';
+    
+    // Заполняем билет "Обратно"
+    if (trip.has_return === '1') {
+        document.getElementById('backwardTicket').style.display = 'flex';
+        document.getElementById('bwdFrom').textContent = trip.return_from_city || '—';
+        document.getElementById('bwdTo').textContent = trip.return_to_city || '—';
+        document.getElementById('bwdDep').textContent = trip.return_departure || '—';
+        document.getElementById('bwdArr').textContent = trip.return_arrival || '—';
+        document.getElementById('bwdDuration').textContent = trip.return_duration || '—';
+        document.getElementById('bwdDepDate').textContent = trip.return_dep_date || '—';
+        document.getElementById('bwdArrDate').textContent = trip.return_arr_date || '—';
+        document.getElementById('bwdFromStation').textContent = trip.return_from_station || '—';
+        document.getElementById('bwdToStation').textContent = trip.return_to_station || '—';
+        document.getElementById('bwdDetails').innerHTML = 
+            '<span class="ticket-card__train">' + (trip.return_train_number || '—') + '</span>' +
+            '<span class="ticket-card__separator">|</span>' +
+            '<span class="ticket-card__duration">' + (trip.return_duration || '—') + '</span>' +
+            '<span class="ticket-card__transfer"><span class="transfer-text">' + (trip.return_transfer_text || '—') + '</span></span>';
+        document.getElementById('bwdChange').href = '/select-seats?from=' + encodeURIComponent(trip.to_city || '') + '&to=' + encodeURIComponent(trip.from_city || '') + '&date_from=' + encodeURIComponent(trip.return_dep_date || '') + '&trip_index=1';
+    }
+    
+    // Выбранные места
+    let seatsHTML = '';
+    if (seats.forward && seats.forward.length > 0) {
+        seatsHTML += '<div class="confirm-seats__block"><h4 class="confirm-seats__direction">Туда</h4>';
+        seats.forward.forEach(s => {
+            seatsHTML += '<div class="confirm-seat-card"><span class="confirm-seat-card__info">Вагон ' + s.wagon + ', место ' + s.seat + '</span><span class="confirm-seat-card__price">' + (s.price || 0).toLocaleString('ru-RU') + ' ₽</span></div>';
+        });
+        seatsHTML += '</div>';
+    }
+    if (seats.backward && seats.backward.length > 0) {
+        seatsHTML += '<div class="confirm-seats__block"><h4 class="confirm-seats__direction">Обратно</h4>';
+        seats.backward.forEach(s => {
+            seatsHTML += '<div class="confirm-seat-card"><span class="confirm-seat-card__info">Вагон ' + s.wagon + ', место ' + s.seat + '</span><span class="confirm-seat-card__price">' + (s.price || 0).toLocaleString('ru-RU') + ' ₽</span></div>';
+        });
+        seatsHTML += '</div>';
+    }
+    document.getElementById('confirmSeats').innerHTML = seatsHTML;
+    
+    // Данные пассажиров
+    let passengersHTML = '';
+    const docTypes = {'passport_rf': 'Паспорт РФ', 'passport_int': 'Загранпаспорт', 'birth_cert': 'Свидетельство о рождении', 'seaman': 'Паспорт моряка', 'military': 'Военный билет', 'military_id': 'Удостоверение военнослужащего', 'foreign_doc': 'Иностранный документ'};
+    passengers.forEach((p, i) => {
+        passengersHTML += '<div class="confirm-passenger-card">';
+        passengersHTML += '<div class="confirm-passenger-card__header"><span class="confirm-passenger-card__number">' + (i+1) + '</span><span class="confirm-passenger-card__type">' + (p.doc_type === 'birth_cert' && i > 0 ? 'Детский билет' : 'Взрослый пассажир') + '</span></div>';
+        passengersHTML += '<div class="confirm-passenger-card__fields">';
+        passengersHTML += '<div class="confirm-passenger-card__row"><span class="confirm-passenger-card__label">ФИО</span><span class="confirm-passenger-card__value">' + p.last_name + ' ' + p.first_name + (p.patronymic && !p.no_patronymic ? ' ' + p.patronymic : '') + '</span></div>';
+        passengersHTML += '<div class="confirm-passenger-card__row"><span class="confirm-passenger-card__label">Пол</span><span class="confirm-passenger-card__value">' + (p.gender === 'male' ? 'Мужской' : 'Женский') + '</span></div>';
+        passengersHTML += '<div class="confirm-passenger-card__row"><span class="confirm-passenger-card__label">Дата рождения</span><span class="confirm-passenger-card__value">' + (p.birth_date || '—') + '</span></div>';
+        passengersHTML += '<div class="confirm-passenger-card__row"><span class="confirm-passenger-card__label">Документ</span><span class="confirm-passenger-card__value">' + (docTypes[p.doc_type] || p.doc_type) + ' — ' + p.doc_number + '</span></div>';
+        if (p.citizenship) passengersHTML += '<div class="confirm-passenger-card__row"><span class="confirm-passenger-card__label">Гражданство</span><span class="confirm-passenger-card__value">' + p.citizenship + '</span></div>';
+        passengersHTML += '</div></div>';
+    });
+    document.getElementById('confirmPassengers').innerHTML = passengersHTML;
+    
+    // Контактная информация
+    document.getElementById('confirmContact').innerHTML = 
+        '<div class="contact-info__header"><h3 class="contact-info__title">Контактная информация покупателя</h3><p class="contact-info__subtitle">Информацию о бронировании направим на вашу электронную почту</p></div>' +
+        '<div class="contact-info__fields"><div class="contact-info__row">' +
+        '<div class="contact-info__group"><label class="contact-info__label">Эл. почта</label><div class="contact-info__value">' + (contact.email || '—') + '</div></div>' +
+        '<div class="contact-info__group"><label class="contact-info__label">Телефон</label><div class="contact-info__value">' + (contact.phone || '—') + '</div></div>' +
+        '</div></div>';
+    
+    // Сайдбар
+    document.getElementById('sidebarFrom').textContent = trip.from_city || '—';
+    document.getElementById('sidebarTo').textContent = trip.to_city || '—';
+    
+    let sidebarHTML = '';
+    let total = 0;
+    if (seats.forward && seats.forward.length > 0) {
+        sidebarHTML += '<div style="margin-bottom:0;font-weight:600;font-size:17px;color:#A3A3A3;">Места туда</div>';
+        seats.forward.forEach(s => {
+            sidebarHTML += '<div class="sidebar__passenger-row"><span class="sidebar__passenger-place">Ваг.' + s.wagon + ', место ' + s.seat + '</span><span class="sidebar__passenger-price">' + (s.price || 0).toLocaleString('ru-RU') + ' ₽</span></div>';
+            total += s.price || 0;
         });
     }
+    if (seats.backward && seats.backward.length > 0) {
+        sidebarHTML += '<div style="margin-top:12px;margin-bottom:0;font-weight:600;font-size:17px;color:#A3A3A3;">Места обратно</div>';
+        seats.backward.forEach(s => {
+            sidebarHTML += '<div class="sidebar__passenger-row"><span class="sidebar__passenger-place">Ваг.' + s.wagon + ', место ' + s.seat + '</span><span class="sidebar__passenger-price">' + (s.price || 0).toLocaleString('ru-RU') + ' ₽</span></div>';
+            total += s.price || 0;
+        });
+    }
+    document.getElementById('sidebarPassengers').innerHTML = sidebarHTML;
+    document.getElementById('sidebarTotal').textContent = total.toLocaleString('ru-RU') + ' ₽';
     
     // Кнопка "Оплатить"
-    const payBtn = document.querySelector('.sidebar__continue-btn');
-    if (payBtn) {
-        payBtn.addEventListener('click', function() {
-            alert('Оплата временно недоступна. Спасибо за заказ!');
-        });
-    }
+    document.getElementById('confirmPayBtn').addEventListener('click', function() {
+        document.getElementById('confirmPostForm').submit();
+    });
+    
+    // Промокод
+    document.getElementById('applyPromoBtn')?.addEventListener('click', function() {
+        const code = document.getElementById('promoInputField').value.trim();
+        const msg = document.getElementById('promoMessage');
+        if (!code) { msg.textContent = 'Введите промокод'; msg.style.color = '#FF3B30'; return; }
+        if (code === 'BRT2026') {
+            msg.textContent = 'Промокод применён! Скидка 10%'; msg.style.color = '#34C759';
+            total = Math.round(total * 0.9);
+            document.getElementById('sidebarTotal').textContent = total.toLocaleString('ru-RU') + ' ₽';
+        } else {
+            msg.textContent = 'Промокод недействителен'; msg.style.color = '#FF3B30';
+        }
+    });
 });
 </script>
 {% endblock %}

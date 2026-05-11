@@ -4,10 +4,12 @@ from datetime import datetime, date
 from utils.rail_api import RZDApi
 from utils.currency import format_price
 from flask_babel import Babel, _
+from utils.payment import create_payment_for_order
 
 from utils.database.database import (
     init_db, save_passenger, create_order, save_ticket, 
-    save_transaction, update_order_status, save_train_full
+    save_transaction, update_order_status, save_train_full, 
+    get_order_by_number, get_user_by_document
 )
 
 app = Flask(__name__)
@@ -518,32 +520,84 @@ def payment():
 @app.route('/confirm', methods=['GET', 'POST'])
 def confirm():
     if request.method == 'POST':
-        import json
+        import json, random
         
         passengers_data = request.form.get('passengers_data', '{}')
         contact_data = request.form.get('contact_data', '{}')
+        seats_json = request.form.get('seats', '{}')
+        trip_json = request.form.get('trip_info', '{}')
         
         passengers = json.loads(passengers_data) if passengers_data else []
         contact = json.loads(contact_data) if contact_data else {}
-        
-        seats_json = request.form.get('seats', '{}')
         seats = json.loads(seats_json) if seats_json else {}
-        
-        trip_json = request.form.get('trip_info', '{}')
         trip_info = json.loads(trip_json) if trip_json else {}
         
-        promo = request.form.get('promo', '')
+        # Сохраняем в БД
+        email = contact.get('email', '')
+        phone = contact.get('phone', '')
         
-        return render_template(
-            'confirm.html',
-            passengers=passengers,
-            contact=contact,
-            seats=seats,
-            trip_info=trip_info,
-            promo=promo
-        )
+        user_id = None
+        for i, p in enumerate(passengers):
+            data = {
+                'first_name': p.get('first_name', ''),
+                'last_name': p.get('last_name', ''),
+                'middle_name': p.get('patronymic', ''),
+                'birth_date': p.get('birth_date', ''),
+                'document_type': p.get('doc_type', ''),
+                'document_number': p.get('doc_number', ''),
+                'citizenship': p.get('citizenship', ''),
+                'phone': phone if i == 0 else None,
+                'email': email if i == 0 else None
+            }
+            ex = get_user_by_document(p.get('doc_type', ''), p.get('doc_number', ''))
+            if ex:
+                if i == 0 and not user_id: user_id = ex['id']
+            else:
+                pid = save_passenger(data)
+                if pid and i == 0 and not user_id: user_id = pid
+        
+        if not user_id: return "Ошибка", 500
+        
+        order_number = 'BRT-' + datetime.now().strftime('%Y%m%d') + '-' + str(random.randint(1000, 9999))
+        total = sum(s.get('price', 0) for d in ['forward', 'backward'] for s in seats.get(d, []))
+        oid = create_order(order_number=order_number, user_id=user_id, total_amount=total)
+        if not oid: return "Ошибка", 500
+        update_order_status(oid, 'pending')
+        
+        return redirect(f'/pay/{order_number}')
     
-    return redirect('/')
+    return render_template('confirm.html', trip_info={}, passengers=[], contact={}, seats={})
+
+
+@app.route('/pay/<order_number>')
+def pay_order(order_number):
+    order = get_order_by_number(order_number)
+    if not order:
+        return "Заказ не найден", 404
+    
+    return f"""
+    <html>
+    <head><meta charset="UTF-8"><title>Оплата {order_number}</title>
+    <style>
+        body {{ font-family: Commissioner, sans-serif; text-align: center; padding-top: 100px; background: #EFF1F4; }}
+        .card {{ background: #fff; border-radius: 35px; padding: 40px; max-width: 500px; margin: 0 auto; box-shadow: 0 4px 20px rgba(0,0,0,0.06); }}
+        h2 {{ color: #1E1E1E; }}
+        .amount {{ font-size: 32px; font-weight: 600; color: #1E1E1E; margin: 20px 0; }}
+        .status {{ color: #A3A3A3; }}
+        a {{ color: #4672FF; text-decoration: none; }}
+    </style></head>
+    <body>
+        <div class="card">
+            <h2>Заказ #{order_number}</h2>
+            <p class="status">Сумма к оплате</p>
+            <div class="amount">{order['total_amount']} ₽</div>
+            <p class="status">Статус: {order['status']}</p>
+            <p class="status">Платёжный шлюз временно отключён</p>
+            <p><a href="/">← Вернуться на главную</a></p>
+        </div>
+    </body>
+    </html>
+    """
 
 
 if __name__ == '__main__':
