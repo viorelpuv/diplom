@@ -655,7 +655,7 @@ header {
     z-index: 10;
     margin-top: 180px;
     background: rgba(221, 221, 221, 0.1);
-    backdrop-filter: blur(2px) saturate(100%);
+    /*backdrop-filter: blur(2px) saturate(100%);*/
     -webkit-backdrop-filter: blur(8px) saturate(100%) contrast(110%);
     padding: 13px;
     
@@ -1582,4 +1582,32 @@ header {
     to {
         transform: rotate(360deg);
     }
+}
+
+.profile-dropdown {
+    display: none;
+    position: absolute;
+    top: 60px;
+    right: 0;
+    background: #FFFFFF;
+    border-radius: 18px;
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.12);
+    padding: 12px 0;
+    min-width: 200px;
+    z-index: 1000;
+}
+
+.profile-dropdown__item {
+    display: block;
+    padding: 12px 24px;
+    font-family: 'Commissioner', sans-serif;
+    font-weight: 500;
+    font-size: 16px;
+    color: #1E1E1E;
+    text-decoration: none;
+    transition: background 0.2s;
+}
+
+.profile-dropdown__item:hover {
+    background: #F5F5F7;
 }

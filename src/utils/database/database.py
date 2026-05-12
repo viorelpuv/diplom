@@ -185,6 +185,38 @@ def init_db():
             unsubscribed_at TIMESTAMP
         );
 
+        CREATE TABLE IF NOT EXISTS admins (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL UNIQUE,
+            permissions TEXT DEFAULT '[]',
+            is_superadmin INTEGER DEFAULT 0,
+            created_by INTEGER,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+            FOREIGN KEY (created_by) REFERENCES users(id)
+        );
+
+        CREATE TABLE IF NOT EXISTS login_history (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            ip_address TEXT,
+            user_agent TEXT,
+            success INTEGER DEFAULT 1,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        );
+
+        CREATE TABLE IF NOT EXISTS sessions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            token TEXT UNIQUE NOT NULL,
+            ip_address TEXT,
+            user_agent TEXT,
+            expires_at TIMESTAMP NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        );
+
         CREATE INDEX IF NOT EXISTS idx_orders_user ON orders(user_id);
         CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status);
         CREATE INDEX IF NOT EXISTS idx_tickets_order ON tickets(order_id);
@@ -192,7 +224,26 @@ def init_db():
         CREATE INDEX IF NOT EXISTS idx_tickets_user ON tickets(user_id);
         CREATE INDEX IF NOT EXISTS idx_trips_departure ON trips(departure_datetime);
         CREATE INDEX IF NOT EXISTS idx_search_history_user ON search_history(user_id);
+        
+        CREATE INDEX IF NOT EXISTS idx_admins_user ON admins(user_id);
+        CREATE INDEX IF NOT EXISTS idx_login_history_user ON login_history(user_id);
+        CREATE INDEX IF NOT EXISTS idx_sessions_token ON sessions(token);
+        CREATE INDEX IF NOT EXISTS idx_sessions_user ON sessions(user_id);
     """)
+    
+    # Создаём супер-админа
+    try:
+        cursor.execute("SELECT id FROM admins WHERE is_superadmin = 1")
+        if not cursor.fetchone():
+            cursor.execute("""
+                INSERT INTO admins (user_id, permissions, is_superadmin, created_at)
+                VALUES (?, ?, ?, datetime('now'))
+            """, (1, '["all"]', 1))
+            print("✅ Супер-админ создан (user_id=1, права=all)")
+        else:
+            print("ℹ️ Супер-админ уже существует")
+    except Exception as e:
+        print(f"⚠️ Ошибка создания админа: {e}")
     
     conn.commit()
     conn.close()
@@ -1002,3 +1053,96 @@ def save_train_full(train_data, from_city, to_city):
         import traceback
         traceback.print_exc()
         return None
+    
+
+# ============================================
+# AUTH
+# ============================================
+def register_user(email, password, first_name=None, last_name=None, phone=None):
+    """Регистрация нового пользователя. Если email уже есть — обновляет пароль."""
+    from utils.hasher import generate_hash
+    
+    conn = get_db()
+    cursor = conn.cursor()
+    try:
+        password_hash = generate_hash(password)
+        
+        cursor.execute("SELECT id, password_hash FROM users WHERE email = ?", (email,))
+        existing = cursor.fetchone()
+        
+        if existing:
+            # Пользователь уже есть — обновляем пароль
+            cursor.execute("""
+                UPDATE users SET 
+                    password_hash = ?,
+                    updated_at = datetime('now')
+                WHERE id = ?
+            """, (password_hash, existing['id']))
+            user_id = existing['id']
+        else:
+            # Новый пользователь
+            cursor.execute("""
+                INSERT INTO users (email, password_hash, first_name, last_name, phone)
+                VALUES (?, ?, ?, ?, ?)
+            """, (email, password_hash, first_name, last_name, phone))
+            user_id = cursor.lastrowid
+        
+        conn.commit()
+        return user_id
+    except Exception as e:
+        print(f"DB Error (register_user): {e}")
+        conn.rollback()
+        return None
+    finally:
+        cursor.close()
+        conn.close()
+
+
+def login_user(email, password):
+    """Проверка логина и пароля. Возвращает user_id или None."""
+    from utils.hasher import check_hash
+    
+    conn = get_db()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("SELECT id, password_hash FROM users WHERE email = ?", (email,))
+        user = cursor.fetchone()
+        
+        if not user or not user['password_hash']:
+            return None
+        
+        if check_hash(user['password_hash'], password):
+            # Обновляем last_login
+            cursor.execute("""
+                UPDATE users SET 
+                    phone = COALESCE(users.phone, '')  -- заглушка, last_login не храним в этой версии
+                WHERE id = ?
+            """, (user['id'],))
+            conn.commit()
+            return user['id']
+        
+        return None
+    except Exception as e:
+        print(f"DB Error (login_user): {e}")
+        return None
+    finally:
+        cursor.close()
+        conn.close()
+
+
+def save_login_history(user_id, ip_address=None, user_agent=None, success=True):
+    """Сохраняет запись о входе."""
+    conn = get_db()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("""
+            INSERT INTO login_history (user_id, ip_address, user_agent, success)
+            VALUES (?, ?, ?, ?)
+        """, (user_id, ip_address, user_agent, 1 if success else 0))
+        conn.commit()
+    except Exception as e:
+        print(f"DB Error (save_login_history): {e}")
+        conn.rollback()
+    finally:
+        cursor.close()
+        conn.close()

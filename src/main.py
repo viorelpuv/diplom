@@ -1,5 +1,5 @@
 # app.py — полный код
-from flask import Flask, render_template, request, redirect, g
+from flask import Flask, render_template, request, redirect, g, make_response
 from datetime import datetime, date
 from utils.rail_api import RZDApi
 from utils.currency import format_price
@@ -8,7 +8,8 @@ from flask_babel import Babel, _
 from utils.database.database import (
     init_db, save_passenger, create_order, save_ticket, 
     save_transaction, update_order_status, save_train_full, 
-    get_order_by_number, get_user_by_document
+    get_order_by_number, get_user_by_document, register_user,
+    login_user, save_login_history
 )
 
 app = Flask(__name__)
@@ -658,6 +659,82 @@ def test_db():
     
     conn.close()
     return result
+
+
+@app.route('/api/register', methods=['POST'])
+def api_register():
+    data = request.get_json()
+    email = data.get('email')
+    password = data.get('password')
+    first_name = data.get('first_name')
+    last_name = data.get('last_name')
+    phone = data.get('phone')
+    
+    if not email or not password:
+        return {'success': False, 'message': 'Email и пароль обязательны'}
+    
+    user_id = register_user(email, password, first_name, last_name, phone)
+    if user_id:
+        save_login_history(user_id, request.remote_addr, request.headers.get('User-Agent'), True)
+        
+        resp = make_response({'success': True, 'user_id': user_id, 'email': email})
+        # Куки для авторизации (24 часа)
+        resp.set_cookie('brt_user_id', str(user_id), max_age=86400, path='/', samesite='Lax')
+        resp.set_cookie('brt_user_email', email, max_age=86400, path='/', samesite='Lax')
+        resp.set_cookie('brt_logged_in', '1', max_age=86400, path='/', samesite='Lax')
+        return resp
+    
+    return {'success': False, 'message': 'Ошибка регистрации'}
+
+
+@app.route('/api/login', methods=['POST'])
+def api_login():
+    data = request.get_json()
+    email = data.get('email')
+    password = data.get('password')
+    
+    from utils.database.database import get_db
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT id FROM users WHERE email = ?", (email,))
+    user = cursor.fetchone()
+    conn.close()
+    
+    user_id = login_user(email, password)
+    
+    if user_id:
+        save_login_history(user_id, request.remote_addr, request.headers.get('User-Agent'), True)
+        
+        resp = make_response({'success': True, 'user_id': user_id, 'email': email})
+        resp.set_cookie('brt_user_id', str(user_id), max_age=86400, path='/', samesite='Lax')
+        resp.set_cookie('brt_user_email', email, max_age=86400, path='/', samesite='Lax')
+        resp.set_cookie('brt_logged_in', '1', max_age=86400, path='/', samesite='Lax')
+        return resp
+    
+    if user:
+        save_login_history(user['id'], request.remote_addr, request.headers.get('User-Agent'), False)
+    
+    return {'success': False, 'message': 'Неверный email или пароль'}
+
+
+@app.route('/api/logout', methods=['POST'])
+def api_logout():
+    resp = make_response({'success': True})
+    resp.delete_cookie('brt_user_id')
+    resp.delete_cookie('brt_user_email')
+    resp.delete_cookie('brt_logged_in')
+    return resp
+
+
+@app.route('/api/user-status')
+def api_user_status():
+    user_id = request.cookies.get('brt_user_id')
+    email = request.cookies.get('brt_user_email')
+    logged_in = request.cookies.get('brt_logged_in')
+    
+    if logged_in == '1' and user_id and email:
+        return {'logged_in': True, 'user_id': int(user_id), 'email': email}
+    return {'logged_in': False}
 
 
 if __name__ == '__main__':

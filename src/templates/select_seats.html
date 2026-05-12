@@ -406,6 +406,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             sessionStorage.setItem('selectedSeats', JSON.stringify(selectedSeatsStore));
             sessionStorage.setItem('ticketCounts', JSON.stringify(ticketCounts));
+            sessionStorage.setItem('currencySymbol', currentCurrencySymbol);
             
             const forwardCard = document.getElementById('forwardTicket');
             const returnCard = document.getElementById('returnTicket');
@@ -442,7 +443,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 url += '&return_arr_date=' + encodeURIComponent(retArrDateEl ? retArrDateEl.textContent.trim() : '');
                 url += '&return_transfer_text=' + encodeURIComponent(returnCard.querySelector('.transfer-text').textContent.trim());
             }
-            
+
+            url += '&cur=' + encodeURIComponent('{{ g.cur }}') + '&cur_sym=' + encodeURIComponent('{{ "€" if g.cur == "EUR" else "$" if g.cur == "USD" else "₽" }}');
             window.location.href = url;
         });
     }
@@ -658,5 +660,6 @@ function renderWagonCards(grouped) {
 document.addEventListener('resetSidebar', function() {
     updateSidebarWithSeats();
 });
+
 </script>
 {% endblock %}
