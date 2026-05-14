@@ -4,6 +4,8 @@
 @import 'select_seats.css';
 @import 'payment.css';
 @import 'confirm.css';
+@import 'profile.css';
+@import 'admin.css';
 @import url('https://fonts.googleapis.com/css2?family=Commissioner:wght@100..900&display=swap');
 
 ::-webkit-scrollbar {
@@ -1610,4 +1612,43 @@ header {
 
 .profile-dropdown__item:hover {
     background: #F5F5F7;
+}
+
+/* Тёмный футер для админ-панели */
+.admin-page ~ .footer,
+.admin-page + .footer {
+    background: #1E1E1E;
+    border-top: 1px solid #333;
+}
+
+.admin-page ~ .footer .footer__title,
+.admin-page ~ .footer .footer__list a,
+.admin-page ~ .footer .footer__subscribe-text,
+.admin-page ~ .footer .footer__social span,
+.admin-page ~ .footer .footer__payment span {
+    color: #EFF1F4;
+}
+
+.admin-page ~ .footer .footer__list a:hover {
+    color: #4672FF;
+}
+
+.admin-page ~ .footer .footer__legal,
+.admin-page ~ .footer .footer__copyright,
+.admin-page ~ .footer .footer__subscribe-agreement {
+    color: #A3A3A3;
+}
+
+.admin-page ~ .footer .footer__subscribe-input {
+    background: #252525;
+    border-color: #333;
+    color: #EFF1F4;
+}
+
+.admin-page ~ .footer .footer__subscribe-input::placeholder {
+    color: #A3A3A3;
+}
+
+.admin-page ~ .footer .footer__bottom {
+    border-top: 1px solid #333;
 }

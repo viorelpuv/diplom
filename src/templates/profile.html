@@ -1,0 +1,547 @@
+<!-- templates/profile.html -->
+{% extends 'base.html' %}
+
+{% block title %}
+Личный кабинет — BRT
+{% endblock %}
+
+{% block body %}
+<div class="profile-page">
+    <div class="profile-page__container">
+        <!-- Боковое меню -->
+        <div class="profile-page__sidebar">
+            <div class="profile-sidebar">
+                <div class="profile-sidebar__user">
+                    <div class="profile-sidebar__avatar" id="profileAvatar">
+                        <span id="avatarInitials">—</span>
+                    </div>
+                    <div class="profile-sidebar__user-info">
+                        <span class="profile-sidebar__name" id="profileName">—</span>
+                        <span class="profile-sidebar__email" id="profileEmail">—</span>
+                    </div>
+                </div>
+                <nav class="profile-sidebar__nav">
+                    <a href="#" class="profile-sidebar__link profile-sidebar__link--active" data-tab="tickets">
+                        <img src="{{ url_for('static', filename='icons/profile_icons/transit_ticket_24dp_F1_FILL0_wght400_GRAD0_opsz24.svg') }}" alt="" class="profile-sidebar__icon">
+                        Мои билеты
+                    </a>
+                    <a href="#" class="profile-sidebar__link" data-tab="history">
+                        <img src="{{ url_for('static', filename='icons/profile_icons/history_24dp_F1_FILL0_wght400_GRAD0_opsz24.svg') }}" alt="" class="profile-sidebar__icon">
+                        История поездок
+                    </a>
+                    <a href="#" class="profile-sidebar__link" data-tab="profile">
+                        <img src="{{ url_for('static', filename='icons/profile_icons/account_circle_24dp_F1_FILL0_wght400_GRAD0_opsz24.svg') }}" alt="" class="profile-sidebar__icon">
+                        Личные данные
+                    </a>
+                    <a href="#" class="profile-sidebar__link" data-tab="documents">
+                        <img src="{{ url_for('static', filename='icons/profile_icons/folder_copy_24dp_F1_FILL0_wght400_GRAD0_opsz24.svg') }}" alt="" class="profile-sidebar__icon">
+                        Документы
+                    </a>
+                    <a href="#" class="profile-sidebar__link" data-tab="passengers">
+                        <img src="{{ url_for('static', filename='icons/profile_icons/group_24dp_F1_FILL0_wght400_GRAD0_opsz24.svg') }}" alt="" class="profile-sidebar__icon">
+                        Сохранённые пассажиры
+                    </a>
+                    <a href="#" class="profile-sidebar__link" data-tab="bonus">
+                        <img src="{{ url_for('static', filename='icons/profile_icons/credit_card_24dp_F1_FILL0_wght400_GRAD0_opsz24.svg') }}" alt="" class="profile-sidebar__icon">
+                        Бонусная программа
+                    </a>
+                    <a href="#" class="profile-sidebar__link" data-tab="login-history">
+                        <img src="{{ url_for('static', filename='icons/profile_icons/login_24dp_F1_FILL0_wght400_GRAD0_opsz24.svg') }}" alt="" class="profile-sidebar__icon">
+                        История активности
+                    </a>
+                    <a href="#" class="profile-sidebar__link" data-tab="password">
+                        <img src="{{ url_for('static', filename='icons/profile_icons/key_vertical_24dp_F1_FILL0_wght400_GRAD0_opsz24.svg') }}" alt="" class="profile-sidebar__icon">
+                        Сменить пароль
+                    </a>
+                </nav>
+                <button class="profile-sidebar__logout" onclick="logout()">
+                    <img src="{{ url_for('static', filename='icons/logout.svg') }}" alt="">
+                    Выйти
+                </button>
+            </div>
+        </div>
+        
+        <!-- Контент -->
+        <div class="profile-page__content">
+            <!-- Мои билеты -->
+            <div class="profile-tab profile-tab--active" id="tab-tickets">
+                <h2 class="profile-tab__title">Мои билеты</h2>
+                <div id="ticketsList">
+                    <p style="color:#A3A3A3; text-align:center; padding:40px;">Загрузка...</p>
+                </div>
+            </div>
+            
+            <!-- История поездок -->
+            <div class="profile-tab" id="tab-history" style="display:none;">
+                <h2 class="profile-tab__title">История поездок</h2>
+                <div id="historyList">
+                    <p style="color:#A3A3A3; text-align:center; padding:40px;">Загрузка...</p>
+                </div>
+            </div>
+            
+            <!-- Личные данные -->
+            <div class="profile-tab" id="tab-profile" style="display:none;">
+                <h2 class="profile-tab__title">Личные данные</h2>
+                <form id="profileForm" class="profile-form">
+                    <div class="profile-form__row">
+                        <div class="profile-form__group">
+                            <label class="profile-form__label">Фамилия</label>
+                            <input type="text" class="profile-form__input" name="last_name" placeholder="Иванов">
+                        </div>
+                        <div class="profile-form__group">
+                            <label class="profile-form__label">Имя</label>
+                            <input type="text" class="profile-form__input" name="first_name" placeholder="Иван">
+                        </div>
+                        <div class="profile-form__group">
+                            <label class="profile-form__label">Отчество</label>
+                            <input type="text" class="profile-form__input" name="middle_name" placeholder="Иванович">
+                        </div>
+                    </div>
+                    <div class="profile-form__row">
+                        <div class="profile-form__group">
+                            <label class="profile-form__label">Дата рождения</label>
+                            <input type="date" class="profile-form__input" name="birth_date">
+                        </div>
+                        <div class="profile-form__group">
+                            <label class="profile-form__label">Пол</label>
+                            <div class="passenger-form__gender">
+                                <div class="passenger-form__gender-slider"></div>
+                                <button type="button" class="passenger-form__gender-btn passenger-form__gender-btn--active" data-gender="male">Мужской</button>
+                                <button type="button" class="passenger-form__gender-btn" data-gender="female">Женский</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="profile-form__row">
+                        <div class="profile-form__group">
+                            <label class="profile-form__label">Email</label>
+                            <input type="email" class="profile-form__input" name="email" disabled>
+                        </div>
+                        <div class="profile-form__group">
+                            <label class="profile-form__label">Телефон</label>
+                            <input type="tel" class="profile-form__input" name="phone" placeholder="+7">
+                        </div>
+                    </div>
+                    <div class="profile-form__row">
+                        <div class="profile-form__group">
+                            <label class="profile-form__label">Гражданство</label>
+                            <input type="text" class="profile-form__input" name="citizenship" placeholder="Россия">
+                        </div>
+                    </div>
+                    <button type="submit" class="profile-form__submit">Сохранить изменения</button>
+                </form>
+            </div>
+            
+            <!-- Документы -->
+            <div class="profile-tab" id="tab-documents" style="display:none;">
+                <h2 class="profile-tab__title">Документы</h2>
+                <div id="documentsList">
+                    <p style="color:#A3A3A3; text-align:center; padding:40px;">Загрузка...</p>
+                </div>
+            </div>
+            
+            <!-- Сохранённые пассажиры -->
+            <div class="profile-tab" id="tab-passengers" style="display:none;">
+                <h2 class="profile-tab__title">Сохранённые пассажиры</h2>
+                <div id="savedPassengersList">
+                    <p style="color:#A3A3A3; text-align:center; padding:40px;">Загрузка...</p>
+                </div>
+            </div>
+            
+            <!-- Бонусная программа -->
+            <div class="profile-tab" id="tab-bonus" style="display:none;">
+                <h2 class="profile-tab__title">Бонусная программа</h2>
+                <div class="bonus-card">
+                    <div class="bonus-card__points">
+                        <span class="bonus-card__amount" id="bonusPoints">0</span>
+                        <span class="bonus-card__label">баллов</span>
+                    </div>
+                    <div class="bonus-card__level">
+                        Уровень: <span id="loyaltyLevel">—</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- История входов -->
+            <div class="profile-tab" id="tab-login-history" style="display:none;">
+                <h2 class="profile-tab__title">История активности</h2>
+                <div id="loginHistoryList">
+                    <p style="color:#A3A3A3; text-align:center; padding:40px;">Загрузка...</p>
+                </div>
+            </div>
+            
+            <!-- Смена пароля -->
+            <div class="profile-tab" id="tab-password" style="display:none;">
+                <h2 class="profile-tab__title">Сменить пароль</h2>
+                <form id="passwordForm" class="profile-form" autocomplete="off">
+                    <div class="profile-form__group">
+                        <label class="profile-form__label">Текущий пароль</label>
+                        <input type="password" class="profile-form__input" name="current_password" required placeholder="Текущий пароль" autocomplete="new-password">
+                    </div>
+                    <div class="profile-form__group">
+                        <label class="profile-form__label">Новый пароль</label>
+                        <input type="password" class="profile-form__input" name="new_password" required placeholder="Новый пароль" autocomplete="new-password">
+                    </div>
+                    <button type="submit" class="profile-form__submit">Сменить пароль</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Устанавливаем шапку как на странице оплаты
+    const header = document.getElementById('header');
+    if (header) {
+        header.classList.add('scrolled');
+        header.style.boxShadow = 'none';
+        
+        const logoWhite = header.querySelector('.header__logo--white');
+        const logoDark = header.querySelector('.header__logo--dark');
+        if (logoWhite) logoWhite.style.display = 'none';
+        if (logoDark) logoDark.style.display = 'block';
+        
+        const sepImg = header.querySelector('.lang-cur img');
+        const favImg = header.querySelector('.fav');
+        const supportImg = header.querySelector('.support-image');
+        
+        if (sepImg) sepImg.src = '/static/icons/v-line-18.png';
+        if (favImg) favImg.src = '/static/icons/fav.svg';
+        if (supportImg) supportImg.src = '/static/icons/support.svg';
+        
+        window.addEventListener('scroll', function() {
+            if (window.scrollY > 50) {
+                header.style.background = '#EFF1F4';
+                header.style.boxShadow = '0 2px 20px rgba(0, 0, 0, 0.15)';
+            } else {
+                header.style.boxShadow = 'none';
+            }
+        });
+    }
+    
+    // Проверяем авторизацию
+    fetch('/api/user-status')
+        .then(r => r.json())
+        .then(data => {
+            if (!data.logged_in) {
+                window.location.href = '/';
+                return;
+            }
+            loadUserData(data.user_id);
+            loadTickets();
+            loadBonus();
+        });
+    
+    // Переключение вкладок
+    document.querySelectorAll('.profile-sidebar__link').forEach(link => {
+    link.addEventListener('click', function(e) {
+        e.preventDefault();
+        
+        document.querySelectorAll('.profile-sidebar__link').forEach(l => l.classList.remove('profile-sidebar__link--active'));
+        this.classList.add('profile-sidebar__link--active');
+        
+        document.querySelectorAll('.profile-tab').forEach(tab => tab.style.display = 'none');
+        
+        const tabId = 'tab-' + this.dataset.tab;
+        document.getElementById(tabId).style.display = 'block';
+        
+        // При открытии вкладки смены пароля — очищаем поля
+        if (this.dataset.tab === 'password') {
+            setTimeout(() => {
+                const form = document.getElementById('passwordForm');
+                if (form) {
+                    form.querySelector('[name="current_password"]').value = '';
+                    form.querySelector('[name="new_password"]').value = '';
+                }
+            }, 50);
+        }
+        
+        switch(this.dataset.tab) {
+            case 'history': loadHistory(); break;
+            case 'profile': break;
+            case 'documents': loadDocuments(); break;
+            case 'passengers': loadSavedPassengers(); break;
+            case 'login-history': loadLoginHistory(); break;
+            case 'bonus': loadBonus(); break;
+        }
+    });
+});
+    
+    // Форма личных данных
+    document.getElementById('profileForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+        const data = Object.fromEntries(formData);
+        
+        fetch('/api/profile/update', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(data)
+        })
+        .then(r => r.json())
+        .then(resp => {
+            alert(resp.message || 'Сохранено');
+        });
+    });
+    
+    // Форма смены пароля
+    document.getElementById('passwordForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+        const data = Object.fromEntries(formData);
+        
+        fetch('/api/profile/change-password', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(data)
+        })
+        .then(r => r.json())
+        .then(resp => {
+            alert(resp.message || 'Готово');
+            if (resp.success) {
+                this.reset();
+                // Явно очищаем поля паролей
+                this.querySelector('[name="current_password"]').value = '';
+                this.querySelector('[name="new_password"]').value = '';
+            }
+        });
+    });
+    
+    // Кнопки пола
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('passenger-form__gender-btn')) {
+            const container = e.target.closest('.passenger-form__gender');
+            container.querySelectorAll('.passenger-form__gender-btn').forEach(b => b.classList.remove('passenger-form__gender-btn--active'));
+            e.target.classList.add('passenger-form__gender-btn--active');
+            container.querySelector('.passenger-form__gender-slider').classList.toggle('passenger-form__gender-slider--right', e.target.dataset.gender === 'female');
+        }
+    });
+});
+
+function loadUserData(userId) {
+    fetch('/api/profile/' + userId)
+        .then(r => r.json())
+        .then(user => {
+            if (user.error) return;
+            
+            const firstChar = (user.first_name?.[0] || user.email?.[0] || '?').toUpperCase();
+            document.getElementById('avatarInitials').textContent = firstChar;
+            
+            const displayName = [user.first_name, user.last_name].filter(Boolean).join(' ');
+            document.getElementById('profileName').textContent = displayName || 'Пользователь';
+            document.getElementById('profileEmail').textContent = user.email || '';
+            
+            const form = document.getElementById('profileForm');
+            if (user.first_name) form.querySelector('[name="first_name"]').value = user.first_name;
+            if (user.last_name) form.querySelector('[name="last_name"]').value = user.last_name;
+            if (user.middle_name) form.querySelector('[name="middle_name"]').value = user.middle_name;
+            if (user.birth_date) form.querySelector('[name="birth_date"]').value = user.birth_date;
+            if (user.email) form.querySelector('[name="email"]').value = user.email;
+            if (user.citizenship) form.querySelector('[name="citizenship"]').value = user.citizenship;
+            
+            // Форматирование телефона
+            const phoneInput = document.querySelector('[name="phone"]');
+            if (phoneInput) {
+                phoneInput.addEventListener('input', function(e) {
+                    let value = this.value.replace(/\D/g, '');
+                    
+                    if (value === '') {
+                        this.value = '';
+                        return;
+                    }
+                    
+                    if (value.startsWith('7')) {
+                        value = value.slice(1);
+                    }
+                    
+                    if (value.length > 10) {
+                        value = value.slice(0, 10);
+                    }
+                    
+                    if (value.length === 0) {
+                        this.value = '+7';
+                        this.setSelectionRange(2, 2);
+                        return;
+                    }
+                    
+                    let formatted = '+7';
+                    
+                    if (value.length >= 1) {
+                        formatted += ' (' + value.slice(0, Math.min(3, value.length));
+                    }
+                    
+                    if (value.length >= 3) {
+                        formatted += ') ' + value.slice(3, Math.min(6, value.length));
+                    }
+                    
+                    if (value.length >= 6) {
+                        formatted += '-' + value.slice(6, Math.min(8, value.length));
+                    }
+                    
+                    if (value.length >= 8) {
+                        formatted += '-' + value.slice(8, 10);
+                    }
+                    
+                    this.value = formatted;
+                    
+                    let newPos = formatted.length;
+                    this.setSelectionRange(newPos, newPos);
+                });
+                
+                phoneInput.addEventListener('keydown', function(e) {
+                    if (e.key === 'Backspace') {
+                        let cursorPos = this.selectionStart;
+                        let value = this.value;
+                        
+                        if (cursorPos > 2 && cursorPos <= value.length) {
+                            let charBefore = value[cursorPos - 1];
+                            if (charBefore === ')' || charBefore === '-' || charBefore === ' ' || charBefore === '(') {
+                                e.preventDefault();
+                                let before = value.slice(0, cursorPos - 2);
+                                let after = value.slice(cursorPos);
+                                this.value = before + after;
+                                this.dispatchEvent(new Event('input'));
+                                let newPos = before.length;
+                                this.setSelectionRange(newPos, newPos);
+                            }
+                        }
+                        
+                        if (cursorPos <= 2) {
+                            e.preventDefault();
+                        }
+                    }
+                });
+                
+                phoneInput.addEventListener('click', function() {
+                    if (this.selectionStart < 2) {
+                        this.setSelectionRange(this.value.length, this.value.length);
+                    }
+                });
+            }
+            
+            if (user.gender === 'female') {
+                const femaleBtn = form.querySelector('[data-gender="female"]');
+                const maleBtn = form.querySelector('[data-gender="male"]');
+                const slider = form.querySelector('.passenger-form__gender-slider');
+                if (femaleBtn) femaleBtn.classList.add('passenger-form__gender-btn--active');
+                if (maleBtn) maleBtn.classList.remove('passenger-form__gender-btn--active');
+                if (slider) slider.classList.add('passenger-form__gender-slider--right');
+            }
+        });
+}
+
+// Функция форматирования телефона
+function formatPhoneNumber(value) {
+    if (!value) return '';
+    let v = value.replace(/\D/g, '');
+    if (v.startsWith('7') || v.startsWith('8')) v = v.slice(1);
+    if (v.length > 10) v = v.slice(0, 10);
+    if (v.length === 0) return '+7';
+    return '+7 (' + v.slice(0,3) + ') ' + v.slice(3,6) + '-' + v.slice(6,8) + '-' + v.slice(8,10);
+}
+
+// Добавь обработчик input для поля телефона
+document.addEventListener('DOMContentLoaded', function() {
+    // ... существующий код ...
+    
+    // Форматирование телефона при вводе
+    const phoneInput = document.querySelector('[name="phone"]');
+    if (phoneInput) {
+        phoneInput.addEventListener('input', function() {
+            const cursorPos = this.selectionStart;
+            const formatted = formatPhoneNumber(this.value);
+            this.value = formatted;
+            if (cursorPos < formatted.length) {
+                this.setSelectionRange(cursorPos, cursorPos);
+            }
+        });
+        
+        phoneInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Backspace') {
+                let cursorPos = this.selectionStart;
+                let value = this.value;
+                if (cursorPos > 2 && cursorPos <= value.length) {
+                    let charBefore = value[cursorPos - 1];
+                    if (charBefore === ')' || charBefore === '-' || charBefore === ' ' || charBefore === '(') {
+                        e.preventDefault();
+                        let before = value.slice(0, cursorPos - 2);
+                        let after = value.slice(cursorPos);
+                        this.value = before + after;
+                        this.setSelectionRange(before.length, before.length);
+                    }
+                }
+                if (cursorPos <= 2) e.preventDefault();
+            }
+        });
+    }
+});
+
+function loadTickets() {
+    fetch('/api/profile/tickets')
+        .then(r => r.json())
+        .then(tickets => {
+            const container = document.getElementById('ticketsList');
+            if (!tickets.length) {
+                container.innerHTML = '<p style="color:#A3A3A3; text-align:center; padding:40px;">У вас пока нет билетов</p>';
+                return;
+            }
+            container.innerHTML = tickets.map(t => 
+                '<div class="ticket-item">' +
+                    '<div class="ticket-item__header">' +
+                        '<span class="ticket-item__route">' + t.from_city + ' → ' + t.to_city + '</span>' +
+                        '<span class="ticket-item__status ticket-item__status--' + t.status + '">' + t.status + '</span>' +
+                    '</div>' +
+                    '<div class="ticket-item__info">' +
+                        '<span>' + t.train_number + '</span>' +
+                        '<span>' + t.departure + ' – ' + t.arrival + '</span>' +
+                        '<span>Вагон ' + t.wagon + ', место ' + t.seat + '</span>' +
+                    '</div>' +
+                    '<div class="ticket-item__price">' + t.price + ' ₽</div>' +
+                '</div>'
+            ).join('');
+        });
+}
+
+function loadHistory() {
+    document.getElementById('historyList').innerHTML = '<p style="color:#A3A3A3; text-align:center; padding:40px;">История поездок пуста</p>';
+}
+
+function loadDocuments() {
+    document.getElementById('documentsList').innerHTML = '<p style="color:#A3A3A3; text-align:center; padding:40px;">Нет сохранённых документов</p>';
+}
+
+function loadSavedPassengers() {
+    document.getElementById('savedPassengersList').innerHTML = '<p style="color:#A3A3A3; text-align:center; padding:40px;">Нет сохранённых пассажиров</p>';
+}
+
+function loadLoginHistory() {
+    fetch('/api/profile/login-history')
+        .then(r => r.json())
+        .then(history => {
+            const container = document.getElementById('loginHistoryList');
+            if (!history.length) {
+                container.innerHTML = '<p style="color:#A3A3A3; text-align:center; padding:40px;">Нет записей</p>';
+                return;
+            }
+            container.innerHTML = history.map(h =>
+                '<div class="login-item" style="display:flex; justify-content:space-between; align-items:center; padding:12px 16px; background:#fff; border-radius:14px; margin-bottom:8px; font-family:\'Commissioner\',sans-serif; font-size:14px; color:#1E1E1E; box-shadow:0 2px 8px rgba(0,0,0,0.04);">' +
+                    '<div style="display:flex; flex-direction:column; gap:4px;">' +
+                        '<span style="font-weight:500;">' + (h.user_agent ? h.user_agent.substring(0, 50) : 'Неизвестное устройство') + '</span>' +
+                        '<span style="color:#A3A3A3; font-size:12px;">' + h.ip_address + ' • ' + new Date(h.created_at).toLocaleString('ru-RU') + '</span>' +
+                    '</div>' +
+                    '<span class="login-item__status ' + (h.success ? 'login-item__status--success' : 'login-item__status--fail') + '" style="font-weight:500; font-size:13px; padding:4px 10px; border-radius:8px; ' + (h.success ? 'background:#E8F5E9; color:#2E7D32;' : 'background:#FFEBEE; color:#C62828;') + '">' + (h.success ? 'Успешно' : 'Неудачно') + '</span>' +
+                '</div>'
+            ).join('');
+        });
+}
+
+function loadBonus() {
+    fetch('/api/profile/bonus')
+        .then(r => r.json())
+        .then(data => {
+            document.getElementById('bonusPoints').textContent = data.points || 0;
+            document.getElementById('loyaltyLevel').textContent = data.level || 'Нет';
+        });
+}
+</script>
+{% endblock %}

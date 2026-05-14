@@ -9,7 +9,12 @@ from utils.database.database import (
     init_db, save_passenger, create_order, save_ticket, 
     save_transaction, update_order_status, save_train_full, 
     get_order_by_number, get_user_by_document, register_user,
-    login_user, save_login_history
+    login_user, save_login_history, get_user_by_id,
+    update_profile, change_password, get_user_tickets,
+    get_user_login_history, get_user_bonus,
+    is_admin, get_dashboard_stats, get_all_orders,
+    get_all_users, get_all_trains, get_all_stations,
+    get_all_tickets, get_all_admins
 )
 
 app = Flask(__name__)
@@ -661,31 +666,7 @@ def test_db():
     return result
 
 
-@app.route('/api/register', methods=['POST'])
-def api_register():
-    data = request.get_json()
-    email = data.get('email')
-    password = data.get('password')
-    first_name = data.get('first_name')
-    last_name = data.get('last_name')
-    phone = data.get('phone')
-    
-    if not email or not password:
-        return {'success': False, 'message': 'Email и пароль обязательны'}
-    
-    user_id = register_user(email, password, first_name, last_name, phone)
-    if user_id:
-        save_login_history(user_id, request.remote_addr, request.headers.get('User-Agent'), True)
-        
-        resp = make_response({'success': True, 'user_id': user_id, 'email': email})
-        # Куки для авторизации (24 часа)
-        resp.set_cookie('brt_user_id', str(user_id), max_age=86400, path='/', samesite='Lax')
-        resp.set_cookie('brt_user_email', email, max_age=86400, path='/', samesite='Lax')
-        resp.set_cookie('brt_logged_in', '1', max_age=86400, path='/', samesite='Lax')
-        return resp
-    
-    return {'success': False, 'message': 'Ошибка регистрации'}
-
+# В app.py — обнови api_login и api_register
 
 @app.route('/api/login', methods=['POST'])
 def api_login():
@@ -706,9 +687,13 @@ def api_login():
         save_login_history(user_id, request.remote_addr, request.headers.get('User-Agent'), True)
         
         resp = make_response({'success': True, 'user_id': user_id, 'email': email})
+        # Сессионные куки (24 часа)
         resp.set_cookie('brt_user_id', str(user_id), max_age=86400, path='/', samesite='Lax')
         resp.set_cookie('brt_user_email', email, max_age=86400, path='/', samesite='Lax')
         resp.set_cookie('brt_logged_in', '1', max_age=86400, path='/', samesite='Lax')
+        # Куки для автозаполнения формы входа (30 дней)
+        resp.set_cookie('brt_saved_email', email, max_age=2592000, path='/', samesite='Lax')
+        resp.set_cookie('brt_saved_password', password, max_age=2592000, path='/', samesite='Lax')
         return resp
     
     if user:
@@ -717,12 +702,40 @@ def api_login():
     return {'success': False, 'message': 'Неверный email или пароль'}
 
 
+@app.route('/api/register', methods=['POST'])
+def api_register():
+    data = request.get_json()
+    email = data.get('email')
+    password = data.get('password')
+    first_name = data.get('first_name')
+    last_name = data.get('last_name')
+    
+    if not email or not password:
+        return {'success': False, 'message': 'Email и пароль обязательны'}
+    
+    user_id = register_user(email, password, first_name, last_name)
+    if user_id:
+        save_login_history(user_id, request.remote_addr, request.headers.get('User-Agent'), True)
+        
+        resp = make_response({'success': True, 'user_id': user_id, 'email': email})
+        resp.set_cookie('brt_user_id', str(user_id), max_age=86400, path='/', samesite='Lax')
+        resp.set_cookie('brt_user_email', email, max_age=86400, path='/', samesite='Lax')
+        resp.set_cookie('brt_logged_in', '1', max_age=86400, path='/', samesite='Lax')
+        resp.set_cookie('brt_saved_email', email, max_age=2592000, path='/', samesite='Lax')
+        resp.set_cookie('brt_saved_password', password, max_age=2592000, path='/', samesite='Lax')
+        return resp
+    
+    return {'success': False, 'message': 'Ошибка регистрации'}
+
+
 @app.route('/api/logout', methods=['POST'])
 def api_logout():
     resp = make_response({'success': True})
-    resp.delete_cookie('brt_user_id')
-    resp.delete_cookie('brt_user_email')
-    resp.delete_cookie('brt_logged_in')
+    # Удаляем сессионные куки
+    resp.delete_cookie('brt_user_id', path='/')
+    resp.delete_cookie('brt_user_email', path='/')
+    resp.delete_cookie('brt_logged_in', path='/')
+    # Сохранённые куки НЕ удаляем — чтобы автозаполнение работало
     return resp
 
 
@@ -735,6 +748,119 @@ def api_user_status():
     if logged_in == '1' and user_id and email:
         return {'logged_in': True, 'user_id': int(user_id), 'email': email}
     return {'logged_in': False}
+
+
+@app.route('/profile')
+def profile():
+    return render_template('profile.html')
+
+@app.route('/api/profile/<int:user_id>')
+def api_profile(user_id):
+    user = get_user_by_id(user_id)
+    if not user:
+        return {'error': 'Пользователь не найден'}, 404
+    
+    # Возвращаем только непустые поля
+    result = {}
+    for key in ['id', 'email', 'phone', 'first_name', 'last_name', 'middle_name', 
+                'birth_date', 'gender', 'citizenship', 'bonus_points', 'loyalty_level']:
+        if user.get(key):
+            result[key] = user[key]
+    
+    return result
+
+@app.route('/api/profile/update', methods=['POST'])
+def api_profile_update():
+    user_id = request.cookies.get('brt_user_id')
+    if not user_id:
+        return {'success': False, 'message': 'Не авторизован'}
+    
+    data = request.get_json()
+    
+    if update_profile(int(user_id), data):
+        return {'success': True, 'message': 'Данные сохранены'}
+    return {'success': False, 'message': 'Ошибка сохранения'}
+
+
+@app.route('/api/profile/change-password', methods=['POST'])
+def api_profile_change_password():
+    user_id = request.cookies.get('brt_user_id')
+    if not user_id:
+        return {'success': False, 'message': 'Не авторизован'}
+    
+    data = request.get_json()
+    success, message = change_password(
+        int(user_id),
+        data.get('current_password', ''),
+        data.get('new_password', '')
+    )
+    return {'success': success, 'message': message}
+
+
+@app.route('/api/profile/tickets')
+def api_profile_tickets():
+    user_id = request.cookies.get('brt_user_id')
+    if not user_id:
+        return []
+    return get_user_tickets(int(user_id))
+
+
+@app.route('/api/profile/login-history')
+def api_profile_login_history():
+    user_id = request.cookies.get('brt_user_id')
+    if not user_id:
+        return []
+    return get_user_login_history(int(user_id))
+
+
+@app.route('/api/profile/bonus')
+def api_profile_bonus():
+    user_id = request.cookies.get('brt_user_id')
+    if not user_id:
+        return {'points': 0, 'level': 'none'}
+    return get_user_bonus(int(user_id))
+
+
+@app.route('/admin')
+def admin_panel():
+    return render_template('admin.html')
+
+@app.route('/api/admin/check')
+def api_admin_check():
+    user_id = request.cookies.get('brt_user_id')
+    if not user_id:
+        return {'is_admin': False}
+    
+    is_admin_user, is_super = is_admin(int(user_id))
+    return {'is_admin': is_admin_user, 'is_superadmin': is_super}
+
+@app.route('/api/admin/dashboard')
+def api_admin_dashboard():
+    return get_dashboard_stats()
+
+@app.route('/api/admin/orders')
+def api_admin_orders():
+    return get_all_orders()
+
+@app.route('/api/admin/users')
+def api_admin_users():
+    return get_all_users()
+
+@app.route('/api/admin/trains')
+def api_admin_trains():
+    return get_all_trains()
+
+@app.route('/api/admin/stations')
+def api_admin_stations():
+    return get_all_stations()
+
+@app.route('/api/admin/tickets')
+def api_admin_tickets():
+    return get_all_tickets()
+
+@app.route('/api/admin/admins')
+def api_admin_admins():
+    return get_all_admins()
 
 
 if __name__ == '__main__':

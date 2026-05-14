@@ -1146,3 +1146,260 @@ def save_login_history(user_id, ip_address=None, user_agent=None, success=True):
     finally:
         cursor.close()
         conn.close()
+
+
+def update_profile(user_id, data):
+    """Обновляет профиль пользователя."""
+    conn = get_db()
+    cursor = conn.cursor()
+    try:
+        fields = []
+        values = []
+        
+        allowed_fields = ['first_name', 'last_name', 'middle_name', 'birth_date', 
+                          'phone', 'citizenship', 'gender']
+        
+        for field in allowed_fields:
+            if field in data and data[field]:
+                fields.append(f"{field} = ?")
+                values.append(data[field])
+        
+        if not fields:
+            return False
+        
+        fields.append("updated_at = datetime('now')")
+        values.append(user_id)
+        
+        query = f"UPDATE users SET {', '.join(fields)} WHERE id = ?"
+        cursor.execute(query, values)
+        conn.commit()
+        return True
+    except Exception as e:
+        print(f"DB Error (update_profile): {e}")
+        conn.rollback()
+        return False
+    finally:
+        cursor.close()
+        conn.close()
+
+
+def change_password(user_id, current_password, new_password):
+    """Меняет пароль пользователя. Возвращает (success, message)."""
+    from utils.hasher import generate_hash, check_hash
+    
+    conn = get_db()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("SELECT password_hash FROM users WHERE id = ?", (user_id,))
+        user = cursor.fetchone()
+        
+        if not user:
+            return False, 'Пользователь не найден'
+        
+        if not check_hash(user['password_hash'], current_password):
+            return False, 'Неверный текущий пароль'
+        
+        new_hash = generate_hash(new_password)
+        cursor.execute("UPDATE users SET password_hash = ?, updated_at = datetime('now') WHERE id = ?", 
+                       (new_hash, user_id))
+        conn.commit()
+        return True, 'Пароль изменён'
+    except Exception as e:
+        print(f"DB Error (change_password): {e}")
+        conn.rollback()
+        return False, 'Ошибка'
+    finally:
+        cursor.close()
+        conn.close()
+
+
+def get_user_tickets(user_id):
+    """Получает все билеты пользователя."""
+    conn = get_db()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("""
+            SELECT t.*, o.order_number, 
+                   s.number as seat, w.number as wagon, w.type as wagon_type,
+                   tr.departure_datetime, tr.arrival_datetime, tr2.number as train_number,
+                   st_from.city as from_city, st_to.city as to_city
+            FROM tickets t
+            JOIN orders o ON t.order_id = o.id
+            LEFT JOIN seats s ON t.seat_id = s.id
+            LEFT JOIN wagons w ON s.wagon_id = w.id
+            LEFT JOIN trips tr ON t.trip_id = tr.id
+            LEFT JOIN trains tr2 ON tr.train_id = tr2.id
+            LEFT JOIN routes r ON tr.route_id = r.id
+            LEFT JOIN stations st_from ON r.departure_station_id = st_from.id
+            LEFT JOIN stations st_to ON r.arrival_station_id = st_to.id
+            WHERE o.user_id = ?
+            ORDER BY t.created_at DESC
+        """, (user_id,))
+        
+        return [dict(row) for row in cursor.fetchall()]
+    finally:
+        cursor.close()
+        conn.close()
+
+
+def get_user_login_history(user_id, limit=20):
+    """Получает историю входов пользователя."""
+    conn = get_db()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("""
+            SELECT ip_address, user_agent, success, created_at
+            FROM login_history
+            WHERE user_id = ?
+            ORDER BY created_at DESC
+            LIMIT ?
+        """, (user_id, limit))
+        
+        return [dict(row) for row in cursor.fetchall()]
+    finally:
+        cursor.close()
+        conn.close()
+
+
+def get_user_bonus(user_id):
+    """Получает бонусную информацию пользователя."""
+    conn = get_db()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("SELECT bonus_points, loyalty_level FROM users WHERE id = ?", (user_id,))
+        user = cursor.fetchone()
+        if user:
+            return {
+                'points': user['bonus_points'] or 0,
+                'level': user['loyalty_level'] or 'none'
+            }
+        return {'points': 0, 'level': 'none'}
+    finally:
+        cursor.close()
+        conn.close()
+
+
+# Добавь эти функции в database.py
+
+# ============================================
+# ADMIN
+# ============================================
+def is_admin(user_id):
+    """Проверяет, является ли пользователь админом."""
+    conn = get_db()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("SELECT role FROM users WHERE id = ?", (user_id,))
+        user = cursor.fetchone()
+        if not user or user['role'] not in ('admin', 'superadmin'):
+            return False, False
+        
+        cursor.execute("SELECT is_superadmin FROM admins WHERE user_id = ?", (user_id,))
+        admin = cursor.fetchone()
+        return True, bool(admin and admin['is_superadmin'])
+    finally:
+        cursor.close()
+        conn.close()
+
+
+def get_dashboard_stats():
+    """Получает статистику для дашборда."""
+    conn = get_db()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("SELECT COALESCE(SUM(total_amount), 0) as revenue FROM orders WHERE date(created_at) = date('now') AND status = 'paid'")
+        revenue = cursor.fetchone()['revenue']
+        
+        cursor.execute("SELECT COUNT(*) as cnt FROM tickets")
+        tickets = cursor.fetchone()['cnt']
+        
+        cursor.execute("SELECT COUNT(*) as cnt FROM orders WHERE status = 'pending'")
+        orders = cursor.fetchone()['cnt']
+        
+        cursor.execute("SELECT COUNT(*) as cnt FROM users")
+        users = cursor.fetchone()['cnt']
+        
+        return {
+            'revenue': revenue,
+            'tickets_sold': tickets,
+            'active_orders': orders,
+            'total_users': users
+        }
+    finally:
+        cursor.close()
+        conn.close()
+
+
+def get_all_orders(limit=50):
+    """Получает все заказы."""
+    conn = get_db()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("SELECT * FROM orders ORDER BY created_at DESC LIMIT ?", (limit,))
+        return [dict(row) for row in cursor.fetchall()]
+    finally:
+        cursor.close()
+        conn.close()
+
+
+def get_all_users(limit=100):
+    """Получает всех пользователей."""
+    conn = get_db()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("SELECT id, email, first_name, last_name, role, created_at FROM users ORDER BY created_at DESC LIMIT ?", (limit,))
+        return [dict(row) for row in cursor.fetchall()]
+    finally:
+        cursor.close()
+        conn.close()
+
+
+def get_all_trains(limit=100):
+    """Получает все поезда."""
+    conn = get_db()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("SELECT * FROM trains ORDER BY number LIMIT ?", (limit,))
+        return [dict(row) for row in cursor.fetchall()]
+    finally:
+        cursor.close()
+        conn.close()
+
+
+def get_all_stations(limit=100):
+    """Получает все станции."""
+    conn = get_db()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("SELECT * FROM stations ORDER BY name LIMIT ?", (limit,))
+        return [dict(row) for row in cursor.fetchall()]
+    finally:
+        cursor.close()
+        conn.close()
+
+
+def get_all_tickets(limit=100):
+    """Получает все билеты."""
+    conn = get_db()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("SELECT * FROM tickets ORDER BY id DESC LIMIT ?", (limit,))
+        return [dict(row) for row in cursor.fetchall()]
+    finally:
+        cursor.close()
+        conn.close()
+
+
+def get_all_admins():
+    """Получает список всех админов."""
+    conn = get_db()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("""
+            SELECT u.email, u.first_name, u.role, a.is_superadmin
+            FROM admins a JOIN users u ON a.user_id = u.id
+        """)
+        return [dict(row) for row in cursor.fetchall()]
+    finally:
+        cursor.close()
+        conn.close()

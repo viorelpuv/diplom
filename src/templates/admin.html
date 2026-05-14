@@ -1,0 +1,310 @@
+<!-- templates/admin.html -->
+{% extends 'base.html' %}
+
+{% block title %}
+Админ-панель — BRT
+{% endblock %}
+
+{% block body %}
+<div class="admin-page">
+    <div class="admin-page__container">
+        <!-- Боковое меню -->
+        <div class="admin-page__sidebar">
+            <div class="admin-sidebar">
+                <div class="admin-sidebar__header">
+                    <h2 class="admin-sidebar__title">Админ-панель</h2>
+                    <span class="admin-sidebar__role">Супер-админ</span>
+                </div>
+                <nav class="admin-sidebar__nav">
+                    <a href="#" class="admin-sidebar__link admin-sidebar__link--active" data-tab="dashboard">
+                        <span class="admin-sidebar__icon">📊</span> Дашборд
+                    </a>
+                    <a href="#" class="admin-sidebar__link" data-tab="orders">
+                        <span class="admin-sidebar__icon">📦</span> Заказы
+                    </a>
+                    <a href="#" class="admin-sidebar__link" data-tab="users">
+                        <span class="admin-sidebar__icon">👥</span> Пользователи
+                    </a>
+                    <a href="#" class="admin-sidebar__link" data-tab="trains">
+                        <span class="admin-sidebar__icon">🚂</span> Поезда и рейсы
+                    </a>
+                    <a href="#" class="admin-sidebar__link" data-tab="stations">
+                        <span class="admin-sidebar__icon">📍</span> Станции и маршруты
+                    </a>
+                    <a href="#" class="admin-sidebar__link" data-tab="tickets">
+                        <span class="admin-sidebar__icon">🎫</span> Билеты
+                    </a>
+                    <a href="#" class="admin-sidebar__link" data-tab="reports">
+                        <span class="admin-sidebar__icon">📈</span> Отчёты
+                    </a>
+                    <a href="#" class="admin-sidebar__link" data-tab="promo">
+                        <span class="admin-sidebar__icon">🎁</span> Промокоды
+                    </a>
+                    <a href="#" class="admin-sidebar__link" data-tab="logs">
+                        <span class="admin-sidebar__icon">📋</span> Логи
+                    </a>
+                    <a href="#" class="admin-sidebar__link" data-tab="settings">
+                        <span class="admin-sidebar__icon">⚙️</span> Настройки
+                    </a>
+                    <a href="#" class="admin-sidebar__link" data-tab="admins">
+                        <span class="admin-sidebar__icon">🔐</span> Администраторы
+                    </a>
+                </nav>
+            </div>
+        </div>
+        
+        <!-- Контент -->
+        <div class="admin-page__content">
+            <!-- Дашборд -->
+            <div class="admin-tab admin-tab--active" id="tab-dashboard">
+                <h2 class="admin-tab__title">Дашборд</h2>
+                <div class="dashboard-cards">
+                    <div class="dashboard-card">
+                        <span class="dashboard-card__value" id="dashRevenue">—</span>
+                        <span class="dashboard-card__label">Выручка сегодня</span>
+                    </div>
+                    <div class="dashboard-card">
+                        <span class="dashboard-card__value" id="dashTickets">—</span>
+                        <span class="dashboard-card__label">Продано билетов</span>
+                    </div>
+                    <div class="dashboard-card">
+                        <span class="dashboard-card__value" id="dashOrders">—</span>
+                        <span class="dashboard-card__label">Активных заказов</span>
+                    </div>
+                    <div class="dashboard-card">
+                        <span class="dashboard-card__value" id="dashUsers">—</span>
+                        <span class="dashboard-card__label">Пользователей</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Заказы -->
+            <div class="admin-tab" id="tab-orders" style="display:none;">
+                <h2 class="admin-tab__title">Заказы</h2>
+                <div id="ordersList">Загрузка...</div>
+            </div>
+            
+            <!-- Пользователи -->
+            <div class="admin-tab" id="tab-users" style="display:none;">
+                <h2 class="admin-tab__title">Пользователи</h2>
+                <div id="usersList">Загрузка...</div>
+            </div>
+            
+            <!-- Поезда и рейсы -->
+            <div class="admin-tab" id="tab-trains" style="display:none;">
+                <h2 class="admin-tab__title">Поезда и рейсы</h2>
+                <div id="trainsList">Загрузка...</div>
+            </div>
+            
+            <!-- Станции и маршруты -->
+            <div class="admin-tab" id="tab-stations" style="display:none;">
+                <h2 class="admin-tab__title">Станции и маршруты</h2>
+                <div id="stationsList">Загрузка...</div>
+            </div>
+            
+            <!-- Билеты -->
+            <div class="admin-tab" id="tab-tickets" style="display:none;">
+                <h2 class="admin-tab__title">Билеты</h2>
+                <div id="adminTicketsList">Загрузка...</div>
+            </div>
+            
+            <!-- Отчёты -->
+            <div class="admin-tab" id="tab-reports" style="display:none;">
+                <h2 class="admin-tab__title">Отчёты</h2>
+                <p>Раздел в разработке</p>
+            </div>
+            
+            <!-- Промокоды -->
+            <div class="admin-tab" id="tab-promo" style="display:none;">
+                <h2 class="admin-tab__title">Промокоды</h2>
+                <p>Раздел в разработке</p>
+            </div>
+            
+            <!-- Логи -->
+            <div class="admin-tab" id="tab-logs" style="display:none;">
+                <h2 class="admin-tab__title">Логи</h2>
+                <p>Раздел в разработке</p>
+            </div>
+            
+            <!-- Настройки -->
+            <div class="admin-tab" id="tab-settings" style="display:none;">
+                <h2 class="admin-tab__title">Настройки</h2>
+                <form id="settingsForm" class="admin-form">
+                    <div class="admin-form__group">
+                        <label class="admin-form__label">Сервисный сбор (₽)</label>
+                        <input type="number" class="admin-form__input" name="service_fee" value="200" placeholder="Сумма в рублях">
+                    </div>
+                    <button type="submit" class="admin-form__submit">Сохранить</button>
+                </form>
+            </div>
+            
+            <!-- Администраторы -->
+            <div class="admin-tab" id="tab-admins" style="display:none;">
+                <h2 class="admin-tab__title">Администраторы</h2>
+                <div id="adminsList">Загрузка...</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    document.body.classList.add('admin-theme');
+    
+    // Проверка прав
+    fetch('/api/admin/check')
+        .then(r => r.json())
+        .then(data => {
+            if (!data.is_admin) {
+                window.location.href = '/';
+                return;
+            }
+            document.querySelector('.admin-sidebar__role').textContent = data.is_superadmin ? 'Супер-админ' : 'Администратор';
+            if (!data.is_superadmin) {
+                document.querySelector('[data-tab="admins"]').style.display = 'none';
+            }
+            loadDashboard();
+        });
+    
+    // Шапка
+    const header = document.getElementById('header');
+    if (header) {
+        header.classList.add('scrolled');
+        header.style.background = '#1E1E1E';
+        header.style.position = 'fixed';
+        header.style.top = '0';
+        header.style.left = '0';
+        header.style.width = '100%';
+        header.style.zIndex = '999';
+    
+        const logoWhite = header.querySelector('.header__logo--white');
+        const logoDark = header.querySelector('.header__logo--dark');
+        if (logoWhite) logoWhite.style.display = 'block';
+        if (logoDark) logoDark.style.display = 'none';
+        
+        const sepImg = header.querySelector('.lang-cur img');
+        const favImg = header.querySelector('.fav');
+        const supportImg = header.querySelector('.support-image');
+        
+        if (sepImg) sepImg.src = '/static/icons/v-line-18-white.png';
+        if (favImg) favImg.src = '/static/icons/fav_white.svg';
+        if (supportImg) supportImg.src = '/static/icons/support_white.svg';
+        
+        const supportLinks = header.querySelectorAll('.support a');
+        supportLinks.forEach(link => {
+            link.style.color = '#EFF1F4';
+        });
+        
+        const langSpan = header.querySelector('#currentLang');
+        const curSpan = header.querySelector('#currentCur');
+        if (langSpan) langSpan.style.color = '#EFF1F4';
+        if (curSpan) curSpan.style.color = '#EFF1F4';
+        
+        window.addEventListener('scroll', function() {
+            header.style.background = '#1E1E1E';
+            header.style.boxShadow = '0 2px 20px rgba(0, 0, 0, 0.5)';
+        });
+    }
+    
+    // Переключение вкладок
+    document.querySelectorAll('.admin-sidebar__link').forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            document.querySelectorAll('.admin-sidebar__link').forEach(l => l.classList.remove('admin-sidebar__link--active'));
+            this.classList.add('admin-sidebar__link--active');
+            document.querySelectorAll('.admin-tab').forEach(t => t.style.display = 'none');
+            document.getElementById('tab-' + this.dataset.tab).style.display = 'block';
+            
+            switch(this.dataset.tab) {
+                case 'dashboard': loadDashboard(); break;
+                case 'orders': loadOrders(); break;
+                case 'users': loadUsers(); break;
+                case 'trains': loadTrains(); break;
+                case 'stations': loadStations(); break;
+                case 'tickets': loadAdminTickets(); break;
+                case 'admins': loadAdmins(); break;
+            }
+        });
+    });
+    
+    // Форма настроек
+    const settingsForm = document.getElementById('settingsForm');
+    if (settingsForm) {
+        settingsForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const fee = this.querySelector('[name="service_fee"]').value;
+            fetch('/api/admin/settings', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({service_fee: parseInt(fee)})
+            }).then(r => r.json()).then(d => alert(d.message || 'Сохранено'));
+        });
+    }
+});
+
+function loadDashboard() {
+    fetch('/api/admin/dashboard')
+        .then(r => r.json())
+        .then(d => {
+            document.getElementById('dashRevenue').textContent = (d.revenue || 0).toLocaleString('ru-RU') + ' ₽';
+            document.getElementById('dashTickets').textContent = d.tickets_sold || 0;
+            document.getElementById('dashOrders').textContent = d.active_orders || 0;
+            document.getElementById('dashUsers').textContent = d.total_users || 0;
+        });
+}
+
+function loadOrders() {
+    fetch('/api/admin/orders')
+        .then(r => r.json())
+        .then(orders => {
+            const c = document.getElementById('ordersList');
+            c.innerHTML = orders.length ? orders.map(o => 
+                '<div class="admin-item"><span>' + o.order_number + '</span><span>' + o.status + '</span><span>' + o.total_amount + ' ₽</span></div>'
+            ).join('') : '<p>Нет заказов</p>';
+        });
+}
+
+function loadUsers() {
+    fetch('/api/admin/users')
+        .then(r => r.json())
+        .then(users => {
+            const c = document.getElementById('usersList');
+            c.innerHTML = users.map(u => 
+                '<div class="admin-item"><span>' + u.email + '</span><span>' + (u.first_name || '—') + '</span><span>' + u.role + '</span></div>'
+            ).join('');
+        });
+}
+
+function loadTrains() {
+    fetch('/api/admin/trains')
+        .then(r => r.json())
+        .then(trains => {
+            document.getElementById('trainsList').innerHTML = trains.length ? trains.map(t => '<div class="admin-item">' + t.number + ' — ' + t.name + '</div>').join('') : '<p>Нет данных</p>';
+        });
+}
+
+function loadStations() {
+    fetch('/api/admin/stations')
+        .then(r => r.json())
+        .then(s => {
+            document.getElementById('stationsList').innerHTML = s.map(st => '<div class="admin-item">' + st.name + ' (' + st.city + ')</div>').join('');
+        });
+}
+
+function loadAdminTickets() {
+    fetch('/api/admin/tickets')
+        .then(r => r.json())
+        .then(tickets => {
+            document.getElementById('adminTicketsList').innerHTML = tickets.length ? tickets.map(t => '<div class="admin-item">' + t.ticket_number + ' — ' + t.status + '</div>').join('') : '<p>Нет билетов</p>';
+        });
+}
+
+function loadAdmins() {
+    fetch('/api/admin/admins')
+        .then(r => r.json())
+        .then(admins => {
+            document.getElementById('adminsList').innerHTML = admins.map(a => '<div class="admin-item">' + a.email + ' — ' + a.role + '</div>').join('');
+        });
+}
+</script>
+{% endblock %}

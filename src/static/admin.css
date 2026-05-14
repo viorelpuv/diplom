@@ -1,0 +1,169 @@
+.admin-page {
+    background: #1E1E1E;
+    min-height: 100vh;
+    padding-top: 90px;
+}
+
+.admin-page__container {
+    display: flex;
+    max-width: 1440px;
+    margin: 0 auto;
+}
+
+.admin-page__sidebar {
+    flex: 0 0 260px;
+    background: #252525;
+    min-height: calc(100vh - 90px);
+    padding: 24px;
+}
+
+.admin-page__content {
+    flex: 1;
+    padding: 32px;
+    background: #1A1A1A;
+}
+
+.admin-sidebar__header {
+    margin-bottom: 24px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #333;
+}
+
+.admin-sidebar__title {
+    color: #fff;
+    font-family: 'Commissioner', sans-serif;
+    font-weight: 600;
+    font-size: 20px;
+    margin: 0 0 4px 0;
+}
+
+.admin-sidebar__role {
+    color: #4672FF;
+    font-family: 'Commissioner', sans-serif;
+    font-size: 13px;
+}
+
+.admin-sidebar__nav {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.admin-sidebar__link {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    border-radius: 12px;
+    color: #A3A3A3;
+    font-family: 'Commissioner', sans-serif;
+    font-size: 15px;
+    text-decoration: none;
+    transition: all 0.2s;
+}
+
+.admin-sidebar__link:hover,
+.admin-sidebar__link--active {
+    background: #333;
+    color: #fff;
+}
+
+.admin-sidebar__icon {
+    font-size: 16px;
+}
+
+.admin-tab__title {
+    color: #fff;
+    font-family: 'Commissioner', sans-serif;
+    font-weight: 600;
+    font-size: 28px;
+    margin: 0 0 24px 0;
+}
+
+.dashboard-cards {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+}
+
+.dashboard-card {
+    background: #252525;
+    border-radius: 20px;
+    padding: 24px;
+}
+
+.dashboard-card__value {
+    display: block;
+    color: #fff;
+    font-family: 'Commissioner', sans-serif;
+    font-weight: 700;
+    font-size: 32px;
+    margin-bottom: 4px;
+}
+
+.dashboard-card__label {
+    color: #A3A3A3;
+    font-family: 'Commissioner', sans-serif;
+    font-size: 14px;
+}
+
+.admin-item {
+    display: flex;
+    gap: 16px;
+    padding: 14px 18px;
+    background: #252525;
+    border-radius: 14px;
+    margin-bottom: 8px;
+    color: #fff;
+    font-family: 'Commissioner', sans-serif;
+    font-size: 14px;
+}
+
+.admin-form {
+    background: #252525;
+    border-radius: 20px;
+    padding: 24px;
+    max-width: 400px;
+}
+
+.admin-form__group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 16px;
+}
+
+.admin-form__label {
+    color: #A3A3A3;
+    font-family: 'Commissioner', sans-serif;
+    font-size: 14px;
+}
+
+.admin-form__input {
+    height: 48px;
+    background: #1A1A1A;
+    border: 1px solid #333;
+    border-radius: 12px;
+    padding: 0 14px;
+    color: #fff;
+    font-family: 'Commissioner', sans-serif;
+    font-size: 16px;
+    outline: none;
+}
+
+.admin-form__input:focus {
+    border-color: #4672FF;
+}
+
+.admin-form__submit {
+    height: 48px;
+    padding: 0 24px;
+    background: #4672FF;
+    border: none;
+    border-radius: 12px;
+    color: #fff;
+    font-family: 'Commissioner', sans-serif;
+    font-weight: 500;
+    font-size: 16px;
+    cursor: pointer;
+}
