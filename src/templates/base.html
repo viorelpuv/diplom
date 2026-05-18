@@ -221,7 +221,7 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(r => r.json())
         .then(data => {
             if (data.logged_in) {
-                updateProfileDropdown(data.email);
+                updateProfileDropdown(data.email, data.is_admin);
             }
         });
     
@@ -297,13 +297,16 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-function updateProfileDropdown(email) {
+function updateProfileDropdown(email, isAdmin) {
     const dropdown = document.getElementById('profileDropdown');
     if (!dropdown) return;
     
+    const profileLink = isAdmin ? '/admin' : '/profile';
+    const profileText = isAdmin ? 'Админ-панель' : 'Личный кабинет';
+    
     dropdown.innerHTML = 
         '<div class="profile-dropdown__item" style="font-weight:600; cursor:default; color:#4672FF;">' + email + '</div>' +
-        '<a href="/profile" class="profile-dropdown__item">Личный кабинет</a>' +
+        '<a href="' + profileLink + '" class="profile-dropdown__item">' + profileText + '</a>' +
         '<a href="#" class="profile-dropdown__item" onclick="logout()">Выйти</a>';
 }
 
@@ -329,8 +332,7 @@ function handleLogin(e) {
     .then(r => r.json())
     .then(data => {
         if (data.success) {
-            updateProfileDropdown(data.email);
-            closeModal('loginModal');
+            window.location.reload();
         } else {
             alert(data.message || 'Ошибка входа');
         }
@@ -356,8 +358,7 @@ function handleRegister(e) {
     .then(r => r.json())
     .then(data => {
         if (data.success) {
-            updateProfileDropdown(data.email);
-            closeModal('registerModal');
+            window.location.reload();
         } else {
             alert(data.message || 'Ошибка регистрации');
         }

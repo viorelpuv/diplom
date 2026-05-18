@@ -145,6 +145,7 @@ def init_db():
             ticket_number TEXT NOT NULL UNIQUE,
             refund_amount REAL,
             refunded_at TIMESTAMP,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
             FOREIGN KEY (trip_id) REFERENCES trips(id),
             FOREIGN KEY (seat_id) REFERENCES seats(id),
@@ -215,6 +216,29 @@ def init_db():
             expires_at TIMESTAMP NOT NULL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        );
+                         
+        CREATE TABLE IF NOT EXISTS promocodes (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            code TEXT NOT NULL UNIQUE,
+            discount_percent INTEGER DEFAULT 10,
+            discount_amount REAL DEFAULT 0,
+            min_order_amount REAL DEFAULT 0,
+            max_uses INTEGER DEFAULT 0,
+            used_count INTEGER DEFAULT 0,
+            is_active INTEGER DEFAULT 1,
+            expires_at TIMESTAMP,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+                         
+        CREATE TABLE IF NOT EXISTS admin_actions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            admin_id INTEGER NOT NULL,
+            action TEXT NOT NULL,
+            details TEXT,
+            ip_address TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (admin_id) REFERENCES users(id)
         );
 
         CREATE INDEX IF NOT EXISTS idx_orders_user ON orders(user_id);
@@ -1278,9 +1302,6 @@ def get_user_bonus(user_id):
         cursor.close()
         conn.close()
 
-
-# Добавь эти функции в database.py
-
 # ============================================
 # ADMIN
 # ============================================
@@ -1289,14 +1310,13 @@ def is_admin(user_id):
     conn = get_db()
     cursor = conn.cursor()
     try:
-        cursor.execute("SELECT role FROM users WHERE id = ?", (user_id,))
-        user = cursor.fetchone()
-        if not user or user['role'] not in ('admin', 'superadmin'):
-            return False, False
-        
         cursor.execute("SELECT is_superadmin FROM admins WHERE user_id = ?", (user_id,))
         admin = cursor.fetchone()
-        return True, bool(admin and admin['is_superadmin'])
+        
+        if not admin:
+            return False, False
+        
+        return True, bool(admin['is_superadmin'])
     finally:
         cursor.close()
         conn.close()
@@ -1343,11 +1363,10 @@ def get_all_orders(limit=50):
 
 
 def get_all_users(limit=100):
-    """Получает всех пользователей."""
     conn = get_db()
     cursor = conn.cursor()
     try:
-        cursor.execute("SELECT id, email, first_name, last_name, role, created_at FROM users ORDER BY created_at DESC LIMIT ?", (limit,))
+        cursor.execute("SELECT id, email, phone, first_name, last_name, COALESCE(is_active, 1) as is_active, created_at FROM users ORDER BY id ASC LIMIT ?", (limit,))
         return [dict(row) for row in cursor.fetchall()]
     finally:
         cursor.close()
@@ -1391,14 +1410,216 @@ def get_all_tickets(limit=100):
 
 
 def get_all_admins():
-    """Получает список всех админов."""
     conn = get_db()
     cursor = conn.cursor()
     try:
         cursor.execute("""
-            SELECT u.email, u.first_name, u.role, a.is_superadmin
-            FROM admins a JOIN users u ON a.user_id = u.id
+            SELECT a.id, a.user_id, a.is_superadmin, a.created_at,
+                   u.email, u.first_name, u.last_name
+            FROM admins a 
+            JOIN users u ON a.user_id = u.id
+            ORDER BY a.is_superadmin DESC
         """)
+        return [dict(row) for row in cursor.fetchall()]
+    finally:
+        cursor.close()
+        conn.close()
+
+# ============================================
+# PROMOCODES
+# ============================================
+def get_all_promocodes():
+    conn = get_db()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("SELECT * FROM promocodes ORDER BY created_at DESC")
+        return [dict(row) for row in cursor.fetchall()]
+    finally:
+        cursor.close()
+        conn.close()
+
+def create_promocode(code, discount_percent=10, discount_amount=0, min_order=0, max_uses=0, expires_at=None):
+    conn = get_db()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("""
+            INSERT INTO promocodes (code, discount_percent, discount_amount, min_order_amount, max_uses, expires_at)
+            VALUES (?, ?, ?, ?, ?, ?)
+        """, (code, discount_percent, discount_amount, min_order, max_uses, expires_at))
+        conn.commit()
+        return cursor.lastrowid
+    except Exception as e:
+        print(f"Ошибка создания промокода: {e}")
+        import traceback
+        traceback.print_exc()
+        conn.rollback()
+        return None
+    finally:
+        cursor.close()
+        conn.close()
+
+def delete_promocode(promo_id):
+    conn = get_db()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("DELETE FROM promocodes WHERE id = ?", (promo_id,))
+        conn.commit()
+        return True
+    except:
+        conn.rollback()
+        return False
+    finally:
+        cursor.close()
+        conn.close()
+
+# ============================================
+# ADMIN LOGS
+# ============================================
+def get_admin_logs(limit=50):
+    conn = get_db()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("""
+            SELECT lh.*, u.email 
+            FROM login_history lh 
+            JOIN users u ON lh.user_id = u.id 
+            JOIN admins a ON u.id = a.user_id 
+            ORDER BY lh.created_at DESC LIMIT ?
+        """, (limit,))
+        return [dict(row) for row in cursor.fetchall()]
+    finally:
+        cursor.close()
+        conn.close()
+
+# ============================================
+# ADMIN USERS MANAGEMENT
+# ============================================
+
+def toggle_user_active(user_id, is_active):
+    conn = get_db()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("UPDATE users SET is_active = ? WHERE id = ?", (is_active, user_id))
+        conn.commit()
+        return True
+    except:
+        conn.rollback()
+        return False
+    finally:
+        cursor.close()
+        conn.close()
+
+# ============================================
+# ADMIN ADMINS MANAGEMENT
+# ============================================
+def add_admin(user_id, permissions='["all"]', is_superadmin=0):
+    conn = get_db()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("""
+            INSERT OR REPLACE INTO admins (user_id, permissions, is_superadmin)
+            VALUES (?, ?, ?)
+        """, (user_id, permissions, is_superadmin))
+        conn.commit()
+        return True
+    except:
+        conn.rollback()
+        return False
+    finally:
+        cursor.close()
+        conn.close()
+
+def remove_admin(user_id):
+    conn = get_db()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("DELETE FROM admins WHERE user_id = ?", (user_id,))
+        conn.commit()
+        return True
+    except:
+        conn.rollback()
+        return False
+    finally:
+        cursor.close()
+        conn.close()
+
+# ============================================
+# REPORTS
+# ============================================
+def get_sales_report(start_date=None, end_date=None):
+    conn = get_db()
+    cursor = conn.cursor()
+    try:
+        query = """
+            SELECT date(o.created_at) as date, 
+                   COUNT(*) as tickets_sold, 
+                   SUM(t.price) as revenue
+            FROM tickets t
+            JOIN orders o ON t.order_id = o.id
+            WHERE 1=1
+        """
+        params = []
+        if start_date:
+            query += " AND date(o.created_at) >= ?"
+            params.append(start_date)
+        if end_date:
+            query += " AND date(o.created_at) <= ?"
+            params.append(end_date)
+        query += " GROUP BY date(o.created_at) ORDER BY date(o.created_at) DESC LIMIT 30"
+        cursor.execute(query, params)
+        return [dict(row) for row in cursor.fetchall()]
+    finally:
+        cursor.close()
+        conn.close()
+
+def get_tickets_by_date(date):
+    """Получает билеты за конкретную дату."""
+    conn = get_db()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("""
+            SELECT t.*, o.created_at as order_date,
+                   st_from.city as from_city, st_to.city as to_city,
+                   tr.departure_datetime as departure
+            FROM tickets t
+            JOIN orders o ON t.order_id = o.id
+            JOIN trips tr ON t.trip_id = tr.id
+            JOIN routes r ON tr.route_id = r.id
+            JOIN stations st_from ON r.departure_station_id = st_from.id
+            JOIN stations st_to ON r.arrival_station_id = st_to.id
+            WHERE date(o.created_at) = ?
+            ORDER BY o.created_at DESC
+        """, (date,))
+        return [dict(row) for row in cursor.fetchall()]
+    finally:
+        cursor.close()
+        conn.close()
+
+def save_admin_action(admin_id, action, details=None, ip_address=None):
+    conn = get_db()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("""
+            INSERT INTO admin_actions (admin_id, action, details, ip_address)
+            VALUES (?, ?, ?, ?)
+        """, (admin_id, action, details, ip_address))
+        conn.commit()
+    except:
+        conn.rollback()
+    finally:
+        cursor.close()
+        conn.close()
+
+def get_admin_actions(limit=100):
+    conn = get_db()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("""
+            SELECT aa.*, u.email 
+            FROM admin_actions aa 
+            JOIN users u ON aa.admin_id = u.id 
+            ORDER BY aa.created_at DESC LIMIT ?
+        """, (limit,))
         return [dict(row) for row in cursor.fetchall()]
     finally:
         cursor.close()

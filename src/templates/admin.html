@@ -110,20 +110,57 @@
             
             <!-- Отчёты -->
             <div class="admin-tab" id="tab-reports" style="display:none;">
-                <h2 class="admin-tab__title">Отчёты</h2>
-                <p>Раздел в разработке</p>
+                <h2 class="admin-tab__title">Отчёты по продажам</h2>
+                <div id="reportsList">Загрузка...</div>
             </div>
-            
+
             <!-- Промокоды -->
             <div class="admin-tab" id="tab-promo" style="display:none;">
                 <h2 class="admin-tab__title">Промокоды</h2>
-                <p>Раздел в разработке</p>
+                <form id="promoForm" class="admin-form" style="margin-bottom:20px;">
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+                        <div class="admin-form__group">
+                            <label class="admin-form__label">Код</label>
+                            <input type="text" class="admin-form__input" name="code" required placeholder="SUMMER2026">
+                        </div>
+                        <div class="admin-form__group">
+                            <label class="admin-form__label">Тип скидки</label>
+                            <div class="passenger-form__gender" id="discountType" style="height:48px;">
+                                <div class="passenger-form__gender-slider"></div>
+                                <button type="button" class="passenger-form__gender-btn passenger-form__gender-btn--active" data-type="percent">Процент</button>
+                                <button type="button" class="passenger-form__gender-btn" data-type="fixed">Фикс. цена</button>
+                            </div>
+                        </div>
+                        <div class="admin-form__group" id="percentGroup">
+                            <label class="admin-form__label">Скидка (%)</label>
+                            <input type="number" class="admin-form__input" name="discount_percent" value="10" min="1" max="100">
+                        </div>
+                        <div class="admin-form__group" id="fixedGroup" style="display:none;">
+                            <label class="admin-form__label">Скидка (₽)</label>
+                            <input type="number" class="admin-form__input" name="discount_amount" value="500" min="0">
+                        </div>
+                        <div class="admin-form__group">
+                            <label class="admin-form__label">Мин. сумма заказа (₽)</label>
+                            <input type="number" class="admin-form__input" name="min_order_amount" value="0" min="0">
+                        </div>
+                        <div class="admin-form__group">
+                            <label class="admin-form__label">Макс. использований (0 — безлимит)</label>
+                            <input type="number" class="admin-form__input" name="max_uses" value="0" min="0">
+                        </div>
+                        <div class="admin-form__group">
+                            <label class="admin-form__label">Действует до</label>
+                            <input type="date" class="admin-form__input" name="expires_at">
+                        </div>
+                    </div>
+                    <button type="submit" class="admin-form__submit" style="margin-top:16px;">Создать</button>
+                </form>
+                <div id="promoList">Загрузка...</div>
             </div>
-            
+
             <!-- Логи -->
             <div class="admin-tab" id="tab-logs" style="display:none;">
                 <h2 class="admin-tab__title">Логи</h2>
-                <p>Раздел в разработке</p>
+                <div id="logsList">Загрузка...</div>
             </div>
             
             <!-- Настройки -->
@@ -151,6 +188,9 @@
 document.addEventListener('DOMContentLoaded', function() {
     document.body.classList.add('admin-theme');
     
+    // Объявляем переменную ДО fetch
+    let isSuperAdmin = false;
+    
     // Проверка прав
     fetch('/api/admin/check')
         .then(r => r.json())
@@ -159,9 +199,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 window.location.href = '/';
                 return;
             }
+            isSuperAdmin = data.is_superadmin;
             document.querySelector('.admin-sidebar__role').textContent = data.is_superadmin ? 'Супер-админ' : 'Администратор';
             if (!data.is_superadmin) {
                 document.querySelector('[data-tab="admins"]').style.display = 'none';
+                document.querySelector('[data-tab="logs"]').style.display = 'none';
+                document.querySelector('[data-tab="settings"]').style.display = 'none';
             }
             loadDashboard();
         });
@@ -210,6 +253,15 @@ document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('.admin-sidebar__link').forEach(link => {
         link.addEventListener('click', function(e) {
             e.preventDefault();
+            
+            const tab = this.dataset.tab;
+            
+            // Проверка прав для защищённых вкладок
+            if ((tab === 'admins' || tab === 'logs' || tab === 'settings') && !isSuperAdmin) {
+                alert('Доступно только супер-админу');
+                return;
+            }
+            
             document.querySelectorAll('.admin-sidebar__link').forEach(l => l.classList.remove('admin-sidebar__link--active'));
             this.classList.add('admin-sidebar__link--active');
             document.querySelectorAll('.admin-tab').forEach(t => t.style.display = 'none');
@@ -223,6 +275,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 case 'stations': loadStations(); break;
                 case 'tickets': loadAdminTickets(); break;
                 case 'admins': loadAdmins(); break;
+                case 'reports': loadReports(); break;
+                case 'promo': loadPromocodes(); break;
+                case 'logs': loadLogs(); break;
+                case 'settings': loadSettings(); break;
             }
         });
     });
@@ -269,10 +325,187 @@ function loadUsers() {
         .then(r => r.json())
         .then(users => {
             const c = document.getElementById('usersList');
-            c.innerHTML = users.map(u => 
-                '<div class="admin-item"><span>' + u.email + '</span><span>' + (u.first_name || '—') + '</span><span>' + u.role + '</span></div>'
-            ).join('');
+            if (!users.length) {
+                c.innerHTML = '<p style="color:#A3A3A3;">Нет пользователей</p>';
+                return;
+            }
+            c.innerHTML = `
+                <table style="width:100%; border-collapse:collapse; color:#fff; font-family:'Commissioner',sans-serif; font-size:14px;">
+                    <thead>
+                        <tr style="border-bottom:1px solid #333;">
+                            <th style="padding:10px; text-align:left;">ID</th>
+                            <th style="padding:10px; text-align:left;">Email</th>
+                            <th style="padding:10px; text-align:left;">Имя</th>
+                            <th style="padding:10px; text-align:left;">Телефон</th>
+                            <th style="padding:10px; text-align:left;">Дата регистрации</th>
+                            <th style="padding:10px; text-align:left;">Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${users.map(u => `
+                            <tr style="border-bottom:1px solid #2A2A2A;">
+                                <td style="padding:10px;">${u.id}</td>
+                                <td style="padding:10px;">${u.email}</td>
+                                <td style="padding:10px;">
+                                    <span id="name-${u.id}">${u.first_name || '—'} ${u.last_name || ''}</span>
+                                </td>
+                                <td style="padding:10px;">
+                                    <span id="phone-${u.id}">${u.phone || '—'}</span>
+                                </td>
+                                <td style="padding:10px;">${new Date(u.created_at).toLocaleDateString('ru-RU')}</td>
+                                <td style="padding:10px;">
+                                    <button onclick="editUser(${u.id}, '${u.email}', '${u.first_name || ''}', '${u.last_name || ''}', '${u.phone || ''}')" style="background:#4672FF;color:#fff;border:none;padding:6px 10px;border-radius:6px;cursor:pointer;margin-right:5px;">
+                                        <img src="/static/icons/admin/users/edit_24dp_F3F3F3_FILL0_wght400_GRAD0_opsz24.svg" alt="Ред." style="width:16px;height:16px;vertical-align:middle;">
+                                    </button>
+                                    <button onclick="deleteUser(${u.id})" style="background:#C62828;color:#fff;border:none;padding:6px 10px;border-radius:6px;cursor:pointer;" class="delete-user-btn">
+                                        <img src="/static/icons/admin/users/delete_24dp_F3F3F3_FILL0_wght400_GRAD0_opsz24.svg" alt="Уд." style="width:16px;height:16px;vertical-align:middle;">
+                                    </button>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
         });
+}
+
+function editUser(userId, email, firstName, lastName, phone) {
+    // Загружаем полные данные пользователя
+    fetch('/api/admin/users/get?user_id=' + userId)
+        .then(r => r.json())
+        .then(user => {
+            if (!user || user.error) {
+                alert('Ошибка загрузки данных пользователя');
+                return;
+            }
+            
+            // Создаем модальное окно
+            const modal = document.createElement('div');
+            modal.className = 'admin-modal';
+            modal.innerHTML = `
+                <div class="admin-modal__overlay" onclick="this.parentElement.remove()"></div>
+                <div class="admin-modal__content">
+                    <div class="admin-modal__header">
+                        <h3 class="admin-modal__title">Редактирование пользователя #${userId}</h3>
+                        <button class="admin-modal__close" onclick="this.closest('.admin-modal').remove()">✕</button>
+                    </div>
+                    <form id="editUserForm" class="admin-form">
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; width:100%; box-sizing:border-box;">
+                            <div class="admin-form__group">
+                                <label class="admin-form__label">Email</label>
+                                <input type="email" class="admin-form__input" name="email" value="${user.email || ''}" required>
+                            </div>
+                            <div class="admin-form__group">
+                                <label class="admin-form__label">Телефон</label>
+                                <input type="text" class="admin-form__input" name="phone" value="${user.phone || ''}">
+                            </div>
+                            <div class="admin-form__group">
+                                <label class="admin-form__label">Имя</label>
+                                <input type="text" class="admin-form__input" name="first_name" value="${user.first_name || ''}">
+                            </div>
+                            <div class="admin-form__group">
+                                <label class="admin-form__label">Фамилия</label>
+                                <input type="text" class="admin-form__input" name="last_name" value="${user.last_name || ''}">
+                            </div>
+                            <div class="admin-form__group">
+                                <label class="admin-form__label">Отчество</label>
+                                <input type="text" class="admin-form__input" name="middle_name" value="${user.middle_name || ''}">
+                            </div>
+                            <div class="admin-form__group">
+                                <label class="admin-form__label">Дата рождения</label>
+                                <input type="date" class="admin-form__input" name="birth_date" value="${user.birth_date || ''}">
+                            </div>
+                            <div class="admin-form__group">
+                                <label class="admin-form__label">Тип документа</label>
+                                <select class="admin-form__input" name="document_type" style="height:48px;">
+                                    <option value="">Не указан</option>
+                                    <option value="passport_rf" ${user.document_type === 'passport_rf' ? 'selected' : ''}>Паспорт РФ</option>
+                                    <option value="passport_foreign" ${user.document_type === 'passport_foreign' ? 'selected' : ''}>Загранпаспорт</option>
+                                    <option value="birth_certificate" ${user.document_type === 'birth_certificate' ? 'selected' : ''}>Свидетельство о рождении</option>
+                                    <option value="military_id" ${user.document_type === 'military_id' ? 'selected' : ''}>Военный билет</option>
+                                    <option value="other" ${user.document_type === 'other' ? 'selected' : ''}>Другой документ</option>
+                                </select>
+                            </div>
+                            <div class="admin-form__group">
+                                <label class="admin-form__label">Номер документа</label>
+                                <input type="text" class="admin-form__input" name="document_number" value="${user.document_number || ''}">
+                            </div>
+                            <div class="admin-form__group">
+                                <label class="admin-form__label">Бонусные баллы</label>
+                                <input type="number" class="admin-form__input" name="bonus_points" value="${user.bonus_points || 0}" min="0">
+                            </div>
+                            <div class="admin-form__group">
+                                <label class="admin-form__label">Уровень лояльности</label>
+                                <select class="admin-form__input" name="loyalty_level" style="height:48px;">
+                                    <option value="none" ${user.loyalty_level === 'none' ? 'selected' : ''}>Нет</option>
+                                    <option value="silver" ${user.loyalty_level === 'silver' ? 'selected' : ''}>Silver</option>
+                                    <option value="gold" ${user.loyalty_level === 'gold' ? 'selected' : ''}>Gold</option>
+                                    <option value="platinum" ${user.loyalty_level === 'platinum' ? 'selected' : ''}>Platinum</option>
+                                </select>
+                            </div>
+                        </div>
+                        <button type="submit" class="admin-form__submit" style="margin-top:16px;">Сохранить изменения</button>
+                    </form>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            
+            // Обработчик отправки формы
+            document.getElementById('editUserForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                const formData = new FormData(this);
+                const data = Object.fromEntries(formData);
+                data.user_id = userId;
+                data.bonus_points = parseInt(data.bonus_points) || 0;
+                
+                fetch('/api/admin/users/update', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(data)
+                }).then(r => r.json()).then(d => {
+                    if (d.success) {
+                        document.getElementById('name-' + userId).textContent = 
+                            (data.first_name || '—') + ' ' + (data.last_name || '');
+                        document.getElementById('phone-' + userId).textContent = data.phone || '—';
+                        modal.remove();
+                        alert('Пользователь обновлён');
+                    } else {
+                        alert(d.message || 'Ошибка обновления');
+                    }
+                });
+            });
+            
+            // Закрытие по Escape
+            const escHandler = function(e) {
+                if (e.key === 'Escape') {
+                    modal.remove();
+                    document.removeEventListener('keydown', escHandler);
+                }
+            };
+            document.addEventListener('keydown', escHandler);
+        })
+        .catch(() => alert('Ошибка загрузки данных'));
+}
+
+function toggleUserBlock(userId, isActive) {
+    fetch('/api/admin/users/update', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({user_id: userId, is_active: isActive})
+    }).then(() => loadUsers());
+}
+
+function deleteUser(userId) {
+    if (!confirm('Удалить пользователя навсегда?')) return;
+    fetch('/api/admin/users/delete', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({user_id: userId})
+    }).then(r => r.json()).then(d => {
+        if (d.success) loadUsers();
+        else alert('Ошибка удаления');
+    });
 }
 
 function loadTrains() {
@@ -303,8 +536,584 @@ function loadAdmins() {
     fetch('/api/admin/admins')
         .then(r => r.json())
         .then(admins => {
-            document.getElementById('adminsList').innerHTML = admins.map(a => '<div class="admin-item">' + a.email + ' — ' + a.role + '</div>').join('');
+            const c = document.getElementById('adminsList');
+            if (!admins.length) {
+                c.innerHTML = '<p style="color:#A3A3A3;">Нет администраторов</p>';
+                return;
+            }
+            c.innerHTML = `
+                <div style="margin-bottom:20px;">
+                    <button onclick="showAddAdminForm()" style="background:#4672FF;color:#fff;border:none;padding:10px 20px;border-radius:8px;cursor:pointer;font-size:14px;">
+                        + Добавить администратора
+                    </button>
+                </div>
+                <table style="width:100%; border-collapse:collapse; color:#fff; font-family:'Commissioner',sans-serif; font-size:14px;">
+                    <thead>
+                        <tr style="border-bottom:1px solid #333;">
+                            <th style="padding:10px; text-align:left;">ID</th>
+                            <th style="padding:10px; text-align:left;">Email</th>
+                            <th style="padding:10px; text-align:left;">Имя</th>
+                            <th style="padding:10px; text-align:left;">Роль</th>
+                            <th style="padding:10px; text-align:left;">Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${admins.map(a => `
+                            <tr style="border-bottom:1px solid #2A2A2A;">
+                                <td style="padding:10px;">${a.id}</td>
+                                <td style="padding:10px;">${a.email}</td>
+                                <td style="padding:10px;">${a.first_name || '—'}</td>
+                                <td style="padding:10px;">
+                                    <span style="color:${a.is_superadmin ? '#FFD700' : '#4672FF'};">
+                                        ${a.is_superadmin ? 'Супер-админ' : 'Администратор'}
+                                    </span>
+                                </td>
+                                <td style="padding:10px;">
+                                    ${!a.is_superadmin ? `
+                                        <button onclick="toggleAdminRole(${a.user_id}, true)" style="background:#31BD24;color:#1E1E1E;border:none;padding:6px 10px;border-radius:6px;cursor:pointer;margin-right:5px;" title="Сделать супер-админом">
+                                            <img src="/static/icons/admin/admins/keyboard_double_arrow_down_24dp_F3F3F3_FILL0_wght400_GRAD0_opsz24.svg" alt="Уд." style="width:20px;height:20px;vertical-align:middle; transform: rotate(180deg);">
+                                        </button>
+                                        <button onclick="removeAdmin(${a.user_id})" style="background:#C62828;color:#fff;border:none;padding:6px 10px;border-radius:6px;cursor:pointer;" title="Удалить админа">
+                                            <img src="/static/icons/admin/users/delete_24dp_F3F3F3_FILL0_wght400_GRAD0_opsz24.svg" alt="Уд." style="width:16px;height:16px;vertical-align:middle;">
+                                        </button>
+                                    ` : `
+                                        <button onclick="toggleAdminRole(${a.user_id}, false)" style="background:#E89313;color:#fff;border:none;padding:6px 10px;border-radius:6px;cursor:pointer;" title="Понизить до админа">
+                                            <img src="/static/icons/admin/admins/keyboard_double_arrow_down_24dp_F3F3F3_FILL0_wght400_GRAD0_opsz24.svg" alt="Уд." style="width:20px;height:20px;vertical-align:middle;">
+                                        </button>
+                                    `}
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
         });
+}
+
+function showAddAdminForm() {
+    const email = prompt('Введите email пользователя для добавления в админы:');
+    if (!email) return;
+    
+    const isSuper = confirm('Сделать супер-админом? (Отмена — обычный админ)');
+    
+    // Сначала ищем пользователя по email
+    fetch('/api/admin/users')
+        .then(r => r.json())
+        .then(users => {
+            const user = users.find(u => u.email === email);
+            if (!user) {
+                alert('Пользователь с таким email не найден');
+                return;
+            }
+            
+            fetch('/api/admin/admins/add', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    user_id: user.id,
+                    is_superadmin: isSuper ? 1 : 0,
+                    permissions: '["all"]'
+                })
+            }).then(r => r.json()).then(d => {
+                if (d.success) {
+                    alert('Администратор добавлен');
+                    loadAdmins();
+                } else {
+                    alert(d.message || 'Ошибка добавления');
+                }
+            });
+        });
+}
+
+function toggleAdminRole(userId, makeSuper) {
+    const action = makeSuper ? 'повысить до супер-админа' : 'понизить до админа';
+    if (!confirm(`Вы уверены, что хотите ${action}?`)) return;
+    
+    // Сначала получаем email пользователя
+    fetch('/api/admin/users/get?user_id=' + userId)
+        .then(r => r.json())
+        .then(user => {
+            const email = user.email || 'User ' + userId;
+            
+            return fetch('/api/admin/admins/add', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    user_id: userId,
+                    is_superadmin: makeSuper ? 1 : 0,
+                    permissions: '["all"]'
+                })
+            }).then(r => r.json()).then(d => {
+                if (d.success) {
+                    alert('Роль обновлена');
+                    loadAdmins();
+                } else {
+                    alert(d.message || 'Ошибка обновления роли');
+                }
+            });
+        });
+}
+
+function removeAdmin(userId) {
+    if (!confirm('Удалить администратора? Пользователь останется в системе, но потеряет права админа.')) return;
+    
+    fetch('/api/admin/admins/remove', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({user_id: userId})
+    }).then(r => r.json()).then(d => {
+        if (d.success) {
+            alert('Администратор удалён');
+            loadAdmins();
+        } else {
+            alert(d.message || 'Ошибка удаления');
+        }
+    });
+}
+
+function loadReports() {
+    fetch('/api/admin/reports/sales')
+        .then(r => r.json())
+        .then(data => {
+            const c = document.getElementById('reportsList');
+            if (!data.length) {
+                c.innerHTML = '<p style="color:#A3A3A3;">Нет данных о продажах</p>';
+                return;
+            }
+            
+            let totalRevenue = 0;
+            let totalTickets = 0;
+            
+            c.innerHTML = `
+                <div style="margin-bottom:20px; display:flex; gap:20px;">
+                    <div class="dashboard-card" style="flex:1;">
+                        <span class="dashboard-card__value" style="font-size:24px;" id="totalTickets">—</span>
+                        <span class="dashboard-card__label">Продано билетов</span>
+                    </div>
+                    <div class="dashboard-card" style="flex:1;">
+                        <span class="dashboard-card__value" style="font-size:24px;" id="totalRevenue">—</span>
+                        <span class="dashboard-card__label">Общая выручка</span>
+                    </div>
+                </div>
+                <div style="margin-bottom:16px; display:flex; justify-content:space-between; align-items:center;">
+                    <h3 style="color:#fff; margin:0; font-size:16px;">Детализация по дням</h3>
+                    <button onclick="downloadReportsCSV()" style="background:#4672FF;color:#fff;border:none;padding:8px 16px;border-radius:8px;cursor:pointer;font-size:13px;font-family:'Commissioner',sans-serif; display: flex; align-items: center">
+                        <img src="/static/icons/admin/reports/download_24dp_F3F3F3_FILL0_wght400_GRAD0_opsz24.svg" alt="CSV" style="width:20px;height:20px;vertical-align:middle; margin-right: 5px">Скачать CSV
+                    </button>
+                </div>
+                <table style="width:100%; border-collapse:collapse; color:#fff; font-family:'Commissioner',sans-serif; font-size:14px;">
+                    <thead>
+                        <tr style="border-bottom:1px solid #333;">
+                            <th style="padding:10px; text-align:left; width:30px;"></th>
+                            <th style="padding:10px; text-align:left;">Дата</th>
+                            <th style="padding:10px; text-align:left;">Билетов</th>
+                            <th style="padding:10px; text-align:left;">Выручка</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${data.map((d) => {
+                            totalRevenue += d.revenue;
+                            totalTickets += d.tickets_sold;
+                            return `
+                                <tr style="border-bottom:1px solid #2A2A2A; cursor:pointer;" onclick="toggleDayDetails('${d.date}', this)">
+                                    <td style="padding:10px;">
+                                        <span class="expand-arrow" style="display:inline-flex; align-items:center; justify-content:center; width:20px; height:20px; font-size:16px; transition:transform 0.2s ease;">›</span>
+                                    </td>
+                                    <td style="padding:10px;">${d.date}</td>
+                                    <td style="padding:10px;">${d.tickets_sold}</td>
+                                    <td style="padding:10px;">${d.revenue.toLocaleString('ru-RU')} ₽</td>
+                                </tr>
+                                <tr class="day-details" data-date="${d.date}" style="display:none;">
+                                    <td colspan="4" style="padding:0;">
+                                        <div style="background:#1A1A1A; padding:16px; border-radius:8px; margin:8px 0;">
+                                            <p style="color:#A3A3A3;">Загрузка...</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            `;
+                        }).join('')}
+                    </tbody>
+                </table>
+            `;
+            
+            document.getElementById('totalTickets').textContent = totalTickets;
+            document.getElementById('totalRevenue').textContent = totalRevenue.toLocaleString('ru-RU') + ' ₽';
+            
+            // Сохраняем данные для CSV
+            window.reportsData = data;
+        });
+}
+
+function downloadReportsCSV() {
+    if (!window.reportsData || !window.reportsData.length) {
+        alert('Нет данных для скачивания');
+        return;
+    }
+    
+    // Собираем все билеты за все дни
+    const allDates = window.reportsData.map(d => d.date);
+    let allTickets = [];
+    let fetched = 0;
+    
+    // Загружаем билеты за каждый день
+    Promise.all(allDates.map(date => 
+        fetch('/api/admin/reports/tickets-by-date?date=' + date)
+            .then(r => r.json())
+            .then(tickets => {
+                tickets.forEach(t => {
+                    allTickets.push({
+                        date: date,
+                        ticket_number: t.ticket_number || '',
+                        from_city: t.from_city || '',
+                        to_city: t.to_city || '',
+                        departure: t.departure || '',
+                        price: t.price || 0
+                    });
+                });
+            })
+    )).then(() => {
+        // Формируем CSV
+        let csv = '\uFEFF'; // BOM для Excel
+        csv += 'Дата;Номер билета;Откуда;Куда;Отправление;Цена\n';
+        
+        allTickets.forEach(t => {
+            csv += [
+                t.date,
+                t.ticket_number,
+                t.from_city,
+                t.to_city,
+                t.departure,
+                t.price
+            ].join(';') + '\n';
+        });
+        
+        // Итоги
+        csv += '\n';
+        csv += 'Итого по дням:\n';
+        csv += 'Дата;Продано билетов;Выручка\n';
+        window.reportsData.forEach(d => {
+            csv += [d.date, d.tickets_sold, d.revenue].join(';') + '\n';
+        });
+        
+        const totalTickets = window.reportsData.reduce((sum, d) => sum + d.tickets_sold, 0);
+        const totalRevenue = window.reportsData.reduce((sum, d) => sum + d.revenue, 0);
+        csv += `ИТОГО;${totalTickets};${totalRevenue}\n`;
+        
+        // Скачиваем
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `отчёт_продажи_${new Date().toISOString().slice(0, 10)}.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
+    }).catch(() => {
+        alert('Ошибка при формировании отчёта');
+    });
+}
+
+// Функция сворачивания/разворачивания дня
+function toggleDayDetails(date, row) {
+    const detailsRow = row.nextElementSibling;
+    const arrow = row.querySelector('.expand-arrow');
+    
+    if (detailsRow.style.display === 'none' || !detailsRow.style.display) {
+        // Загружаем билеты за день
+        fetch('/api/admin/reports/tickets-by-date?date=' + date)
+            .then(r => r.json())
+            .then(tickets => {
+                const container = detailsRow.querySelector('div');
+                if (tickets && tickets.length) {
+                    container.innerHTML = tickets.map(t => {
+                        // Убираем дублирование префикса BRT-
+                        let ticketNum = (t.ticket_number || '—');
+                        // Если номер начинается с BRT- и отображается как BRT-BRT-, убираем лишнее
+                        if (ticketNum.startsWith('BRT-BRT-')) {
+                            ticketNum = ticketNum.substring(4); // Убираем первый BRT-
+                        }
+                        
+                        return '<div class="admin-item" style="background:#252525; margin-bottom:4px; display: flex; justify-content: space-between; padding: 15px 30px 15px 30px">' +
+                            '<span>' + ticketNum + '</span>' +
+                            '<span>' + (t.from_city || '—') + ' → ' + (t.to_city || '—') + '</span>' +
+                            '<span>' + (t.departure || '—') + '</span>' +
+                            '<span>' + (t.price || 0).toLocaleString('ru-RU') + ' ₽</span>' +
+                        '</div>';
+                    }).join('');
+                } else {
+                    container.innerHTML = '<p style="color:#A3A3A3;">Билеты не найдены</p>';
+                }
+            })
+            .catch(() => {
+                detailsRow.querySelector('div').innerHTML = '<p style="color:#A3A3A3;">Ошибка загрузки</p>';
+            });
+        
+        detailsRow.style.display = 'table-row';
+        arrow.style.transform = 'rotate(90deg)';
+    } else {
+        detailsRow.style.display = 'none';
+        arrow.style.transform = 'rotate(0deg)';
+    }
+}
+
+function loadLogs() {
+    fetch('/api/admin/logs')
+        .then(r => r.json())
+        .then(data => {
+            const c = document.getElementById('logsList');
+            if (!data.length) {
+                c.innerHTML = '<p style="color:#A3A3A3;">Нет записей</p>';
+                return;
+            }
+            c.innerHTML = `
+                <table style="width:100%; border-collapse:collapse; color:#fff; font-family:'Commissioner',sans-serif; font-size:14px;">
+                    <thead>
+                        <tr style="border-bottom:1px solid #333;">
+                            <th style="padding:10px; text-align:left;">Админ</th>
+                            <th style="padding:10px; text-align:left;">Действие</th>
+                            <th style="padding:10px; text-align:left;">Детали</th>
+                            <th style="padding:10px; text-align:left;">IP</th>
+                            <th style="padding:10px; text-align:left;">Дата</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${data.map(l => `
+                            <tr style="border-bottom:1px solid #2A2A2A;">
+                                <td style="padding:10px;">${l.email || '—'}</td>
+                                <td style="padding:10px;">${getActionLabel(l.action)}</td>
+                                <td style="padding:10px;">${l.details || '—'}</td>
+                                <td style="padding:10px;">${l.ip_address || '—'}</td>
+                                <td style="padding:10px;">${new Date(l.created_at).toLocaleString('ru-RU')}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+        });
+}
+
+function getActionLabel(action) {
+    const labels = {
+        'create_promo': '🎁 Создал промокод',
+        'delete_promo': '🗑️ Удалил промокод',
+        'toggle_user': '👤 Изменил статус пользователя',
+        'edit_user': '✏️ Изменил пользователя',
+        'delete_user': '❌ Удалил пользователя',
+        'add_admin': '🔐 Добавил админа',
+        'remove_admin': '🔓 Удалил админа',
+        'update_settings': '⚙️ Изменил сервисный сбор',
+        'create_user': '➕ Создал пользователя'
+    };
+    return labels[action] || action;
+}
+
+function loadPromocodes() {
+    fetch('/api/admin/promocodes')
+        .then(r => r.json())
+        .then(data => {
+            const c = document.getElementById('promoList');
+            if (!data.length) {
+                c.innerHTML = '<p style="color:#A3A3A3;">Нет промокодов</p>';
+                return;
+            }
+            c.innerHTML = `
+                <table style="width:100%; border-collapse:collapse; color:#fff; font-family:'Commissioner',sans-serif; font-size:14px;">
+                    <thead>
+                        <tr style="border-bottom:1px solid #333;">
+                            <th style="padding:10px; text-align:left;">Код</th>
+                            <th style="padding:10px; text-align:left;">Скидка</th>
+                            <th style="padding:10px; text-align:left;">Мин. заказ</th>
+                            <th style="padding:10px; text-align:left;">Исп./Лимит</th>
+                            <th style="padding:10px; text-align:left;">Статус</th>
+                            <th style="padding:10px; text-align:left;">Действует до</th>
+                            <th style="padding:10px; text-align:left;"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${data.map(p => `
+                            <tr style="border-bottom:1px solid #2A2A2A;">
+                                <td style="padding:10px; font-weight:600;">${p.code}</td>
+                                <td style="padding:10px;">${p.discount_percent ? p.discount_percent + '%' : p.discount_amount.toLocaleString('ru-RU') + ' ₽'}</td>
+                                <td style="padding:10px;">${p.min_order_amount > 0 ? p.min_order_amount.toLocaleString('ru-RU') + ' ₽' : '—'}</td>
+                                <td style="padding:10px;">${p.used_count}/${p.max_uses || '∞'}</td>
+                                <td style="padding:10px;">
+                                    <span style="color:${p.is_active ? '#4CAF50' : '#C62828'};">${p.is_active ? 'Активен' : 'Неактивен'}</span>
+                                </td>
+                                <td style="padding:10px;">${p.expires_at ? new Date(p.expires_at).toLocaleDateString('ru-RU') : '—'}</td>
+                                <td style="padding:10px;">
+                                    <button onclick="deletePromo(${p.id})" style="background:#C62828;color:#fff;border:none;padding:6px 10px;border-radius:6px;cursor:pointer;">
+                                        <img src="/static/icons/admin/users/delete_24dp_F3F3F3_FILL0_wght400_GRAD0_opsz24.svg" alt="Уд." style="width:16px;height:16px;vertical-align:middle;">
+                                    </button>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+        });
+    
+    // Переключатель типа скидки
+    const discountType = document.getElementById('discountType');
+    if (discountType) {
+        discountType.addEventListener('click', function(e) {
+            if (e.target.classList.contains('passenger-form__gender-btn')) {
+                discountType.querySelectorAll('.passenger-form__gender-btn').forEach(b => b.classList.remove('passenger-form__gender-btn--active'));
+                e.target.classList.add('passenger-form__gender-btn--active');
+                discountType.querySelector('.passenger-form__gender-slider').classList.toggle('passenger-form__gender-slider--right', e.target.dataset.type === 'fixed');
+                
+                document.getElementById('percentGroup').style.display = e.target.dataset.type === 'fixed' ? 'none' : 'block';
+                document.getElementById('fixedGroup').style.display = e.target.dataset.type === 'fixed' ? 'block' : 'none';
+            }
+        });
+    }
+    
+    document.getElementById('promoForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+        const data = Object.fromEntries(formData);
+        const activeType = discountType.querySelector('.passenger-form__gender-btn--active').dataset.type;
+        
+        if (activeType === 'percent') {
+            data.discount_amount = 0;
+        } else {
+            data.discount_percent = 0;
+        }
+        
+        data.discount_percent = parseInt(data.discount_percent) || 0;
+        data.discount_amount = parseInt(data.discount_amount) || 0;
+        data.min_order_amount = parseInt(data.min_order_amount) || 0;
+        data.max_uses = parseInt(data.max_uses) || 0;
+        
+        fetch('/api/admin/promocodes/create', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(data)
+        }).then(r => r.json()).then(d => {
+            if (d.success) {
+                // Сбрасываем только текстовые поля, не трогая тип скидки
+                document.querySelector('#promoForm [name="code"]').value = '';
+                document.querySelector('#promoForm [name="discount_percent"]').value = '10';
+                document.querySelector('#promoForm [name="discount_amount"]').value = '500';
+                document.querySelector('#promoForm [name="min_order_amount"]').value = '0';
+                document.querySelector('#promoForm [name="max_uses"]').value = '0';
+                document.querySelector('#promoForm [name="expires_at"]').value = '';
+                loadPromocodes();
+            } else {
+                alert(d.message || 'Ошибка создания');
+            }
+        });
+    });
+}
+
+function deletePromo(id) {
+    if (!confirm('Удалить промокод?')) return;
+    fetch('/api/admin/promocodes/delete', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({id: id})
+    }).then(r => r.json()).then(d => {
+        if (d.success) loadPromocodes();
+        else alert('Ошибка удаления');
+    });
+}
+
+function loadSettings() {
+    fetch('/api/admin/settings/get')
+        .then(r => r.json())
+        .then(data => {
+            if (data && data.service_fee) {
+                document.querySelector('#settingsForm [name="service_fee"]').value = data.service_fee;
+            }
+        });
+}
+
+function showAddAdminForm() {
+    // Создаем модальное окно
+    const modal = document.createElement('div');
+    modal.className = 'admin-modal';
+    modal.innerHTML = `
+        <div class="admin-modal__overlay" onclick="this.parentElement.remove()"></div>
+        <div class="admin-modal__content">
+            <div class="admin-modal__header">
+                <h3 class="admin-modal__title">Добавить администратора</h3>
+                <button class="admin-modal__close" onclick="this.closest('.admin-modal').remove()">✕</button>
+            </div>
+            <form id="addAdminForm" class="admin-form">
+                <div class="admin-form__group">
+                    <label class="admin-form__label">Email</label>
+                    <input type="email" class="admin-form__input" name="email" required placeholder="admin@example.com">
+                </div>
+                <div class="admin-form__group">
+                    <label class="admin-form__label">Имя</label>
+                    <input type="text" class="admin-form__input" name="first_name" placeholder="Имя администратора">
+                </div>
+                <div class="admin-form__group">
+                    <label class="admin-form__label">Пароль</label>
+                    <input type="password" class="admin-form__input" name="password" required placeholder="Придумайте пароль" minlength="6">
+                </div>
+                <div class="admin-form__group">
+                    <label class="admin-form__label" style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+                        <input type="checkbox" name="is_superadmin" value="1" style="width:18px;height:18px;accent-color:#4672FF;">
+                        Сделать супер-админом
+                    </label>
+                </div>
+                <button type="submit" class="admin-form__submit" style="margin-top:16px;">Добавить</button>
+            </form>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Обработчик отправки формы
+    document.getElementById('addAdminForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+        const data = Object.fromEntries(formData);
+        data.is_superadmin = data.is_superadmin === '1' ? 1 : 0;
+        
+        // Используем новый маршрут — не входим в аккаунт
+        fetch('/api/admin/users/create', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                email: data.email,
+                password: data.password,
+                first_name: data.first_name
+            })
+        }).then(r => r.json()).then(d => {
+            if (!d.success) {
+                throw new Error(d.message || 'Ошибка создания пользователя');
+            }
+            // Добавляем админа
+            return fetch('/api/admin/admins/add', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    user_id: d.user_id,
+                    is_superadmin: data.is_superadmin,
+                    permissions: '["all"]'
+                })
+            });
+        }).then(r => r.json()).then(d => {
+            if (d.success) {
+                alert('Администратор добавлен');
+                modal.remove();
+                loadAdmins();
+            } else {
+                alert(d.message || 'Ошибка добавления');
+            }
+        }).catch(err => {
+            alert('Ошибка: ' + err.message);
+        });
+    });
+    
+    // Закрытие по Escape
+    const escHandler = function(e) {
+        if (e.key === 'Escape') {
+            modal.remove();
+            document.removeEventListener('keydown', escHandler);
+        }
+    };
+    document.addEventListener('keydown', escHandler);
 }
 </script>
 {% endblock %}

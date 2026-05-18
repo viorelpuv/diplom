@@ -14,7 +14,10 @@ from utils.database.database import (
     get_user_login_history, get_user_bonus,
     is_admin, get_dashboard_stats, get_all_orders,
     get_all_users, get_all_trains, get_all_stations,
-    get_all_tickets, get_all_admins
+    get_all_tickets, get_all_admins, delete_promocode, 
+    get_admin_logs, toggle_user_active, add_admin, remove_admin, 
+    get_sales_report, get_all_promocodes, create_promocode,
+    get_tickets_by_date, save_admin_action, get_admin_actions
 )
 
 app = Flask(__name__)
@@ -666,8 +669,6 @@ def test_db():
     return result
 
 
-# В app.py — обнови api_login и api_register
-
 @app.route('/api/login', methods=['POST'])
 def api_login():
     data = request.get_json()
@@ -687,11 +688,9 @@ def api_login():
         save_login_history(user_id, request.remote_addr, request.headers.get('User-Agent'), True)
         
         resp = make_response({'success': True, 'user_id': user_id, 'email': email})
-        # Сессионные куки (24 часа)
         resp.set_cookie('brt_user_id', str(user_id), max_age=86400, path='/', samesite='Lax')
         resp.set_cookie('brt_user_email', email, max_age=86400, path='/', samesite='Lax')
         resp.set_cookie('brt_logged_in', '1', max_age=86400, path='/', samesite='Lax')
-        # Куки для автозаполнения формы входа (30 дней)
         resp.set_cookie('brt_saved_email', email, max_age=2592000, path='/', samesite='Lax')
         resp.set_cookie('brt_saved_password', password, max_age=2592000, path='/', samesite='Lax')
         return resp
@@ -731,11 +730,9 @@ def api_register():
 @app.route('/api/logout', methods=['POST'])
 def api_logout():
     resp = make_response({'success': True})
-    # Удаляем сессионные куки
     resp.delete_cookie('brt_user_id', path='/')
     resp.delete_cookie('brt_user_email', path='/')
     resp.delete_cookie('brt_logged_in', path='/')
-    # Сохранённые куки НЕ удаляем — чтобы автозаполнение работало
     return resp
 
 
@@ -746,8 +743,15 @@ def api_user_status():
     logged_in = request.cookies.get('brt_logged_in')
     
     if logged_in == '1' and user_id and email:
-        return {'logged_in': True, 'user_id': int(user_id), 'email': email}
-    return {'logged_in': False}
+        is_admin_user, is_super = is_admin(int(user_id))
+        return {
+            'logged_in': True, 
+            'user_id': int(user_id), 
+            'email': email,
+            'is_admin': is_admin_user,
+            'is_superadmin': is_super
+        }
+    return {'logged_in': False, 'is_admin': False}
 
 
 @app.route('/profile')
@@ -760,7 +764,6 @@ def api_profile(user_id):
     if not user:
         return {'error': 'Пользователь не найден'}, 404
     
-    # Возвращаем только непустые поля
     result = {}
     for key in ['id', 'email', 'phone', 'first_name', 'last_name', 'middle_name', 
                 'birth_date', 'gender', 'citizenship', 'bonus_points', 'loyalty_level']:
@@ -834,6 +837,170 @@ def api_admin_check():
     is_admin_user, is_super = is_admin(int(user_id))
     return {'is_admin': is_admin_user, 'is_superadmin': is_super}
 
+@app.route('/api/admin/promocodes')
+def api_admin_promocodes():
+    return get_all_promocodes()
+
+@app.route('/api/admin/promocodes/create', methods=['POST'])
+def api_admin_create_promocode():
+    data = request.get_json()
+    code = data.get('code')
+    if not code:
+        return {'success': False, 'message': 'Введите код'}
+    
+    promo_id = create_promocode(
+        code=code,
+        discount_percent=int(data.get('discount_percent', 0) or 0),
+        discount_amount=int(data.get('discount_amount', 0) or 0),
+        min_order=int(data.get('min_order_amount', 0) or 0),
+        max_uses=int(data.get('max_uses', 0) or 0),
+        expires_at=data.get('expires_at') or None
+    )
+    
+    if promo_id:
+        admin_id = request.cookies.get('brt_user_id', 0)
+        save_admin_action(int(admin_id), 'create_promo', f'Создан промокод {code}', request.remote_addr)
+        return {'success': True}
+    return {'success': False, 'message': 'Ошибка создания'}
+
+@app.route('/api/admin/promocodes/delete', methods=['POST'])
+def api_admin_delete_promocode():
+    data = request.get_json()
+    promo_id = data.get('id', 0)
+    result = delete_promocode(promo_id)
+    if result:
+        save_admin_action(int(request.cookies.get('brt_user_id', 0)), 'delete_promo', f'Удалён промокод #{promo_id}', request.remote_addr)
+    return {'success': result}
+
+@app.route('/api/admin/logs')
+def api_admin_logs():
+    return get_admin_actions()
+
+@app.route('/api/admin/users/update', methods=['POST'])
+def api_admin_update_user():
+    data = request.get_json()
+    user_id = data.get('user_id')
+    
+    if not user_id:
+        return {'success': False, 'message': 'user_id не указан'}
+    
+    from utils.database.database import get_db
+    conn = get_db()
+    cursor = conn.cursor()
+    
+    try:
+        fields = []
+        values = []
+        
+        # Разрешенные для обновления поля
+        allowed_fields = [
+            'email', 'phone', 'first_name', 'last_name', 'middle_name',
+            'birth_date', 'document_type', 'document_number', 
+            'bonus_points', 'loyalty_level', 'language', 'currency'
+        ]
+        
+        for field in allowed_fields:
+            if field in data:
+                fields.append(f"{field} = ?")
+                values.append(data[field])
+        
+        if not fields:
+            return {'success': False, 'message': 'Нет полей для обновления'}
+        
+        # Добавляем обновление времени
+        fields.append("updated_at = datetime('now')")
+        values.append(user_id)
+        
+        query = f"UPDATE users SET {', '.join(fields)} WHERE id = ?"
+        cursor.execute(query, values)
+        conn.commit()
+        
+        # Логируем действие
+        admin_id = request.cookies.get('brt_user_id', 0)
+        changes = ', '.join(allowed_fields)
+        save_admin_action(
+            int(admin_id), 
+            'edit_user', 
+            f'Пользователь #{user_id} обновлён. Поля: {changes}', 
+            request.remote_addr
+        )
+        
+        return {'success': True, 'message': 'Данные сохранены'}
+        
+    except Exception as e:
+        print(f"Ошибка обновления пользователя: {e}")
+        conn.rollback()
+        return {'success': False, 'message': str(e)}
+    finally:
+        cursor.close()
+        conn.close()
+
+@app.route('/api/admin/users/delete', methods=['POST'])
+def api_admin_delete_user():
+    data = request.get_json()
+    user_id = data.get('user_id')
+    from utils.database.database import get_db
+    conn = get_db()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("DELETE FROM users WHERE id = ?", (user_id,))
+        conn.commit()
+        save_admin_action(int(request.cookies.get('brt_user_id', 0)), 'delete_user', f'User {user_id} deleted', request.remote_addr)
+        return {'success': True}
+    except Exception as e:
+        return {'success': False, 'message': str(e)}
+    finally:
+        cursor.close()
+        conn.close()
+
+@app.route('/api/admin/admins/add', methods=['POST'])
+def api_admin_add_admin():
+    data = request.get_json()
+    user_id = data.get('user_id')
+    
+    # Получаем email пользователя
+    user = get_user_by_id(user_id)
+    email = user['email'] if user else f'User {user_id}'
+    
+    result = add_admin(user_id, data.get('permissions', '["all"]'), data.get('is_superadmin', 0))
+    if result:
+        admin_id = request.cookies.get('brt_user_id', 0)
+        role = 'супер-админом' if data.get('is_superadmin') else 'админом'
+        save_admin_action(
+            int(admin_id), 
+            'add_admin', 
+            f'Добавлен {"супер-админ" if data.get("is_superadmin") else "админ"} {email}', 
+            request.remote_addr
+        )
+    return {'success': result}
+
+
+@app.route('/api/admin/admins/remove', methods=['POST'])
+def api_admin_remove_admin():
+    data = request.get_json()
+    user_id = data.get('user_id')
+    
+    # Получаем email пользователя
+    user = get_user_by_id(user_id)
+    email = user['email'] if user else f'User {user_id}'
+    
+    result = remove_admin(user_id)
+    if result:
+        admin_id = request.cookies.get('brt_user_id', 0)
+        save_admin_action(
+            int(admin_id), 
+            'remove_admin', 
+            f'Удалён админ {email}', 
+            request.remote_addr
+        )
+    return {'success': result}
+
+@app.route('/api/admin/reports/sales')
+def api_admin_sales_report():
+    start = request.args.get('start')
+    end = request.args.get('end')
+    return get_sales_report(start, end)
+
 @app.route('/api/admin/dashboard')
 def api_admin_dashboard():
     return get_dashboard_stats()
@@ -858,9 +1025,75 @@ def api_admin_stations():
 def api_admin_tickets():
     return get_all_tickets()
 
+@app.route('/api/admin/reports/tickets-by-date')
+def api_admin_tickets_by_date():
+    date = request.args.get('date')
+    return get_tickets_by_date(date)
+
 @app.route('/api/admin/admins')
 def api_admin_admins():
-    return get_all_admins()
+    admins = get_all_admins()
+    for admin in admins:
+        if 'id' not in admin:
+            admin['id'] = admin.get('user_id')
+    return admins
+
+@app.route('/api/admin/settings', methods=['POST'])
+def api_admin_settings():
+    data = request.get_json()
+    fee = data.get('service_fee', 200)
+    save_admin_action(int(request.cookies.get('brt_user_id', 0)), 'update_settings', f'Service fee changed to {fee}', request.remote_addr)
+    return {'success': True, 'message': 'Сохранено'}
+
+@app.route('/api/admin/users/get')
+def api_admin_get_user():
+    """Получить полные данные пользователя для редактирования."""
+    user_id = request.args.get('user_id')
+    if not user_id:
+        return {'error': 'user_id не указан'}, 400
+    
+    user = get_user_by_id(int(user_id))
+    if not user:
+        return {'error': 'Пользователь не найден'}, 404
+    
+    # Исключаем чувствительные поля
+    safe_fields = ['id', 'email', 'phone', 'first_name', 'last_name', 'middle_name', 
+                   'birth_date', 'document_type', 'document_number', 'bonus_points',
+                   'loyalty_level', 'language', 'currency', 'updated_at']
+    
+    result = {k: user[k] for k in safe_fields if k in user}
+    return result
+
+@app.route('/api/admin/users/create', methods=['POST'])
+def api_admin_create_user():
+    """Создание пользователя админом без входа в его аккаунт."""
+    data = request.get_json()
+    email = data.get('email')
+    password = data.get('password')
+    first_name = data.get('first_name')
+    
+    if not email or not password:
+        return {'success': False, 'message': 'Email и пароль обязательны'}
+    
+    # Проверяем, существует ли уже пользователь
+    from utils.database.database import get_db
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT id FROM users WHERE email = ?", (email,))
+    existing = cursor.fetchone()
+    conn.close()
+    
+    if existing:
+        return {'success': True, 'user_id': existing['id'], 'message': 'Пользователь уже существует'}
+    
+    # Создаём пользователя
+    user_id = register_user(email, password, first_name)
+    if user_id:
+        admin_id = request.cookies.get('brt_user_id', 0)
+        save_admin_action(int(admin_id), 'create_user', f'Создан пользователь {email}', request.remote_addr)
+        return {'success': True, 'user_id': user_id}
+    
+    return {'success': False, 'message': 'Ошибка создания пользователя'}
 
 
 if __name__ == '__main__':
