@@ -219,7 +219,7 @@ document.addEventListener('DOMContentLoaded', function() {
         header.style.left = '0';
         header.style.width = '100%';
         header.style.zIndex = '999';
-    
+
         const logoWhite = header.querySelector('.header__logo--white');
         const logoDark = header.querySelector('.header__logo--dark');
         if (logoWhite) logoWhite.style.display = 'block';
@@ -227,16 +227,13 @@ document.addEventListener('DOMContentLoaded', function() {
         
         const sepImg = header.querySelector('.lang-cur img');
         const favImg = header.querySelector('.fav');
-        const supportImg = header.querySelector('.support-image');
         
         if (sepImg) sepImg.src = '/static/icons/v-line-18-white.png';
         if (favImg) favImg.src = '/static/icons/fav_white.svg';
-        if (supportImg) supportImg.src = '/static/icons/support_white.svg';
         
-        const supportLinks = header.querySelectorAll('.support a');
-        supportLinks.forEach(link => {
-            link.style.color = '#EFF1F4';
-        });
+        // Скрываем кнопку обратной связи
+        const supportBlock = header.querySelector('.support');
+        if (supportBlock) supportBlock.style.display = 'none';
         
         const langSpan = header.querySelector('#currentLang');
         const curSpan = header.querySelector('#currentCur');
@@ -310,63 +307,128 @@ function loadDashboard() {
 }
 
 function loadOrders() {
+    const c = document.getElementById('ordersList');
+    c.innerHTML = `
+        <div style="margin-bottom:16px; display:flex; gap:10px;">
+            <input type="text" id="orderSearch" placeholder="Поиск по номеру заказа..." style="flex:1;height:40px;background:#252525;border:1px solid #333;border-radius:8px;padding:0 12px;color:#fff;font-family:'Commissioner',sans-serif;font-size:14px;outline:none;" oninput="filterOrders()">
+            <select id="orderStatusFilter" style="height:40px;background:#252525;border:1px solid #333;border-radius:8px;padding:0 12px;color:#fff;font-family:'Commissioner',sans-serif;font-size:14px;outline:none;" onchange="filterOrders()">
+                <option value="">Все статусы</option>
+                <option value="pending">Ожидает оплаты</option>
+                <option value="paid">Оплачен</option>
+                <option value="cancelled">Отменён</option>
+                <option value="expired">Истёк</option>
+                <option value="refunded">Возврат</option>
+            </select>
+        </div>
+        <div id="ordersTableContainer">Загрузка...</div>
+    `;
+    
     fetch('/api/admin/orders')
         .then(r => r.json())
         .then(orders => {
-            const c = document.getElementById('ordersList');
-            c.innerHTML = orders.length ? orders.map(o => 
-                '<div class="admin-item"><span>' + o.order_number + '</span><span>' + o.status + '</span><span>' + o.total_amount + ' ₽</span></div>'
-            ).join('') : '<p>Нет заказов</p>';
+            window.allOrders = orders;
+            filterOrders();
         });
 }
 
+function filterOrders() {
+    const searchText = (document.getElementById('orderSearch')?.value || '').toLowerCase();
+    const statusFilter = document.getElementById('orderStatusFilter')?.value || '';
+    
+    let orders = window.allOrders || [];
+    
+    if (searchText) {
+        orders = orders.filter(o => (o.order_number || '').toLowerCase().includes(searchText));
+    }
+    if (statusFilter) {
+        orders = orders.filter(o => o.status === statusFilter);
+    }
+    
+    const container = document.getElementById('ordersTableContainer');
+    if (!container) return;
+    
+    container.innerHTML = orders.length ? orders.map(o => 
+        '<div class="admin-item"><span>' + o.order_number + '</span><span>' + getOrderStatusLabel(o.status) + '</span><span>' + o.total_amount + ' ₽</span></div>'
+    ).join('') : '<p style="color:#A3A3A3;">Ничего не найдено</p>';
+}
+
 function loadUsers() {
+    const c = document.getElementById('usersList');
+    c.innerHTML = `
+        <div style="margin-bottom:16px;">
+            <input type="text" id="userSearch" placeholder="Поиск по email, имени или телефону..." style="width:100%;height:40px;background:#252525;border:1px solid #333;border-radius:8px;padding:0 12px;color:#fff;font-family:'Commissioner',sans-serif;font-size:14px;outline:none;" oninput="filterUsers()">
+        </div>
+        <div id="usersTableContainer">Загрузка...</div>
+    `;
+    
     fetch('/api/admin/users')
         .then(r => r.json())
         .then(users => {
-            const c = document.getElementById('usersList');
-            if (!users.length) {
-                c.innerHTML = '<p style="color:#A3A3A3;">Нет пользователей</p>';
-                return;
-            }
-            c.innerHTML = `
-                <table style="width:100%; border-collapse:collapse; color:#fff; font-family:'Commissioner',sans-serif; font-size:14px;">
-                    <thead>
-                        <tr style="border-bottom:1px solid #333;">
-                            <th style="padding:10px; text-align:left;">ID</th>
-                            <th style="padding:10px; text-align:left;">Email</th>
-                            <th style="padding:10px; text-align:left;">Имя</th>
-                            <th style="padding:10px; text-align:left;">Телефон</th>
-                            <th style="padding:10px; text-align:left;">Дата регистрации</th>
-                            <th style="padding:10px; text-align:left;">Действия</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${users.map(u => `
-                            <tr style="border-bottom:1px solid #2A2A2A;">
-                                <td style="padding:10px;">${u.id}</td>
-                                <td style="padding:10px;">${u.email}</td>
-                                <td style="padding:10px;">
-                                    <span id="name-${u.id}">${u.first_name || '—'} ${u.last_name || ''}</span>
-                                </td>
-                                <td style="padding:10px;">
-                                    <span id="phone-${u.id}">${u.phone || '—'}</span>
-                                </td>
-                                <td style="padding:10px;">${new Date(u.created_at).toLocaleDateString('ru-RU')}</td>
-                                <td style="padding:10px;">
-                                    <button onclick="editUser(${u.id}, '${u.email}', '${u.first_name || ''}', '${u.last_name || ''}', '${u.phone || ''}')" style="background:#4672FF;color:#fff;border:none;padding:6px 10px;border-radius:6px;cursor:pointer;margin-right:5px;">
-                                        <img src="/static/icons/admin/users/edit_24dp_F3F3F3_FILL0_wght400_GRAD0_opsz24.svg" alt="Ред." style="width:16px;height:16px;vertical-align:middle;">
-                                    </button>
-                                    <button onclick="deleteUser(${u.id})" style="background:#C62828;color:#fff;border:none;padding:6px 10px;border-radius:6px;cursor:pointer;" class="delete-user-btn">
-                                        <img src="/static/icons/admin/users/delete_24dp_F3F3F3_FILL0_wght400_GRAD0_opsz24.svg" alt="Уд." style="width:16px;height:16px;vertical-align:middle;">
-                                    </button>
-                                </td>
-                            </tr>
-                        `).join('')}
-                    </tbody>
-                </table>
-            `;
+            window.allUsers = users;
+            filterUsers();
         });
+}
+
+function filterUsers() {
+    const searchText = (document.getElementById('userSearch')?.value || '').toLowerCase();
+    
+    let users = window.allUsers || [];
+    
+    if (searchText) {
+        users = users.filter(u => 
+            (u.email || '').toLowerCase().includes(searchText) ||
+            (u.first_name || '').toLowerCase().includes(searchText) ||
+            (u.last_name || '').toLowerCase().includes(searchText) ||
+            (u.phone || '').toLowerCase().includes(searchText) ||
+            String(u.id).includes(searchText)
+        );
+    }
+    
+    const container = document.getElementById('usersTableContainer');
+    if (!container) return;
+    
+    if (!users.length) {
+        container.innerHTML = '<p style="color:#A3A3A3;">Ничего не найдено</p>';
+        return;
+    }
+    
+    container.innerHTML = `
+        <table style="width:100%; border-collapse:collapse; color:#fff; font-family:'Commissioner',sans-serif; font-size:14px;">
+            <thead>
+                <tr style="border-bottom:1px solid #333;">
+                    <th style="padding:10px; text-align:left;">ID</th>
+                    <th style="padding:10px; text-align:left;">Email</th>
+                    <th style="padding:10px; text-align:left;">Имя</th>
+                    <th style="padding:10px; text-align:left;">Телефон</th>
+                    <th style="padding:10px; text-align:left;">Дата регистрации</th>
+                    <th style="padding:10px; text-align:left;">Действия</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${users.map(u => `
+                    <tr style="border-bottom:1px solid #2A2A2A;">
+                        <td style="padding:10px;">${u.id}</td>
+                        <td style="padding:10px;">${u.email}</td>
+                        <td style="padding:10px;">
+                            <span id="name-${u.id}">${u.first_name || '—'} ${u.last_name || ''}</span>
+                        </td>
+                        <td style="padding:10px;">
+                            <span id="phone-${u.id}">${u.phone || '—'}</span>
+                        </td>
+                        <td style="padding:10px;">${new Date(u.created_at).toLocaleDateString('ru-RU')}</td>
+                        <td style="padding:10px;">
+                            <button onclick="editUser(${u.id}, '${u.email}', '${u.first_name || ''}', '${u.last_name || ''}', '${u.phone || ''}')" style="background:#4672FF;color:#fff;border:none;padding:6px 10px;border-radius:6px;cursor:pointer;margin-right:5px;">
+                                ✏️
+                            </button>
+                            <button onclick="deleteUser(${u.id})" style="background:#C62828;color:#fff;border:none;padding:6px 10px;border-radius:6px;cursor:pointer;" class="delete-user-btn">
+                                🗑️
+                            </button>
+                        </td>
+                    </tr>
+                `).join('')}
+            </tbody>
+        </table>
+    `;
 }
 
 function editUser(userId, email, firstName, lastName, phone) {
@@ -509,27 +571,124 @@ function deleteUser(userId) {
 }
 
 function loadTrains() {
+    const c = document.getElementById('trainsList');
+    c.innerHTML = `
+        <div style="margin-bottom:16px;">
+            <input type="text" id="trainSearch" placeholder="Поиск по номеру или названию поезда..." style="width:100%;height:40px;background:#252525;border:1px solid #333;border-radius:8px;padding:0 12px;color:#fff;font-family:'Commissioner',sans-serif;font-size:14px;outline:none;" oninput="filterTrains()">
+        </div>
+        <div id="trainsTableContainer">Загрузка...</div>
+    `;
+    
     fetch('/api/admin/trains')
         .then(r => r.json())
         .then(trains => {
-            document.getElementById('trainsList').innerHTML = trains.length ? trains.map(t => '<div class="admin-item">' + t.number + ' — ' + t.name + '</div>').join('') : '<p>Нет данных</p>';
+            window.allTrains = trains;
+            filterTrains();
         });
+}
+
+function filterTrains() {
+    const searchText = (document.getElementById('trainSearch')?.value || '').toLowerCase();
+    
+    let trains = window.allTrains || [];
+    
+    if (searchText) {
+        trains = trains.filter(t => 
+            (t.number || '').toLowerCase().includes(searchText) ||
+            (t.name || '').toLowerCase().includes(searchText) ||
+            (t.type || '').toLowerCase().includes(searchText)
+        );
+    }
+    
+    const container = document.getElementById('trainsTableContainer');
+    if (!container) return;
+    
+    container.innerHTML = trains.length ? trains.map(t => 
+        '<div class="admin-item"><span>' + t.number + '</span><span>' + (t.name || '—') + '</span><span>' + (t.type || '—') + '</span></div>'
+    ).join('') : '<p style="color:#A3A3A3;">Ничего не найдено</p>';
 }
 
 function loadStations() {
+    const c = document.getElementById('stationsList');
+    c.innerHTML = `
+        <div style="margin-bottom:16px;">
+            <input type="text" id="stationSearch" placeholder="Поиск по названию, городу или коду станции..." style="width:100%;height:40px;background:#252525;border:1px solid #333;border-radius:8px;padding:0 12px;color:#fff;font-family:'Commissioner',sans-serif;font-size:14px;outline:none;" oninput="filterStations()">
+        </div>
+        <div id="stationsTableContainer">Загрузка...</div>
+    `;
+    
     fetch('/api/admin/stations')
         .then(r => r.json())
-        .then(s => {
-            document.getElementById('stationsList').innerHTML = s.map(st => '<div class="admin-item">' + st.name + ' (' + st.city + ')</div>').join('');
+        .then(stations => {
+            window.allStations = stations;
+            filterStations();
         });
 }
 
+function filterStations() {
+    const searchText = (document.getElementById('stationSearch')?.value || '').toLowerCase();
+    
+    let stations = window.allStations || [];
+    
+    if (searchText) {
+        stations = stations.filter(s => 
+            (s.name || '').toLowerCase().includes(searchText) ||
+            (s.city || '').toLowerCase().includes(searchText) ||
+            (s.code || '').toLowerCase().includes(searchText)
+        );
+    }
+    
+    const container = document.getElementById('stationsTableContainer');
+    if (!container) return;
+    
+    container.innerHTML = stations.length ? stations.map(st => 
+        '<div class="admin-item"><span>' + st.name + '</span><span>' + (st.city || '—') + '</span><span>' + (st.code || '—') + '</span></div>'
+    ).join('') : '<p style="color:#A3A3A3;">Ничего не найдено</p>';
+}
+
 function loadAdminTickets() {
+    const c = document.getElementById('adminTicketsList');
+    c.innerHTML = `
+        <div style="margin-bottom:16px; display:flex; gap:10px;">
+            <input type="text" id="ticketSearch" placeholder="Поиск по номеру билета..." style="flex:1;height:40px;background:#252525;border:1px solid #333;border-radius:8px;padding:0 12px;color:#fff;font-family:'Commissioner',sans-serif;font-size:14px;outline:none;" oninput="filterTickets()">
+            <select id="ticketStatusFilter" style="height:40px;background:#252525;border:1px solid #333;border-radius:8px;padding:0 12px;color:#fff;font-family:'Commissioner',sans-serif;font-size:14px;outline:none;" onchange="filterTickets()">
+                <option value="">Все статусы</option>
+                <option value="active">Активен</option>
+                <option value="used">Использован</option>
+                <option value="cancelled">Отменён</option>
+                <option value="refunded">Возврат</option>
+            </select>
+        </div>
+        <div id="ticketsTableContainer">Загрузка...</div>
+    `;
+    
     fetch('/api/admin/tickets')
         .then(r => r.json())
         .then(tickets => {
-            document.getElementById('adminTicketsList').innerHTML = tickets.length ? tickets.map(t => '<div class="admin-item">' + t.ticket_number + ' — ' + t.status + '</div>').join('') : '<p>Нет билетов</p>';
+            window.allTickets = tickets;
+            filterTickets();
         });
+}
+
+function filterTickets() {
+    const searchText = (document.getElementById('ticketSearch')?.value || '').toLowerCase();
+    const statusFilter = document.getElementById('ticketStatusFilter')?.value || '';
+    
+    let tickets = window.allTickets || [];
+    
+    if (searchText) {
+        tickets = tickets.filter(t => (t.ticket_number || '').toLowerCase().includes(searchText));
+    }
+    if (statusFilter) {
+        tickets = tickets.filter(t => t.status === statusFilter);
+    }
+    
+    const container = document.getElementById('ticketsTableContainer');
+    if (!container) return;
+    
+    container.innerHTML = tickets.length ? tickets.map(t => 
+        '<div class="admin-item"><span>' + t.ticket_number + '</span><span>' + getTicketStatusLabel(t.status) + '</span></div>'
+    ).join('') : '<p style="color:#A3A3A3;">Ничего не найдено</p>';
 }
 
 function loadAdmins() {
@@ -683,15 +842,36 @@ function loadReports() {
             
             let totalRevenue = 0;
             let totalTickets = 0;
+            let totalDays = data.length;
+            let bestDay = data[0];
+            let avgTicketsPerDay = 0;
+            let avgRevenuePerDay = 0;
+            
+            data.forEach(d => {
+                totalRevenue += d.revenue;
+                totalTickets += d.tickets_sold;
+                if (d.revenue > bestDay.revenue) bestDay = d;
+            });
+            
+            avgTicketsPerDay = Math.round(totalTickets / totalDays);
+            avgRevenuePerDay = Math.round(totalRevenue / totalDays);
             
             c.innerHTML = `
-                <div style="margin-bottom:20px; display:flex; gap:20px;">
-                    <div class="dashboard-card" style="flex:1;">
-                        <span class="dashboard-card__value" style="font-size:24px;" id="totalTickets">—</span>
+                <div style="margin-bottom:20px; display:grid; grid-template-columns: repeat(4, 1fr); gap:16px;">
+                    <div class="dashboard-card">
+                        <span class="dashboard-card__value" style="font-size:24px;" id="totalTickets">${totalTickets}</span>
                         <span class="dashboard-card__label">Продано билетов</span>
                     </div>
-                    <div class="dashboard-card" style="flex:1;">
-                        <span class="dashboard-card__value" style="font-size:24px;" id="totalRevenue">—</span>
+                    <div class="dashboard-card">
+                        <span class="dashboard-card__value" style="font-size:24px;">${avgTicketsPerDay}</span>
+                        <span class="dashboard-card__label">Билетов в среднем за день</span>
+                    </div>
+                    <div class="dashboard-card">
+                        <span class="dashboard-card__value" style="font-size:24px;">${avgRevenuePerDay.toLocaleString('ru-RU')} ₽</span>
+                        <span class="dashboard-card__label">Средняя выручка за день</span>
+                    </div>
+                    <div class="dashboard-card">
+                        <span class="dashboard-card__value" style="font-size:24px;" id="totalRevenue">${totalRevenue.toLocaleString('ru-RU')} ₽</span>
                         <span class="dashboard-card__label">Общая выручка</span>
                     </div>
                 </div>
@@ -712,8 +892,6 @@ function loadReports() {
                     </thead>
                     <tbody>
                         ${data.map((d) => {
-                            totalRevenue += d.revenue;
-                            totalTickets += d.tickets_sold;
                             return `
                                 <tr style="border-bottom:1px solid #2A2A2A; cursor:pointer;" onclick="toggleDayDetails('${d.date}', this)">
                                     <td style="padding:10px;">
@@ -735,9 +913,6 @@ function loadReports() {
                     </tbody>
                 </table>
             `;
-            
-            document.getElementById('totalTickets').textContent = totalTickets;
-            document.getElementById('totalRevenue').textContent = totalRevenue.toLocaleString('ru-RU') + ' ₽';
             
             // Сохраняем данные для CSV
             window.reportsData = data;
@@ -1114,6 +1289,27 @@ function showAddAdminForm() {
         }
     };
     document.addEventListener('keydown', escHandler);
+}
+
+function getOrderStatusLabel(status) {
+    const labels = {
+        'pending': '⏳ Ожидает оплаты',
+        'paid': '✅ Оплачен',
+        'cancelled': '❌ Отменён',
+        'expired': '⌛ Истёк',
+        'refunded': '💰 Возврат'
+    };
+    return labels[status] || status;
+}
+
+function getTicketStatusLabel(status) {
+    const labels = {
+        'active': '✅ Активен',
+        'used': '🎫 Использован',
+        'cancelled': '❌ Отменён',
+        'refunded': '💰 Возврат'
+    };
+    return labels[status] || status;
 }
 </script>
 {% endblock %}

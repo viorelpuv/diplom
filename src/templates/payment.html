@@ -640,6 +640,83 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
+    // Загружаем данные пользователя для автозаполнения первого пассажира
+    fetch('/api/user-status')
+        .then(r => r.json())
+        .then(userStatus => {
+            if (userStatus.logged_in) {
+                return fetch('/api/profile/' + userStatus.user_id);
+            }
+            return null;
+        })
+        .then(r => r ? r.json() : null)
+        .then(user => {
+            if (!user || user.error) return;
+            
+            // Заполняем контактные данные
+            const emailInput = document.querySelector('.contact-info__input[type="email"]');
+            const phoneInput = document.getElementById('phoneInput');
+            
+            if (emailInput && user.email) {
+                emailInput.value = user.email;
+            }
+            if (phoneInput && user.phone) {
+                // Форматируем телефон
+                let phone = user.phone.replace(/\D/g, '');
+                if (phone.startsWith('8')) phone = '7' + phone.slice(1);
+                if (!phone.startsWith('7')) phone = '7' + phone;
+                if (phone.length > 11) phone = phone.slice(0, 11);
+                
+                if (phone.length >= 2) {
+                    let formatted = '+7';
+                    if (phone.length > 1) {
+                        const rest = phone.slice(1, 11);
+                        if (rest.length >= 1) formatted += ' (' + rest.slice(0, Math.min(3, rest.length));
+                        if (rest.length >= 3) formatted += ') ' + rest.slice(3, Math.min(6, rest.length));
+                        if (rest.length >= 6) formatted += '-' + rest.slice(6, Math.min(8, rest.length));
+                        if (rest.length >= 8) formatted += '-' + rest.slice(8, 10);
+                    }
+                    phoneInput.value = formatted;
+                }
+            }
+            
+            // Заполняем первого взрослого пассажира
+            const passengerForms = document.querySelectorAll('.passenger-form');
+            if (passengerForms.length > 0) {
+                const firstForm = passengerForms[0];
+                
+                // ФИО
+                const fioInputs = firstForm.querySelectorAll('.passenger-form__row--fio .passenger-form__input');
+                if (user.last_name && fioInputs[0]) fioInputs[0].value = user.last_name;
+                if (user.first_name && fioInputs[1]) fioInputs[1].value = user.first_name;
+                if (user.middle_name && fioInputs[2]) fioInputs[2].value = user.middle_name;
+                
+                // Дата рождения
+                const dateInput = firstForm.querySelector('input[type="date"]');
+                if (dateInput && user.birth_date) {
+                    dateInput.value = user.birth_date;
+                }
+                
+                // Пол
+                if (user.gender === 'female') {
+                    const femaleBtn = firstForm.querySelector('[data-gender="female"]');
+                    const maleBtn = firstForm.querySelector('[data-gender="male"]');
+                    const slider = firstForm.querySelector('.passenger-form__gender-slider');
+                    if (femaleBtn) {
+                        femaleBtn.classList.add('passenger-form__gender-btn--active');
+                        maleBtn.classList.remove('passenger-form__gender-btn--active');
+                        slider.classList.add('passenger-form__gender-slider--right');
+                    }
+                }
+                
+                // Гражданство (если есть в профиле)
+                if (user.citizenship) {
+                    const citizenshipInput = firstForm.querySelector('.doc-extra-fields .passenger-form__input');
+                    // Гражданство будет заполнено только если выбран foreign_doc
+                }
+            }
+        });
+
     // Отправка формы
     document.getElementById('submitBtn').addEventListener('click', function(e) {
         e.preventDefault();
@@ -743,6 +820,8 @@ document.addEventListener('DOMContentLoaded', function() {
             arr_date: urlParams.get('arr_date'),
             transfer_text: urlParams.get('transfer_text'),
             has_return: hasBackward ? '1' : '0',
+            forward_trip_id: urlParams.get('forward_trip_id') || '',   // ← добавить
+            backward_trip_id: urlParams.get('backward_trip_id') || '', // ← добавить
             return_from_city: urlParams.get('return_from_city'),
             return_to_city: urlParams.get('return_to_city'),
             return_from_station: urlParams.get('return_from_station'),

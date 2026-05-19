@@ -286,17 +286,54 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     // Промокод
+    let appliedPromo = null;
+    let originalTotal = total;
+
     document.getElementById('applyPromoBtn')?.addEventListener('click', function() {
         const code = document.getElementById('promoInputField').value.trim();
         const msg = document.getElementById('promoMessage');
-        if (!code) { msg.textContent = 'Введите промокод'; msg.style.color = '#FF3B30'; return; }
-        if (code === 'BRT2026') {
-            msg.textContent = 'Промокод применён! Скидка 10%'; msg.style.color = '#34C759';
-            total = Math.round(total * 0.9);
-            document.getElementById('sidebarTotal').textContent = total.toLocaleString('ru-RU') + ' ₽';
-        } else {
-            msg.textContent = 'Промокод недействителен'; msg.style.color = '#FF3B30';
+        
+        if (!code) {
+            msg.textContent = 'Введите промокод';
+            msg.style.color = '#FF3B30';
+            return;
         }
+        
+        // Проверяем промокод через API
+        fetch('/api/promo/check', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({code: code, order_amount: originalTotal})
+        })
+        .then(r => r.json())
+        .then(d => {
+            if (d.valid) {
+                appliedPromo = code;
+                document.getElementById('confirmPromoData').value = code;
+                
+                // Применяем скидку
+                let newTotal = originalTotal;
+                if (d.discount_percent) {
+                    newTotal = Math.round(originalTotal * (1 - d.discount_percent / 100));
+                } else if (d.discount_amount) {
+                    newTotal = Math.max(0, originalTotal - d.discount_amount);
+                }
+                
+                document.getElementById('sidebarTotal').textContent = newTotal.toLocaleString('ru-RU') + ' ₽';
+                msg.textContent = d.message || 'Промокод применён!';
+                msg.style.color = '#34C759';
+                document.getElementById('promoInputField').disabled = true;
+                document.getElementById('applyPromoBtn').disabled = true;
+                document.getElementById('applyPromoBtn').textContent = '✓';
+            } else {
+                msg.textContent = d.message || 'Промокод недействителен';
+                msg.style.color = '#FF3B30';
+            }
+        })
+        .catch(() => {
+            msg.textContent = 'Ошибка проверки';
+            msg.style.color = '#FF3B30';
+        });
     });
 });
 </script>

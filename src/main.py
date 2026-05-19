@@ -1,12 +1,14 @@
-# app.py — полный код
-from flask import Flask, render_template, request, redirect, g, make_response
+import random
+import json
 from datetime import datetime, date
-from utils.rail_api import RZDApi
-from utils.currency import format_price
+
+from flask import Flask, render_template, request, redirect, g, make_response, session
 from flask_babel import Babel, _
 
+from utils.rail_api import RZDApi
+from utils.currency import format_price
 from utils.database.database import (
-    init_db, save_passenger, create_order, save_ticket, 
+    add_bonus_points, apply_promocode, calculate_loyalty_level, check_promocode, get_user_total_spent, init_db, save_passenger, create_order, save_ticket, 
     save_transaction, update_order_status, save_train_full, 
     get_order_by_number, get_user_by_document, register_user,
     login_user, save_login_history, get_user_by_id,
@@ -16,11 +18,12 @@ from utils.database.database import (
     get_all_users, get_all_trains, get_all_stations,
     get_all_tickets, get_all_admins, delete_promocode, 
     get_admin_logs, toggle_user_active, add_admin, remove_admin, 
-    get_sales_report, get_all_promocodes, create_promocode,
-    get_tickets_by_date, save_admin_action, get_admin_actions
+    get_sales_report, get_all_promocodes, create_promocode, update_order_promo,
+    get_tickets_by_date, save_admin_action, get_admin_actions, update_user_loyalty
 )
 
 app = Flask(__name__)
+app.secret_key = "12432dsacOIAJWoDj98918u383jodpsSPOAsc"
 
 api = RZDApi()
 
@@ -176,7 +179,7 @@ def format_train(train, from_city, to_city, total_passengers):
     days = ['пн', 'вт', 'ср', 'чт', 'пт', 'сб', 'вс']
     
     return {
-        'id': trip.get('trip_id', abs(hash(f"{trip.get('train_number')}_{dep_dt}"))),
+        'trip_id': trip.get('trip_id', abs(hash(f"{trip.get('train_number')}_{dep_dt}"))),
         'date': dep_dt.strftime('%Y-%m-%d'),
         'departure': dep_dt.strftime('%H:%M'),
         'arrival': arr_dt.strftime('%H:%M'),
@@ -266,8 +269,10 @@ def search():
         for train in forward_trains:
             formatted = format_train(train, from_city, to_city, total_passengers)
             if formatted:
+                real_trip_id = save_train_full(formatted, from_city, to_city)
+                if real_trip_id:
+                    formatted['trip_id'] = real_trip_id
                 results.append(formatted)
-                result = save_train_full(formatted, from_city, to_city)
         
         return_results = []
         for train in backward_trains:
@@ -388,22 +393,20 @@ def select_seats():
         for train in forward_trains:
             formatted = format_train(train, from_city, to_city, total_passengers)
             if formatted:
+                real_trip_id = save_train_full(formatted, from_city, to_city)
+                if real_trip_id:
+                    formatted['trip_id'] = real_trip_id
                 results.append(formatted)
-                try:
-                    save_train_full(formatted, from_city, to_city)
-                except:
-                    pass
 
         return_results = []
         for train in backward_trains:
             formatted = format_train(train, to_city, from_city, total_passengers)
             if formatted:
                 formatted['from_station'], formatted['to_station'] = formatted['to_station'], formatted['from_station']
+                real_trip_id = save_train_full(formatted, to_city, from_city)
+                if real_trip_id:
+                    formatted['trip_id'] = real_trip_id
                 return_results.append(formatted)
-                try:
-                    save_train_full(formatted, to_city, from_city)
-                except:
-                    pass
 
         trip = results[trip_idx] if 0 <= trip_idx < len(results) else (results[0] if results else None)
         return_trip = return_results[ret_idx] if ret_idx is not None and 0 <= ret_idx < len(return_results) else (return_results[0] if ret_idx is not None and return_results else None)
@@ -580,6 +583,7 @@ def confirm():
         contact_data = request.form.get('contact_data', '{}')
         seats_json = request.form.get('seats', '{}')
         trip_json = request.form.get('trip_info', '{}')
+        promo_code = request.form.get('promo', '').strip().upper()
         
         passengers = json.loads(passengers_data) if passengers_data else []
         contact = json.loads(contact_data) if contact_data else {}
@@ -613,14 +617,149 @@ def confirm():
         
         order_number = 'BRT-' + datetime.now().strftime('%Y%m%d') + '-' + str(random.randint(1000, 9999))
         total = sum(s.get('price', 0) for d in ['forward', 'backward'] for s in seats.get(d, []))
+        
+        # Применяем промокод
+        discount_applied = 0
+        applied_promo = None
+        
+        if promo_code:
+            promo_result = check_promocode(promo_code, total)
+            if promo_result['valid']:
+                applied_promo = promo_code
+                if promo_result['discount_percent']:
+                    discount_applied = int(total * promo_result['discount_percent'] / 100)
+                elif promo_result['discount_amount']:
+                    discount_applied = min(promo_result['discount_amount'], total)
+                
+                total -= discount_applied
+                apply_promocode(promo_result['promo_id'])
+        
         oid = create_order(order_number=order_number, user_id=user_id, total_amount=total)
         if not oid: return "Ошибка", 500
-        update_order_status(oid, 'pending')
         
-        return redirect(f'/pay/{order_number}')
+        # Обновляем заказ с промокодом
+        if applied_promo:
+            update_order_promo(oid, applied_promo)
+        
+        session['order_number'] = order_number
+        session['order_amount'] = total
+
+        session['tickets_data'] = json.dumps({
+            'order_id': oid,
+            'seats': seats,
+            'passengers': passengers,
+            'trip_info': trip_info
+        })
+
+        session.modified = True  
+
+        return redirect(f'/payment/card')
     
     return render_template('confirm.html', trip_info={}, passengers=[], contact={}, seats={})
 
+
+@app.route('/payment/card')
+def payment_card():
+    order_number = session.get('order_number')
+    order_amount = session.get('order_amount')
+    
+    if not order_number:
+        return render_template('payment_card.html', order_number=None, order_amount=0)
+    
+    return render_template('payment_card.html', order_number=order_number, order_amount=order_amount)
+
+
+@app.route('/api/payment/process', methods=['POST'])
+def api_payment_process():
+    import random
+    
+    data = request.get_json()
+    order_number = data.get('order_number')
+    amount = data.get('amount')
+    
+    order = get_order_by_number(order_number)
+    if not order:
+        return {'success': False, 'message': 'Заказ не найден'}
+    
+    update_order_status(order['id'], 'paid')
+    
+    save_transaction(
+        order_id=order['id'],
+        amount=amount,
+        trans_type='payment',
+        gateway='card',
+        external_id='CARD-' + data.get('card_last4', '0000'),
+        status='success'
+    )
+    
+    tickets_data_str = session.get('tickets_data', '{}')
+    if tickets_data_str:
+        tickets_data = json.loads(tickets_data_str)
+        seats = tickets_data.get('seats', {})
+        passengers = tickets_data.get('passengers', [])
+        trip_info = tickets_data.get('trip_info', {})
+        
+        # Безопасное преобразование в int
+        fwd_id = trip_info.get('forward_trip_id', '0')
+        bwd_id = trip_info.get('backward_trip_id', '0')
+        forward_trip_id = int(fwd_id) if fwd_id and fwd_id != '' else 0
+        backward_trip_id = int(bwd_id) if bwd_id and bwd_id != '' else 0
+        
+        print(f"DEBUG: forward_trip_id={forward_trip_id}, backward_trip_id={backward_trip_id}")
+        
+        p_idx = 0
+        for direction in ['forward', 'backward']:
+            current_trip_id = forward_trip_id if direction == 'forward' else backward_trip_id
+            
+            if not current_trip_id:
+                print(f"⚠️ Нет trip_id для {direction}, пропускаем")
+                continue
+            
+            for seat in seats.get(direction, []):
+                if p_idx < len(passengers):
+                    passenger = passengers[p_idx]
+                    ticket_number = 'BRT-' + datetime.now().strftime('%Y%m%d') + '-' + str(random.randint(10000, 99999))
+                    
+                    wagon_num = str(seat.get('wagon', '1'))
+                    seat_num = str(seat.get('seat', '1'))
+                    
+                    from utils.database.database import get_db
+                    conn = get_db()
+                    cursor = conn.cursor()
+                    
+                    cursor.execute("""
+                        SELECT ts.seat_id
+                        FROM trip_seats ts
+                        JOIN seats s ON ts.seat_id = s.id
+                        JOIN wagons w ON s.wagon_id = w.id
+                        WHERE ts.trip_id = ? AND w.number = ? AND s.number = ?
+                    """, (current_trip_id, wagon_num, seat_num))
+                    
+                    row = cursor.fetchone()
+                    conn.close()
+                    
+                    real_seat_id = row['seat_id'] if row else 1
+                    
+                    save_ticket(order['id'], {
+                        'trip_id': current_trip_id,
+                        'seat_id': real_seat_id,
+                        'user_id': order['user_id'],
+                        'passenger_type': 'adult',
+                        'price': seat.get('price', 0),
+                        'ticket_number': ticket_number
+                    })
+                    p_idx += 1
+        
+        session.pop('tickets_data', None)
+    
+    add_bonus_points(order['user_id'], amount)
+    update_user_loyalty(order['user_id'])
+    
+    session.pop('order_number', None)
+    session.pop('order_amount', None)
+    session.modified = True
+    
+    return {'success': True, 'message': 'Оплата прошла успешно'}
 
 @app.route('/pay/<order_number>')
 def pay_order(order_number):
@@ -820,8 +959,24 @@ def api_profile_login_history():
 def api_profile_bonus():
     user_id = request.cookies.get('brt_user_id')
     if not user_id:
-        return {'points': 0, 'level': 'none'}
-    return get_user_bonus(int(user_id))
+        return {'points': 0, 'level': 'none', 'total_spent': 0}
+    
+    user_id = int(user_id)
+    bonus = get_user_bonus(user_id)  # берёт loyalty_level из БД
+    total_spent = get_user_total_spent(user_id)
+    
+    # Пересчитываем уровень на основе потраченной суммы
+    level = calculate_loyalty_level(total_spent)
+    
+    # Если уровень из БД отличается — обновляем БД
+    if bonus.get('level') != level:
+        update_user_loyalty(user_id)
+    
+    return {
+        'points': bonus.get('points', 0),
+        'level': level, 
+        'total_spent': total_spent
+    }
 
 
 @app.route('/admin')
@@ -871,6 +1026,13 @@ def api_admin_delete_promocode():
     if result:
         save_admin_action(int(request.cookies.get('brt_user_id', 0)), 'delete_promo', f'Удалён промокод #{promo_id}', request.remote_addr)
     return {'success': result}
+
+@app.route('/api/promo/check', methods=['POST'])
+def api_promo_check():
+    data = request.get_json()
+    code = data.get('code', '').strip().upper()
+    order_amount = data.get('order_amount', 0)
+    return check_promocode(code, order_amount)
 
 @app.route('/api/admin/logs')
 def api_admin_logs():

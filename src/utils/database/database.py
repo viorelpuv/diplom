@@ -424,8 +424,8 @@ def save_ticket(order_id, ticket_data):
     cursor = conn.cursor()
     try:
         cursor.execute("""
-            INSERT INTO tickets (order_id, trip_id, seat_id, user_id, passenger_type, price, ticket_number)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO tickets (order_id, trip_id, seat_id, user_id, passenger_type, price, ticket_number, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'))
         """, (
             order_id,
             ticket_data.get('trip_id'),
@@ -437,10 +437,12 @@ def save_ticket(order_id, ticket_data):
         ))
         ticket_id = cursor.lastrowid
         
-        cursor.execute("""
-            UPDATE trip_seats SET is_available = 0 
-            WHERE trip_id = ? AND seat_id = ?
-        """, (ticket_data.get('trip_id'), ticket_data.get('seat_id')))
+        # Обновляем доступность места
+        if ticket_data.get('trip_id') and ticket_data.get('seat_id'):
+            cursor.execute("""
+                UPDATE trip_seats SET is_available = 0 
+                WHERE trip_id = ? AND seat_id = ?
+            """, (ticket_data.get('trip_id'), ticket_data.get('seat_id')))
         
         conn.commit()
         return ticket_id
@@ -1621,6 +1623,256 @@ def get_admin_actions(limit=100):
             ORDER BY aa.created_at DESC LIMIT ?
         """, (limit,))
         return [dict(row) for row in cursor.fetchall()]
+    finally:
+        cursor.close()
+        conn.close()
+
+
+# ============================================
+# SETTINGS
+# ============================================
+def get_settings():
+    """Получить настройки системы."""
+    conn = get_db()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("SELECT * FROM settings WHERE id = 1")
+        row = cursor.fetchone()
+        if row:
+            return dict(row)
+        return {
+            'service_fee': 200,
+            'payment_timeout': 20,
+            'max_tickets_per_order': 5,
+            'bonus_rate': 1,
+            'bonus_value': 1,
+            'bonus_register': 100,
+            'min_bonus_order': 500,
+            'max_bonus_percent': 30,
+            'max_login_attempts': 5,
+            'block_minutes': 30,
+            'min_password_length': 6,
+            'maintenance_mode': False,
+            'maintenance_message': 'Сайт на техническом обслуживании'
+        }
+    finally:
+        cursor.close()
+        conn.close()
+
+
+def save_settings(data):
+    """Сохранить настройки системы."""
+    conn = get_db()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("SELECT id FROM settings WHERE id = 1")
+        if cursor.fetchone():
+            cursor.execute("""
+                UPDATE settings SET 
+                    service_fee = ?, payment_timeout = ?, max_tickets_per_order = ?,
+                    bonus_rate = ?, bonus_value = ?, bonus_register = ?,
+                    min_bonus_order = ?, max_bonus_percent = ?,
+                    max_login_attempts = ?, block_minutes = ?, min_password_length = ?,
+                    maintenance_mode = ?, maintenance_message = ?
+                WHERE id = 1
+            """, (
+                data.get('service_fee', 200),
+                data.get('payment_timeout', 20),
+                data.get('max_tickets_per_order', 5),
+                data.get('bonus_rate', 1),
+                data.get('bonus_value', 1),
+                data.get('bonus_register', 100),
+                data.get('min_bonus_order', 500),
+                data.get('max_bonus_percent', 30),
+                data.get('max_login_attempts', 5),
+                data.get('block_minutes', 30),
+                data.get('min_password_length', 6),
+                data.get('maintenance_mode', 1 if data.get('maintenance_mode') else 0),
+                data.get('maintenance_message', 'Сайт на техническом обслуживании')
+            ))
+        else:
+            cursor.execute("""
+                INSERT INTO settings (id, service_fee, payment_timeout, max_tickets_per_order,
+                    bonus_rate, bonus_value, bonus_register, min_bonus_order, max_bonus_percent,
+                    max_login_attempts, block_minutes, min_password_length,
+                    maintenance_mode, maintenance_message)
+                VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (
+                data.get('service_fee', 200),
+                data.get('payment_timeout', 20),
+                data.get('max_tickets_per_order', 5),
+                data.get('bonus_rate', 1),
+                data.get('bonus_value', 1),
+                data.get('bonus_register', 100),
+                data.get('min_bonus_order', 500),
+                data.get('max_bonus_percent', 30),
+                data.get('max_login_attempts', 5),
+                data.get('block_minutes', 30),
+                data.get('min_password_length', 6),
+                data.get('maintenance_mode', 1 if data.get('maintenance_mode') else 0),
+                data.get('maintenance_message', 'Сайт на техническом обслуживании')
+            ))
+        conn.commit()
+        return True
+    except Exception as e:
+        print(f"Ошибка сохранения настроек: {e}")
+        conn.rollback()
+        return False
+    finally:
+        cursor.close()
+        conn.close()
+
+
+# ============================================
+# PROMO CHECK
+# ============================================
+def check_promocode(code, order_amount=0):
+    """Проверить промокод и вернуть скидку."""
+    conn = get_db()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("""
+            SELECT * FROM promocodes 
+            WHERE code = ? AND is_active = 1 
+            AND (expires_at IS NULL OR expires_at >= datetime('now'))
+            AND (max_uses = 0 OR used_count < max_uses)
+        """, (code,))
+        
+        promo = cursor.fetchone()
+        if not promo:
+            return {'valid': False, 'message': 'Промокод не найден или истёк'}
+        
+        promo = dict(promo)
+        
+        if promo['min_order_amount'] > 0 and order_amount < promo['min_order_amount']:
+            return {
+                'valid': False,
+                'message': f'Минимальная сумма заказа: {promo["min_order_amount"]} ₽'
+            }
+        
+        message = 'Промокод применён!'
+        if promo['discount_percent']:
+            message += f' Скидка {promo["discount_percent"]}%'
+        elif promo['discount_amount']:
+            message += f' Скидка {promo["discount_amount"]} ₽'
+        
+        return {
+            'valid': True,
+            'message': message,
+            'discount_percent': promo['discount_percent'],
+            'discount_amount': promo['discount_amount'],
+            'promo_id': promo['id']
+        }
+    finally:
+        cursor.close()
+        conn.close()
+
+
+def apply_promocode(promo_id):
+    """Увеличить счётчик использований промокода."""
+    conn = get_db()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("UPDATE promocodes SET used_count = used_count + 1 WHERE id = ?", (promo_id,))
+        conn.commit()
+        return True
+    except:
+        conn.rollback()
+        return False
+    finally:
+        cursor.close()
+        conn.close()
+
+
+def update_order_promo(order_id, promo_code):
+    """Обновить промокод в заказе."""
+    conn = get_db()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("UPDATE orders SET promo_code = ? WHERE id = ?", (promo_code, order_id))
+        conn.commit()
+        return True
+    except:
+        conn.rollback()
+        return False
+    finally:
+        cursor.close()
+        conn.close()
+
+
+# ============================================
+# BONUS
+# ============================================
+def get_user_total_spent(user_id):
+    """Получить общую сумму покупок пользователя."""
+    conn = get_db()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("""
+            SELECT COALESCE(SUM(total_amount), 0) as total_spent 
+            FROM orders 
+            WHERE user_id = ? AND status = 'paid'
+        """, (user_id,))
+        row = cursor.fetchone()
+        return row['total_spent'] if row else 0
+    finally:
+        cursor.close()
+        conn.close()
+
+
+def calculate_loyalty_level(total_spent):
+    """Рассчитать уровень лояльности на основе потраченной суммы."""
+    if total_spent >= 200000:
+        return 'platinum'
+    elif total_spent >= 70000:
+        return 'gold'
+    elif total_spent >= 20000:
+        return 'silver'
+    return 'none'
+
+
+def update_user_loyalty(user_id):
+    """Обновить уровень лояльности пользователя."""
+    total_spent = get_user_total_spent(user_id)
+    level = calculate_loyalty_level(total_spent)
+    
+    conn = get_db()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("""
+            UPDATE users SET loyalty_level = ?, updated_at = datetime('now') 
+            WHERE id = ?
+        """, (level, user_id))
+        conn.commit()
+        print(f"DEBUG: loyalty_level обновлён: user_id={user_id}, level={level}, total_spent={total_spent}")
+        return level
+    except Exception as e:
+        print(f"ERROR update_user_loyalty: {e}")
+        conn.rollback()
+        return 'none'
+    finally:
+        cursor.close()
+        conn.close()
+
+
+def add_bonus_points(user_id, amount_paid):
+    """Начислить бонусные баллы за покупку."""
+    # Фиксированное значение — 1 балл за 1 рубль
+    bonus_rate = 1
+    points = int(amount_paid * bonus_rate)
+    
+    conn = get_db()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("""
+            UPDATE users SET bonus_points = bonus_points + ?, updated_at = datetime('now')
+            WHERE id = ?
+        """, (points, user_id))
+        conn.commit()
+        return points
+    except:
+        conn.rollback()
+        return 0
     finally:
         cursor.close()
         conn.close()

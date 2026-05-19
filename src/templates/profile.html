@@ -37,10 +37,6 @@
                         <img src="{{ url_for('static', filename='icons/profile_icons/folder_copy_24dp_F1_FILL0_wght400_GRAD0_opsz24.svg') }}" alt="" class="profile-sidebar__icon">
                         Документы
                     </a>
-                    <a href="#" class="profile-sidebar__link" data-tab="passengers">
-                        <img src="{{ url_for('static', filename='icons/profile_icons/group_24dp_F1_FILL0_wght400_GRAD0_opsz24.svg') }}" alt="" class="profile-sidebar__icon">
-                        Сохранённые пассажиры
-                    </a>
                     <a href="#" class="profile-sidebar__link" data-tab="bonus">
                         <img src="{{ url_for('static', filename='icons/profile_icons/credit_card_24dp_F1_FILL0_wght400_GRAD0_opsz24.svg') }}" alt="" class="profile-sidebar__icon">
                         Бонусная программа
@@ -134,15 +130,12 @@
             <!-- Документы -->
             <div class="profile-tab" id="tab-documents" style="display:none;">
                 <h2 class="profile-tab__title">Документы</h2>
-                <div id="documentsList">
-                    <p style="color:#A3A3A3; text-align:center; padding:40px;">Загрузка...</p>
+                <div style="margin-bottom:20px;">
+                    <button onclick="showAddDocumentForm()" style="background:#4672FF;color:#fff;border:none;padding:10px 20px;border-radius:8px;cursor:pointer;font-size:14px;font-family:'Commissioner',sans-serif;">
+                        + Добавить документ
+                    </button>
                 </div>
-            </div>
-            
-            <!-- Сохранённые пассажиры -->
-            <div class="profile-tab" id="tab-passengers" style="display:none;">
-                <h2 class="profile-tab__title">Сохранённые пассажиры</h2>
-                <div id="savedPassengersList">
+                <div id="documentsList">
                     <p style="color:#A3A3A3; text-align:center; padding:40px;">Загрузка...</p>
                 </div>
             </div>
@@ -260,7 +253,6 @@ document.addEventListener('DOMContentLoaded', function() {
             case 'history': loadHistory(); break;
             case 'profile': break;
             case 'documents': loadDocuments(); break;
-            case 'passengers': loadSavedPassengers(); break;
             case 'login-history': loadLoginHistory(); break;
             case 'bonus': loadBonus(); break;
         }
@@ -332,15 +324,35 @@ function loadUserData(userId) {
             document.getElementById('profileEmail').textContent = user.email || '';
             
             const form = document.getElementById('profileForm');
-            if (user.first_name) form.querySelector('[name="first_name"]').value = user.first_name;
-            if (user.last_name) form.querySelector('[name="last_name"]').value = user.last_name;
-            if (user.middle_name) form.querySelector('[name="middle_name"]').value = user.middle_name;
-            if (user.birth_date) form.querySelector('[name="birth_date"]').value = user.birth_date;
-            if (user.email) form.querySelector('[name="email"]').value = user.email;
-            if (user.citizenship) form.querySelector('[name="citizenship"]').value = user.citizenship;
+            if (user.first_name) form.querySelector('[name="first_name"]').value = user.first_name || '';
+            if (user.last_name) form.querySelector('[name="last_name"]').value = user.last_name || '';
+            if (user.middle_name) form.querySelector('[name="middle_name"]').value = user.middle_name || '';
+            if (user.birth_date) form.querySelector('[name="birth_date"]').value = user.birth_date || '';
+            if (user.email) form.querySelector('[name="email"]').value = user.email || '';
+            if (user.citizenship) form.querySelector('[name="citizenship"]').value = user.citizenship || '';
             
-            // Форматирование телефона
+            // Заполняем телефон
             const phoneInput = document.querySelector('[name="phone"]');
+            if (phoneInput && user.phone) {
+                let phone = user.phone.replace(/\D/g, '');
+                if (phone.startsWith('8')) phone = '7' + phone.slice(1);
+                if (!phone.startsWith('7')) phone = '7' + phone;
+                if (phone.length > 11) phone = phone.slice(0, 11);
+                
+                if (phone.length >= 2) {
+                    let formatted = '+7';
+                    const rest = phone.slice(1, 11);
+                    if (rest.length >= 1) formatted += ' (' + rest.slice(0, Math.min(3, rest.length));
+                    if (rest.length >= 3) formatted += ') ' + rest.slice(3, Math.min(6, rest.length));
+                    if (rest.length >= 6) formatted += '-' + rest.slice(6, Math.min(8, rest.length));
+                    if (rest.length >= 8) formatted += '-' + rest.slice(8, 10);
+                    phoneInput.value = formatted;
+                } else {
+                    phoneInput.value = '+7';
+                }
+            }
+            
+            // Форматирование телефона при вводе
             if (phoneInput) {
                 phoneInput.addEventListener('input', function(e) {
                     let value = this.value.replace(/\D/g, '');
@@ -485,20 +497,45 @@ function loadTickets() {
                 container.innerHTML = '<p style="color:#A3A3A3; text-align:center; padding:40px;">У вас пока нет билетов</p>';
                 return;
             }
-            container.innerHTML = tickets.map(t => 
-                '<div class="ticket-item">' +
+            container.innerHTML = tickets.map(t => {
+                // Форматируем даты
+                let depDate = '';
+                let arrDate = '';
+                let departure = '';
+                let arrival = '';
+                
+                if (t.departure_datetime) {
+                    const dep = new Date(t.departure_datetime);
+                    depDate = dep.toLocaleDateString('ru-RU');
+                    departure = dep.toLocaleTimeString('ru-RU', {hour:'2-digit', minute:'2-digit'});
+                }
+                if (t.arrival_datetime) {
+                    const arr = new Date(t.arrival_datetime);
+                    arrDate = arr.toLocaleDateString('ru-RU');
+                    arrival = arr.toLocaleTimeString('ru-RU', {hour:'2-digit', minute:'2-digit'});
+                }
+                
+                const statusLabels = {
+                    'active': '✅ Активен',
+                    'used': '🎫 Использован',
+                    'cancelled': '❌ Отменён',
+                    'refunded': '💰 Возврат'
+                };
+                
+                return '<div class="ticket-item">' +
                     '<div class="ticket-item__header">' +
-                        '<span class="ticket-item__route">' + t.from_city + ' → ' + t.to_city + '</span>' +
-                        '<span class="ticket-item__status ticket-item__status--' + t.status + '">' + t.status + '</span>' +
+                        '<span class="ticket-item__route">' + (t.from_city || '—') + ' → ' + (t.to_city || '—') + '</span>' +
+                        '<span class="ticket-item__status">' + (statusLabels[t.status] || t.status) + '</span>' +
                     '</div>' +
                     '<div class="ticket-item__info">' +
-                        '<span>' + t.train_number + '</span>' +
-                        '<span>' + t.departure + ' – ' + t.arrival + '</span>' +
-                        '<span>Вагон ' + t.wagon + ', место ' + t.seat + '</span>' +
+                        '<span>Поезд ' + (t.train_number || '—') + '</span>' +
+                        '<span>' + departure + ' – ' + arrival + '</span>' +
+                        '<span>Вагон ' + (t.wagon || '—') + ', место ' + (t.seat || '—') + '</span>' +
+                        '<span style="color:#A3A3A3; font-size:12px;">Билет №' + (t.ticket_number || '—') + '</span>' +
                     '</div>' +
-                    '<div class="ticket-item__price">' + t.price + ' ₽</div>' +
-                '</div>'
-            ).join('');
+                    '<div class="ticket-item__price">' + (t.price || 0).toLocaleString('ru-RU') + ' ₽</div>' +
+                '</div>';
+            }).join('');
         });
 }
 
@@ -507,11 +544,251 @@ function loadHistory() {
 }
 
 function loadDocuments() {
-    document.getElementById('documentsList').innerHTML = '<p style="color:#A3A3A3; text-align:center; padding:40px;">Нет сохранённых документов</p>';
+    const userId = getUserId();
+    if (!userId) return;
+    
+    fetch('/api/profile/' + userId)
+        .then(r => r.json())
+        .then(user => {
+            const container = document.getElementById('documentsList');
+            
+            if (!user.document_type || !user.document_number) {
+                container.innerHTML = '<p style="color:#A3A3A3; text-align:center; padding:40px;">Нет сохранённых документов</p>';
+                return;
+            }
+            
+            const docTypeLabels = {
+                'passport_rf': 'Паспорт РФ',
+                'passport_foreign': 'Загранпаспорт',
+                'birth_certificate': 'Свидетельство о рождении',
+                'military_id': 'Военный билет',
+                'other': 'Другой документ'
+            };
+            
+            container.innerHTML = `
+                <div style="background:#fff; border-radius:14px; padding:20px; box-shadow:0 2px 8px rgba(0,0,0,0.04);">
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; font-family:'Commissioner',sans-serif;">
+                        <div>
+                            <span style="color:#A3A3A3; font-size:13px;">Тип документа</span>
+                            <p style="color:#1E1E1E; font-size:15px; margin-top:4px;">${docTypeLabels[user.document_type] || user.document_type}</p>
+                        </div>
+                        <div>
+                            <span style="color:#A3A3A3; font-size:13px;">Номер документа</span>
+                            <p style="color:#1E1E1E; font-size:15px; margin-top:4px;">${user.document_number || '—'}</p>
+                        </div>
+                        ${user.document_series ? `
+                        <div>
+                            <span style="color:#A3A3A3; font-size:13px;">Серия</span>
+                            <p style="color:#1E1E1E; font-size:15px; margin-top:4px;">${user.document_series}</p>
+                        </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+        });
 }
 
-function loadSavedPassengers() {
-    document.getElementById('savedPassengersList').innerHTML = '<p style="color:#A3A3A3; text-align:center; padding:40px;">Нет сохранённых пассажиров</p>';
+function getUserId() {
+    const cookies = document.cookie.split('; ');
+    const userCookie = cookies.find(c => c.startsWith('brt_user_id='));
+    return userCookie ? userCookie.split('=')[1] : null;
+}
+
+function showAddDocumentForm() {
+    const modal = document.createElement('div');
+    modal.className = 'profile-modal';
+    modal.innerHTML = `
+        <div class="profile-modal__overlay" onclick="this.parentElement.remove()"></div>
+        <div class="profile-modal__content">
+            <div class="profile-modal__header">
+                <h3 class="profile-modal__title">Добавить документ</h3>
+                <button class="profile-modal__close" onclick="this.closest('.profile-modal').remove()">✕</button>
+            </div>
+            <form id="addDocumentForm">
+                <div class="form-group">
+                    <label class="form-label">Тип документа</label>
+                    <select class="form-input" name="document_type" id="profileDocType" onchange="updateProfileDocFields(this)" style="height:48px;">
+                        <option value="passport_rf">Паспорт РФ</option>
+                        <option value="passport_int">Загранпаспорт</option>
+                        <option value="seaman">Паспорт моряка</option>
+                        <option value="military">Военный билет</option>
+                        <option value="military_id">Удостоверение военнослужащего</option>
+                        <option value="foreign_doc">Иностранный документ</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" id="docNumberLabel">Серия и номер</label>
+                    <input type="text" class="form-input" name="document_number" id="profileDocNumber" required placeholder="0000 000000" maxlength="11" oninput="formatProfileDocNumber(this)">
+                </div>
+                <div id="profileDocExtraFields"></div>
+                <button type="submit" class="form-submit" style="margin-top:16px;">Сохранить</button>
+            </form>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    document.getElementById('addDocumentForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+        const data = Object.fromEntries(formData);
+        
+        // Собираем дополнительные поля
+        const extraContainer = document.getElementById('profileDocExtraFields');
+        if (extraContainer) {
+            const extraInputs = extraContainer.querySelectorAll('.form-input');
+            const extraSelects = extraContainer.querySelectorAll('select');
+            
+            if (data.document_type === 'military' || data.document_type === 'military_id') {
+                data.military_category = extraSelects[0]?.value || '';
+                data.military_date = extraInputs[0]?.value || '';
+            } else if (data.document_type === 'foreign_doc') {
+                data.citizenship = extraInputs[0]?.value || '';
+            }
+        }
+        
+        fetch('/api/profile/update', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(data)
+        }).then(r => r.json()).then(d => {
+            if (d.success) {
+                alert('Документ сохранён');
+                modal.remove();
+                loadDocuments();
+            } else {
+                alert(d.message || 'Ошибка сохранения');
+            }
+        });
+    });
+    
+    const escHandler = function(e) {
+        if (e.key === 'Escape') {
+            modal.remove();
+            document.removeEventListener('keydown', escHandler);
+        }
+    };
+    document.addEventListener('keydown', escHandler);
+}
+
+// Функция обновления полей в зависимости от типа документа
+function updateProfileDocFields(select) {
+    const docType = select.value;
+    const numberInput = document.getElementById('profileDocNumber');
+    const numberLabel = document.getElementById('docNumberLabel');
+    const extraContainer = document.getElementById('profileDocExtraFields');
+    
+    numberInput.value = '';
+    numberInput.dataset.docType = docType;
+    
+    // Меняем плейсхолдер и макс. длину
+    switch (docType) {
+        case 'passport_rf':
+            numberInput.placeholder = '0000 000000';
+            numberInput.maxLength = 11;
+            numberLabel.textContent = 'Серия и номер';
+            break;
+        case 'passport_int':
+            numberInput.placeholder = '00 0000000';
+            numberInput.maxLength = 10;
+            numberLabel.textContent = 'Серия и номер';
+            break;
+        case 'seaman':
+            numberInput.placeholder = '0000000';
+            numberInput.maxLength = 7;
+            numberLabel.textContent = 'Номер';
+            break;
+        case 'military':
+        case 'military_id':
+            numberInput.placeholder = 'АА1234567';
+            numberInput.maxLength = 9;
+            numberLabel.textContent = 'Серия и номер';
+            break;
+        case 'foreign_doc':
+            numberInput.placeholder = 'Номер документа';
+            numberInput.maxLength = 20;
+            numberLabel.textContent = 'Номер документа';
+            break;
+        default:
+            numberInput.placeholder = '0000 000000';
+            numberInput.maxLength = 11;
+    }
+    
+    // Очищаем и добавляем доп. поля
+    extraContainer.innerHTML = '';
+    
+    if (docType === 'military' || docType === 'military_id') {
+        extraContainer.innerHTML = `
+            <div class="form-group">
+                <label class="form-label">Категория военнослужащего</label>
+                <select class="form-input" style="height:48px;">
+                    <option value="contract">Контрактник</option>
+                    <option value="conscript">Призывник</option>
+                    <option value="mobilized">Мобилизованный</option>
+                    <option value="cadet">Курсант</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Дата начала военной службы</label>
+                <input type="date" class="form-input">
+            </div>
+        `;
+    } else if (docType === 'foreign_doc') {
+        extraContainer.innerHTML = `
+            <div class="form-group">
+                <label class="form-label">Гражданство</label>
+                <input type="text" class="form-input" placeholder="Казахстан">
+            </div>
+        `;
+    }
+}
+
+// Форматирование номера документа
+function formatProfileDocNumber(input) {
+    const docType = input.dataset.docType || 'passport_rf';
+    let value = input.value.replace(/[^\dA-Za-zА-Яа-я]/g, '');
+    
+    if (docType === 'military' || docType === 'military_id') {
+        value = value.toUpperCase();
+        if (value.length > 9) value = value.slice(0, 9);
+    } else if (docType === 'foreign_doc') {
+        if (value.length > 20) value = value.slice(0, 20);
+        input.value = value;
+        return;
+    } else {
+        value = value.replace(/\D/g, '');
+    }
+    
+    let formatted = '';
+    let numVal = value.replace(/[^\d]/g, '');
+    
+    switch (docType) {
+        case 'passport_rf':
+            if (numVal.length > 10) numVal = numVal.slice(0, 10);
+            if (numVal.length > 0) formatted = numVal.slice(0, 4);
+            if (numVal.length >= 5) formatted += ' ' + numVal.slice(4, 10);
+            break;
+        case 'passport_int':
+            if (numVal.length > 9) numVal = numVal.slice(0, 9);
+            if (numVal.length > 0) formatted = numVal.slice(0, 2);
+            if (numVal.length >= 3) formatted += ' ' + numVal.slice(2, 9);
+            break;
+        case 'seaman':
+            formatted = numVal.slice(0, 7);
+            break;
+        case 'military':
+        case 'military_id':
+            if (value.length > 9) value = value.slice(0, 9);
+            formatted = value;
+            break;
+        case 'foreign_doc':
+            formatted = value;
+            break;
+        default:
+            formatted = numVal;
+    }
+    
+    input.value = formatted;
 }
 
 function loadLoginHistory() {
@@ -539,8 +816,129 @@ function loadBonus() {
     fetch('/api/profile/bonus')
         .then(r => r.json())
         .then(data => {
-            document.getElementById('bonusPoints').textContent = data.points || 0;
-            document.getElementById('loyaltyLevel').textContent = data.level || 'Нет';
+            const points = data.points || 0;
+            const level = data.level || 'none';
+            const totalSpent = data.total_spent || 0;
+            
+            const levelConfig = {
+                'none': { 
+                    label: 'Базовый', 
+                    color: '#4672FF', 
+                    bgColor: 'linear-gradient(135deg, #4672FF, #2A3F8F)',
+                    cashback: '1%',
+                    nextLevel: 'Silver',
+                    nextLevelAmount: 20000,
+                    progress: Math.min(100, (totalSpent / 20000) * 100),  // было 10000
+                    textColor: '#fff'
+                },
+                'silver': { 
+                    label: 'Серебряный', 
+                    color: '#B0BEC5', 
+                    bgColor: 'linear-gradient(135deg, #B0BEC5, #78909C, #546E7A)',
+                    cashback: '2%',
+                    nextLevel: 'Gold',
+                    nextLevelAmount: 70000,
+                    progress: Math.min(100, ((totalSpent - 20000) / (70000 - 20000)) * 100),  // (текущие - порог) / (след.порог - порог)
+                    textColor: '#1E1E1E'
+                },
+                'gold': { 
+                    label: 'Золотой', 
+                    color: '#FFD700', 
+                    bgColor: 'linear-gradient(135deg, #FFD700, #FFA000, #FF8F00)',
+                    cashback: '3%',
+                    nextLevel: 'Platinum',
+                    nextLevelAmount: 200000,
+                    progress: Math.min(100, ((totalSpent - 70000) / (200000 - 70000)) * 100),
+                    textColor: '#1E1E1E'
+                },
+                'platinum': { 
+                    label: 'Платиновый', 
+                    color: '#E5E4E2', 
+                    bgColor: 'linear-gradient(135deg, #667eea, #764ba2, #f093fb)',
+                    cashback: '5%',
+                    nextLevel: null,
+                    nextLevelAmount: null,
+                    progress: 100,
+                    textColor: '#fff'
+                }
+            };
+            
+            const config = levelConfig[level] || levelConfig['none'];
+
+            document.getElementById('bonusPoints').textContent = points;
+            document.getElementById('loyaltyLevel').textContent = config.label;
+            document.getElementById('loyaltyLevel').style.color = config.textColor;
+
+            // Обновляем карточку
+            const bonusCard = document.querySelector('.bonus-card');
+            if (bonusCard) {
+                bonusCard.style.background = config.bgColor;
+                bonusCard.style.color = config.textColor;
+                bonusCard.style.border = 'none';
+                bonusCard.style.boxShadow = '0 8px 32px rgba(0,0,0,0.2)';
+                
+                // Меняем цвет текста внутри карточки
+                bonusCard.querySelectorAll('span').forEach(span => {
+                    span.style.color = config.textColor;
+                });
+            }
+            
+            // Добавляем информацию о прогрессе
+            const container = document.getElementById('tab-bonus');
+            let progressHTML = '';
+            
+            if (config.nextLevel) {
+                const remaining = config.nextLevelAmount - totalSpent;
+                progressHTML = `
+                    <div style="margin-top:20px; background:#fff; border-radius:14px; padding:20px; box-shadow:0 2px 8px rgba(0,0,0,0.04);">
+                        <div style="display:flex; justify-content:space-between; margin-bottom:8px; font-family:'Commissioner',sans-serif; font-size:14px; color:#1E1E1E;">
+                            <span>Прогресс до ${config.nextLevel}</span>
+                            <span>${totalSpent.toLocaleString('ru-RU')} / ${config.nextLevelAmount.toLocaleString('ru-RU')} ₽</span>
+                        </div>
+                        <div style="height:8px; background:#E0E0E0; border-radius:4px; overflow:hidden;">
+                            <div style="height:100%; width:${config.progress}%; background:${config.color}; border-radius:4px; transition:width 0.3s;"></div>
+                        </div>
+                        <p style="color:#A3A3A3; font-family:'Commissioner',sans-serif; font-size:13px; margin-top:8px;">
+                            Осталось ${remaining.toLocaleString('ru-RU')} ₽ до следующего уровня
+                        </p>
+                    </div>
+                `;
+            } else {
+                progressHTML = `
+                    <div style="margin-top:20px; background:#fff; border-radius:14px; padding:20px; box-shadow:0 2px 8px rgba(0,0,0,0.04); text-align:center;">
+                        <p style="color:#1E1E1E; font-family:'Commissioner',sans-serif; font-size:15px; font-weight:500;">
+                            🎉 Вы достигли максимального уровня!
+                        </p>
+                    </div>
+                `;
+            }
+            
+            // Добавляем информацию о кешбэке
+            const cashbackHTML = `
+                <div style="margin-top:16px; background:#fff; border-radius:14px; padding:20px; box-shadow:0 2px 8px rgba(0,0,0,0.04); display:grid; grid-template-columns:1fr 1fr; gap:16px; font-family:'Commissioner',sans-serif;">
+                    <div>
+                        <span style="color:#A3A3A3; font-size:13px;">Кешбэк бонусами</span>
+                        <p style="color:#1E1E1E; font-size:18px; font-weight:600; margin-top:4px;">${config.cashback}</p>
+                    </div>
+                    <div>
+                        <span style="color:#A3A3A3; font-size:13px;">Всего потрачено</span>
+                        <p style="color:#1E1E1E; font-size:18px; font-weight:600; margin-top:4px;">${totalSpent.toLocaleString('ru-RU')} ₽</p>
+                    </div>
+                </div>
+            `;
+            
+            // Вставляем после бонусной карточки
+            const existingInfo = container.querySelector('.bonus-info');
+            if (existingInfo) existingInfo.remove();
+            
+            const infoDiv = document.createElement('div');
+            infoDiv.className = 'bonus-info';
+            infoDiv.innerHTML = cashbackHTML + progressHTML;
+            
+            const bonusCardEl = container.querySelector('.bonus-card');
+            if (bonusCardEl) {
+                bonusCardEl.after(infoDiv);
+            }
         });
 }
 </script>

@@ -1,0 +1,200 @@
+{% extends 'base.html' %}
+
+{% block title %}
+Оплата картой — BRT
+{% endblock %}
+
+{% block body %}
+<div class="payment-page">
+    <div class="payment-page__container">
+        <div class="payment-card">
+            <div class="payment-card__header">
+                <h2 class="payment-card__title">Оплата картой</h2>
+                <p class="payment-card__subtitle">Безопасный платёж через платёжный шлюз</p>
+            </div>
+            
+            {% if order_number %}
+            <div class="payment-card__body">
+                <div class="payment-card__order-info">
+                    <div class="payment-card__order-row">
+                        <span>Заказ</span>
+                        <span>{{ order_number }}</span>
+                    </div>
+                    <div class="payment-card__order-row">
+                        <span>Сумма к оплате</span>
+                        <span class="payment-card__amount">{{ order_amount }} ₽</span>
+                    </div>
+                </div>
+                
+                <form id="cardForm" class="card-form">
+                    <div class="card-form__group">
+                        <label class="card-form__label">Номер карты</label>
+                        <input type="text" class="card-form__input" id="cardNumber" placeholder="0000 0000 0000 0000" maxlength="19" oninput="formatCardNumber(this)" required>
+                    </div>
+                    
+                    <div class="card-form__row">
+                        <div class="card-form__group" style="flex:1;">
+                            <label class="card-form__label">Срок действия</label>
+                            <input type="text" class="card-form__input" id="cardExpiry" placeholder="ММ/ГГ" maxlength="5" oninput="formatCardExpiry(this)" required>
+                        </div>
+                        <div class="card-form__group" style="flex:1;">
+                            <label class="card-form__label">CVV/CVC</label>
+                            <input type="password" class="card-form__input" id="cardCvv" placeholder="•••" maxlength="3" oninput="this.value = this.value.replace(/\D/g, '')" required>
+                        </div>
+                    </div>
+                    
+                    <div class="card-form__group">
+                        <label class="card-form__label">Имя держателя карты</label>
+                        <input type="text" class="card-form__input" id="cardHolder" placeholder="IVAN IVANOV" oninput="this.value = this.value.toUpperCase()" required>
+                    </div>
+                    
+                    <button type="submit" class="card-form__submit" id="payBtn">
+                        <span id="payBtnText">Оплатить {{ order_amount }} ₽</span>
+                        <span id="payBtnLoader" style="display:none;">⏳ Обработка...</span>
+                    </button>
+                </form>
+                
+                <div class="payment-card__security">
+                    <span>🔒 Платёж защищён. Данные карты не сохраняются.</span>
+                </div>
+            </div>
+            {% else %}
+            <div class="payment-card__body">
+                <div class="payment-success">
+                    <div class="payment-success__icon">❌</div>
+                    <h3 class="payment-success__title">Заказ не найден</h3>
+                    <p class="payment-success__text">Пожалуйста, начните оформление заново</p>
+                    <a href="/" class="payment-success__btn">На главную</a>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const header = document.getElementById('header');
+    if (header) {
+        header.classList.add('scrolled');
+        header.style.background = '#EFF1F4';
+        header.style.boxShadow = 'none';
+        
+        const logoWhite = header.querySelector('.header__logo--white');
+        const logoDark = header.querySelector('.header__logo--dark');
+        if (logoWhite) logoWhite.style.display = 'none';
+        if (logoDark) logoDark.style.display = 'block';
+        
+        const sepImg = header.querySelector('.lang-cur img');
+        const favImg = header.querySelector('.fav');
+        const supportImg = header.querySelector('.support-image');
+        
+        if (sepImg) sepImg.src = '/static/icons/v-line-18.png';
+        if (favImg) favImg.src = '/static/icons/fav.svg';
+        if (supportImg) supportImg.src = '/static/icons/support.svg';
+    }
+    
+    // Проверяем, есть ли заказ
+    const orderNumber = '{{ order_number }}';
+    const orderAmount = '{{ order_amount }}';
+    
+    if (!orderNumber || orderNumber === 'None') return;
+    
+    // Обработка формы
+    document.getElementById('cardForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const cardNumber = document.getElementById('cardNumber').value.replace(/\s/g, '');
+        const cardExpiry = document.getElementById('cardExpiry').value;
+        const cardCvv = document.getElementById('cardCvv').value;
+        const cardHolder = document.getElementById('cardHolder').value;
+        
+        // Валидация
+        let valid = true;
+        
+        if (cardNumber.length !== 16) {
+            document.getElementById('cardNumber').classList.add('error');
+            valid = false;
+        }
+        
+        if (!cardExpiry.match(/^\d{2}\/\d{2}$/)) {
+            document.getElementById('cardExpiry').classList.add('error');
+            valid = false;
+        }
+        
+        if (cardCvv.length !== 3) {
+            document.getElementById('cardCvv').classList.add('error');
+            valid = false;
+        }
+        
+        if (!cardHolder || cardHolder.length < 3) {
+            document.getElementById('cardHolder').classList.add('error');
+            valid = false;
+        }
+        
+        if (!valid) {
+            alert('Пожалуйста, проверьте данные карты');
+            return;
+        }
+        
+        // Блокируем кнопку
+        const payBtn = document.getElementById('payBtn');
+        payBtn.disabled = true;
+        document.getElementById('payBtnText').style.display = 'none';
+        document.getElementById('payBtnLoader').style.display = 'inline';
+        
+        // Имитация обработки платежа
+        setTimeout(() => {
+            fetch('/api/payment/process', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    order_number: orderNumber,
+                    card_last4: cardNumber.slice(-4),
+                    amount: parseInt(orderAmount)
+                })
+            }).then(r => r.json()).then(d => {
+                if (d.success) {
+                    document.querySelector('.payment-card__body').innerHTML = `
+                        <div class="payment-success">
+                            <div class="payment-success__icon">✅</div>
+                            <h3 class="payment-success__title">Оплата прошла успешно!</h3>
+                            <p class="payment-success__text">Заказ #${orderNumber} оплачен. Билеты активны.</p>
+                            <p class="payment-success__text" style="color:#34C759;">Спасибо за покупку!</p>
+                            <a href="/profile" class="payment-success__btn">Мои билеты</a>
+                        </div>
+                    `;
+                } else {
+                    alert(d.message || 'Ошибка оплаты');
+                    payBtn.disabled = false;
+                    document.getElementById('payBtnText').style.display = 'inline';
+                    document.getElementById('payBtnLoader').style.display = 'none';
+                }
+            }).catch(() => {
+                alert('Ошибка соединения');
+                payBtn.disabled = false;
+                document.getElementById('payBtnText').style.display = 'inline';
+                document.getElementById('payBtnLoader').style.display = 'none';
+            });
+        }, 1500);
+    });
+});
+
+function formatCardNumber(input) {
+    let value = input.value.replace(/\D/g, '');
+    if (value.length > 16) value = value.slice(0, 16);
+    let formatted = value.match(/.{1,4}/g)?.join(' ') || '';
+    input.value = formatted;
+}
+
+function formatCardExpiry(input) {
+    let value = input.value.replace(/\D/g, '');
+    if (value.length > 4) value = value.slice(0, 4);
+    if (value.length >= 2) {
+        input.value = value.slice(0, 2) + '/' + value.slice(2);
+    } else {
+        input.value = value;
+    }
+}
+</script>
+{% endblock %}

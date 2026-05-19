@@ -255,6 +255,12 @@ const selectedSeatsStore = {
 };
 window.selectedSeatsStore = selectedSeatsStore;
 
+// Сохраняем trip_id из шаблона
+const tripIds = {
+    forward: '{{ trip.get("trip_id", trip.get("id", "")) }}',
+    backward: '{{ return_trip.get("trip_id", return_trip.get("id", "")) if return_trip else "" }}'
+};
+
 document.addEventListener('DOMContentLoaded', function() {
     const header = document.getElementById('header');
     const logoWhite = header.querySelector('.header__logo--white');
@@ -407,6 +413,7 @@ document.addEventListener('DOMContentLoaded', function() {
             sessionStorage.setItem('selectedSeats', JSON.stringify(selectedSeatsStore));
             sessionStorage.setItem('ticketCounts', JSON.stringify(ticketCounts));
             sessionStorage.setItem('currencySymbol', currentCurrencySymbol);
+            sessionStorage.setItem('tripIds', JSON.stringify(tripIds));  // ← сохраняем trip_id
             
             const forwardCard = document.getElementById('forwardTicket');
             const returnCard = document.getElementById('returnTicket');
@@ -428,6 +435,7 @@ document.addEventListener('DOMContentLoaded', function() {
             url += '&children=' + ticketCounts.forward.children;
             url += '&infants=' + ticketCounts.forward.infants;
             url += '&has_return=' + (hasReturn ? '1' : '0');
+            url += '&forward_trip_id=' + tripIds.forward;  // ← передаём trip_id
             
             if (returnCard) {
                 url += '&return_from_city=' + encodeURIComponent(returnCard.querySelector('.ticket-card__from').textContent.trim());
@@ -442,6 +450,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 const retArrDateEl = returnCard.querySelectorAll('.ticket-card__time-block .ticket-card__date')[1];
                 url += '&return_arr_date=' + encodeURIComponent(retArrDateEl ? retArrDateEl.textContent.trim() : '');
                 url += '&return_transfer_text=' + encodeURIComponent(returnCard.querySelector('.transfer-text').textContent.trim());
+                url += '&backward_trip_id=' + tripIds.backward;  // ← передаём trip_id
             }
 
             url += '&cur=' + encodeURIComponent('{{ g.cur }}') + '&cur_sym=' + encodeURIComponent('{{ "€" if g.cur == "EUR" else "$" if g.cur == "USD" else "₽" }}');
@@ -660,6 +669,5 @@ function renderWagonCards(grouped) {
 document.addEventListener('resetSidebar', function() {
     updateSidebarWithSeats();
 });
-
 </script>
 {% endblock %}
