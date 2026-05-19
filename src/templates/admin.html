@@ -1031,39 +1031,78 @@ function toggleDayDetails(date, row) {
 }
 
 function loadLogs() {
+    const c = document.getElementById('logsList');
+    c.innerHTML = `
+        <div style="margin-bottom:16px; display:flex; justify-content:space-between; align-items:center;">
+            <h3 style="color:#fff; margin:0; font-size:16px;">Журнал действий</h3>
+            <button onclick="clearLogs()" style="background:#C62828;color:#fff;border:none;padding:8px 16px;border-radius:8px;cursor:pointer;font-size:13px;font-family:'Commissioner',sans-serif; display: flex; align-items: center">
+                <img src="/static/icons/admin/users/delete_24dp_F3F3F3_FILL0_wght400_GRAD0_opsz24.svg" alt="Уд." style="width:16px;height:16px;vertical-align:middle;"> Очистить логи
+            </button>
+        </div>
+        <div id="logsTableContainer">Загрузка...</div>
+    `;
+    
     fetch('/api/admin/logs')
         .then(r => r.json())
         .then(data => {
-            const c = document.getElementById('logsList');
-            if (!data.length) {
-                c.innerHTML = '<p style="color:#A3A3A3;">Нет записей</p>';
-                return;
-            }
-            c.innerHTML = `
-                <table style="width:100%; border-collapse:collapse; color:#fff; font-family:'Commissioner',sans-serif; font-size:14px;">
-                    <thead>
-                        <tr style="border-bottom:1px solid #333;">
-                            <th style="padding:10px; text-align:left;">Админ</th>
-                            <th style="padding:10px; text-align:left;">Действие</th>
-                            <th style="padding:10px; text-align:left;">Детали</th>
-                            <th style="padding:10px; text-align:left;">IP</th>
-                            <th style="padding:10px; text-align:left;">Дата</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${data.map(l => `
-                            <tr style="border-bottom:1px solid #2A2A2A;">
-                                <td style="padding:10px;">${l.email || '—'}</td>
-                                <td style="padding:10px;">${getActionLabel(l.action)}</td>
-                                <td style="padding:10px;">${l.details || '—'}</td>
-                                <td style="padding:10px;">${l.ip_address || '—'}</td>
-                                <td style="padding:10px;">${new Date(l.created_at).toLocaleString('ru-RU')}</td>
-                            </tr>
-                        `).join('')}
-                    </tbody>
-                </table>
-            `;
+            window.allLogsData = data;
+            renderLogsTable(data);
         });
+}
+
+function renderLogsTable(data) {
+    const container = document.getElementById('logsTableContainer');
+    if (!container) return;
+    
+    if (!data.length) {
+        container.innerHTML = '<p style="color:#A3A3A3;">Нет записей</p>';
+        return;
+    }
+    
+    container.innerHTML = `
+        <table style="width:100%; border-collapse:collapse; color:#fff; font-family:'Commissioner',sans-serif; font-size:14px;">
+            <thead>
+                <tr style="border-bottom:1px solid #333;">
+                    <th style="padding:10px; text-align:left;">Админ</th>
+                    <th style="padding:10px; text-align:left;">Действие</th>
+                    <th style="padding:10px; text-align:left;">Детали</th>
+                    <th style="padding:10px; text-align:left;">IP</th>
+                    <th style="padding:10px; text-align:left;">Дата</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${data.map(l => `
+                    <tr style="border-bottom:1px solid #2A2A2A;">
+                        <td style="padding:10px;">${l.email || '—'}</td>
+                        <td style="padding:10px;">${getActionLabel(l.action)}</td>
+                        <td style="padding:10px;">${l.details || '—'}</td>
+                        <td style="padding:10px;">${l.ip_address || '—'}</td>
+                        <td style="padding:10px;">${new Date(l.created_at).toLocaleString('ru-RU')}</td>
+                    </tr>
+                `).join('')}
+            </tbody>
+        </table>
+    `;
+}
+
+function clearLogs() {
+    if (!confirm('Вы уверены, что хотите очистить все логи? Это действие нельзя отменить.')) return;
+    
+    fetch('/api/admin/logs/clear', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'}
+    })
+    .then(r => r.json())
+    .then(d => {
+        if (d.success) {
+            alert('Логи очищены');
+            window.allLogsData = [];
+            renderLogsTable([]);
+        } else {
+            alert(d.message || 'Ошибка очистки');
+        }
+    })
+    .catch(() => alert('Ошибка соединения'));
 }
 
 function getActionLabel(action) {

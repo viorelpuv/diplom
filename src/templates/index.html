@@ -236,7 +236,7 @@ BRT
         </div>
 
         <div class="info-block">
-            <div class="info-block__large">
+            <div class="info-block__large" onclick="window.location.href='/faq'">
                 <div class="info-block__large-content">
                     <h3>Справочный раздел</h3>
                     <p>С ответами на часто задаваемые<br>вопросы</p>
@@ -246,13 +246,13 @@ BRT
                 </div>
             </div>
             <div class="info-block__small-row">
-                <div class="info-block__small">
+                <div class="info-block__small" onclick="window.location.href='/faq#refund'">
                     <span>Вернуть билет</span>
                     <div class="info-block__small-arrow">
                         <img src="{{ url_for('static', filename='icons/arrow-mid.svg') }}" alt="">
                     </div>
                 </div>
-                <div class="info-block__small">
+                <div class="info-block__small" onclick="window.location.href='/faq#animals'">
                     <span>Перевозка животных</span>
                     <div class="info-block__small-arrow">
                         <img src="{{ url_for('static', filename='icons/arrow-mid.svg') }}" alt="">
@@ -260,13 +260,13 @@ BRT
                 </div>
             </div>
             <div class="info-block__small-row">
-                <div class="info-block__small">
+                <div class="info-block__small" onclick="window.location.href='/faq#baggage'">
                     <span>Провоз багажа</span>
                     <div class="info-block__small-arrow">
                         <img src="{{ url_for('static', filename='icons/arrow-mid.svg') }}" alt="">
                     </div>
                 </div>
-                <div class="info-block__small">
+                <div class="info-block__small" onclick="window.location.href='/faq#feedback'">
                     <span>Обратная связь</span>
                     <div class="info-block__small-arrow">
                         <img src="{{ url_for('static', filename='icons/arrow-mid.svg') }}" alt="">
@@ -352,6 +352,9 @@ BRT
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Скрываем прелоадер при загрузке
+    if (typeof hidePreloader === 'function') hidePreloader();
+    
     const passengerSelect = document.getElementById('passengerSelect');
     const passengerDropdown = document.getElementById('passengerDropdown');
     const passengerText = passengerSelect.querySelector('.passenger-select__text');
@@ -444,6 +447,109 @@ document.addEventListener('DOMContentLoaded', function() {
     passengerDropdown.addEventListener('click', function(e) {
         e.stopPropagation();
     });
+
+    // Клики по большим карточкам маршрутов
+    document.querySelectorAll('.route-card').forEach(card => {
+        card.addEventListener('click', function() {
+            const city = this.querySelector('.route-card__city').textContent.trim();
+            showGlobalPreloader();
+            getUserLocationAndSearch(city);
+        });
+    });
+
+    // Клики по маленьким карточкам
+    document.querySelectorAll('.quick-route-card').forEach(card => {
+        card.addEventListener('click', function() {
+            const arrowImg = this.querySelector('.quick-route-card__content img');
+            let from = '';
+            let to = '';
+            
+            if (arrowImg) {
+                const fullText = this.querySelector('.quick-route-card__content span:first-child').innerHTML;
+                const arrowPos = fullText.indexOf('<img');
+                if (arrowPos > 0) {
+                    from = fullText.substring(0, arrowPos).trim();
+                    to = fullText.substring(arrowPos).replace(/<img[^>]*>/g, '').trim();
+                }
+            }
+            
+            if (from && to) {
+                showGlobalPreloader();
+                window.location.href = '/search?from=' + encodeURIComponent(from) + 
+                    '&to=' + encodeURIComponent(to) +
+                    '&adults=' + counters.adults + 
+                    '&children=' + counters.children + 
+                    '&infants=' + counters.infants;
+            }
+        });
+    });
+
+    // Загружаем актуальные цены для маленьких карточек
+    loadQuickRoutePrices();
+
+    // Показ прелоадера
+    function showGlobalPreloader() {
+        const preloader = document.getElementById('preloader');
+        if (preloader) {
+            preloader.style.display = 'flex';
+            preloader.classList.add('preloader--show');
+            preloader.classList.remove('preloader--hide');
+        }
+    }
+
+    // Геолокация и поиск
+    function getUserLocationAndSearch(toCity) {
+        fetch('https://ipapi.co/json/')
+            .then(r => r.json())
+            .then(data => {
+                let userCity = data.city || data.region || 'Москва';
+                redirectToSearch(userCity, toCity);
+            })
+            .catch(() => {
+                redirectToSearch('Москва', toCity);
+            });
+    }
+
+    function redirectToSearch(fromCity, toCity) {
+        window.location.href = '/search?from=' + encodeURIComponent(fromCity) + 
+            '&to=' + encodeURIComponent(toCity) +
+            '&adults=' + counters.adults + 
+            '&children=' + counters.children + 
+            '&infants=' + counters.infants;
+    }
+    
+    // Загрузка цен из API для маленьких карточек
+    function loadQuickRoutePrices() {
+        const cards = document.querySelectorAll('.quick-route-card');
+        
+        cards.forEach(card => {
+            const arrowImg = card.querySelector('.quick-route-card__content img');
+            if (!arrowImg) return;
+            
+            const fullText = card.querySelector('.quick-route-card__content span:first-child').innerHTML;
+            const arrowPos = fullText.indexOf('<img');
+            if (arrowPos <= 0) return;
+            
+            const from = fullText.substring(0, arrowPos).trim();
+            const to = fullText.substring(arrowPos).replace(/<img[^>]*>/g, '').trim();
+            
+            if (!from || !to) return;
+            
+            const today = new Date().toISOString().split('T')[0];
+            
+            fetch('/api/quick-search?from=' + encodeURIComponent(from) + '&to=' + encodeURIComponent(to) + '&date=' + today)
+                .then(r => r.json())
+                .then(data => {
+                    const priceEl = card.querySelector('.quick-route-card__content span:last-child');
+                    if (priceEl && data.min_price) {
+                        priceEl.textContent = 'от ' + data.min_price.toLocaleString('ru-RU') + ' ₽';
+                    }
+                })
+                .catch(() => {
+                    // Оставляем статичную цену если API недоступно
+                });
+        });
+    }
 });
 
 // Смена хедера при скролле

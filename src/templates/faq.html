@@ -1,0 +1,317 @@
+{% extends 'base.html' %}
+
+{% block title %}
+Справочный раздел — BRT
+{% endblock %}
+
+{% block body %}
+<div class="faq-page">
+    <div class="faq-page__container">
+        <h1 class="faq-page__title">Справочный раздел</h1>
+        <p class="faq-page__subtitle">С ответами на часто задаваемые вопросы</p>
+        
+        <div class="faq-grid">
+            <!-- Карточка 1 -->
+            <a href="#refund" class="faq-card">
+                <div class="faq-card__icon">🎫</div>
+                <h3 class="faq-card__title">Вернуть билет</h3>
+                <p class="faq-card__text">Условия возврата и обмена билетов</p>
+            </a>
+            
+            <!-- Карточка 2 -->
+            <a href="#animals" class="faq-card">
+                <div class="faq-card__icon">🐾</div>
+                <h3 class="faq-card__title">Перевозка животных</h3>
+                <p class="faq-card__text">Правила провоза домашних питомцев</p>
+            </a>
+            
+            <!-- Карточка 3 -->
+            <a href="#baggage" class="faq-card">
+                <div class="faq-card__icon">🧳</div>
+                <h3 class="faq-card__title">Провоз багажа</h3>
+                <p class="faq-card__text">Нормы и правила провоза багажа</p>
+            </a>
+            
+            <!-- Карточка 4 -->
+            <a href="#feedback" class="faq-card">
+                <div class="faq-card__icon">💬</div>
+                <h3 class="faq-card__title">Обратная связь</h3>
+                <p class="faq-card__text">Свяжитесь с нами</p>
+            </a>
+            
+            <!-- Карточка 5 -->
+            <a href="#payment" class="faq-card">
+                <div class="faq-card__icon">💳</div>
+                <h3 class="faq-card__title">Способы оплаты</h3>
+                <p class="faq-card__text">Доступные способы оплаты билетов</p>
+            </a>
+            
+            <!-- Карточка 6 -->
+            <a href="#registration" class="faq-card">
+                <div class="faq-card__icon">📝</div>
+                <h3 class="faq-card__title">Регистрация и вход</h3>
+                <p class="faq-card__text">Как создать аккаунт и войти</p>
+            </a>
+        </div>
+        
+        <!-- Разделы FAQ -->
+        <div class="faq-sections">
+            <!-- Возврат билета -->
+            <div class="faq-section" id="refund">
+                <h2 class="faq-section__title">Вернуть билет</h2>
+                <div class="faq-accordion">
+                    <div class="faq-accordion__item">
+                        <button class="faq-accordion__trigger">
+                            <span>Как вернуть билет?</span>
+                            <span class="faq-accordion__arrow">›</span>
+                        </button>
+                        <div class="faq-accordion__content">
+                            <p>Для возврата билета перейдите в раздел "Мои билеты" в личном кабинете, выберите нужный билет и нажмите кнопку "Вернуть". Возврат возможен не позднее чем за 24 часа до отправления поезда.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="faq-accordion__item">
+                        <button class="faq-accordion__trigger">
+                            <span>Какая комиссия при возврате?</span>
+                            <span class="faq-accordion__arrow">›</span>
+                        </button>
+                        <div class="faq-accordion__content">
+                            <p>При возврате билета удерживается сервисный сбор. Размер комиссии зависит от времени до отправления поезда: более 24 часов — удерживается только сервисный сбор, менее 24 часов — дополнительно 50% от стоимости билета, менее 2 часов — возврат не производится.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="faq-accordion__item">
+                        <button class="faq-accordion__trigger">
+                            <span>Сколько ждать возврат денег?</span>
+                            <span class="faq-accordion__arrow">›</span>
+                        </button>
+                        <div class="faq-accordion__content">
+                            <p>Денежные средства возвращаются на карту в течение 3-30 рабочих дней. Срок зависит от вашего банка.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Перевозка животных -->
+            <div class="faq-section" id="animals">
+                <h2 class="faq-section__title">Перевозка животных</h2>
+                <div class="faq-accordion">
+                    <div class="faq-accordion__item">
+                        <button class="faq-accordion__trigger">
+                            <span>Какие животные допускаются к перевозке?</span>
+                            <span class="faq-accordion__arrow">›</span>
+                        </button>
+                        <div class="faq-accordion__content">
+                            <p>Допускаются мелкие домашние животные (кошки, собаки, птицы) при наличии ветеринарного паспорта и переноски. Крупные собаки перевозятся только в специальных вагонах.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="faq-accordion__item">
+                        <button class="faq-accordion__trigger">
+                            <span>Нужно ли покупать билет для животного?</span>
+                            <span class="faq-accordion__arrow">›</span>
+                        </button>
+                        <div class="faq-accordion__content">
+                            <p>Да, для животного оформляется отдельный билет. Стоимость зависит от веса животного и типа вагона.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Провоз багажа -->
+            <div class="faq-section" id="baggage">
+                <h2 class="faq-section__title">Провоз багажа</h2>
+                <div class="faq-accordion">
+                    <div class="faq-accordion__item">
+                        <button class="faq-accordion__trigger">
+                            <span>Сколько багажа можно провезти бесплатно?</span>
+                            <span class="faq-accordion__arrow">›</span>
+                        </button>
+                        <div class="faq-accordion__content">
+                            <p>Один пассажир может провезти бесплатно: 2 места ручной клади общим весом до 36 кг и габаритами не более 50×50×120 см каждое.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="faq-accordion__item">
+                        <button class="faq-accordion__trigger">
+                            <span>Что нельзя провозить в багаже?</span>
+                            <span class="faq-accordion__arrow">›</span>
+                        </button>
+                        <div class="faq-accordion__content">
+                            <p>Запрещены: легковоспламеняющиеся жидкости, взрывчатые вещества, оружие без разрешения, ядовитые и радиоактивные материалы.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Обратная связь -->
+            <div class="faq-section" id="feedback">
+                <h2 class="faq-section__title">Обратная связь</h2>
+                <div class="faq-accordion">
+                    <div class="faq-accordion__item">
+                        <button class="faq-accordion__trigger">
+                            <span>Как связаться с поддержкой?</span>
+                            <span class="faq-accordion__arrow">›</span>
+                        </button>
+                        <div class="faq-accordion__content">
+                            <p>Вы можете связаться с нами по телефону 8-800-123-45-67, написать на почту support@brt.ru или через форму обратной связи в приложении. Поддержка работает ежедневно с 08:00 до 23:00 по московскому времени.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="faq-accordion__item">
+                        <button class="faq-accordion__trigger">
+                            <span>Форма обратной связи</span>
+                            <span class="faq-accordion__arrow">›</span>
+                        </button>
+                        <div class="faq-accordion__content">
+                            <form id="feedbackForm" class="faq-form" onsubmit="submitFeedback(event)">
+                                <div class="faq-form__group">
+                                    <label class="faq-form__label">Ваше имя</label>
+                                    <input type="text" class="faq-form__input" required placeholder="Иван">
+                                </div>
+                                <div class="faq-form__group">
+                                    <label class="faq-form__label">Email</label>
+                                    <input type="email" class="faq-form__input" required placeholder="ivan@example.com">
+                                </div>
+                                <div class="faq-form__group">
+                                    <label class="faq-form__label">Сообщение</label>
+                                    <textarea class="faq-form__textarea" required placeholder="Опишите ваш вопрос..." rows="4"></textarea>
+                                </div>
+                                <button type="submit" class="faq-form__submit">Отправить</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Способы оплаты -->
+            <div class="faq-section" id="payment">
+                <h2 class="faq-section__title">Способы оплаты</h2>
+                <div class="faq-accordion">
+                    <div class="faq-accordion__item">
+                        <button class="faq-accordion__trigger">
+                            <span>Какие способы оплаты доступны?</span>
+                            <span class="faq-accordion__arrow">›</span>
+                        </button>
+                        <div class="faq-accordion__content">
+                            <p>Оплатить билеты можно банковской картой (Мир, Visa, Mastercard), через СБП, СберПэй, а также наличными в кассах вокзалов.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="faq-accordion__item">
+                        <button class="faq-accordion__trigger">
+                            <span>Безопасно ли вводить данные карты?</span>
+                            <span class="faq-accordion__arrow">›</span>
+                        </button>
+                        <div class="faq-accordion__content">
+                            <p>Да, все платежи проходят через защищённое соединение. Данные карты не сохраняются на сервере и передаются только в зашифрованном виде.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Регистрация и вход -->
+            <div class="faq-section" id="registration">
+                <h2 class="faq-section__title">Регистрация и вход</h2>
+                <div class="faq-accordion">
+                    <div class="faq-accordion__item">
+                        <button class="faq-accordion__trigger">
+                            <span>Как зарегистрироваться?</span>
+                            <span class="faq-accordion__arrow">›</span>
+                        </button>
+                        <div class="faq-accordion__content">
+                            <p>Нажмите на иконку профиля в правом верхнем углу, выберите "Зарегистрироваться", заполните поля Имя, Фамилия, Email и Пароль. После регистрации вы сможете отслеживать свои билеты и получать бонусы.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="faq-accordion__item">
+                        <button class="faq-accordion__trigger">
+                            <span>Что делать если забыл пароль?</span>
+                            <span class="faq-accordion__arrow">›</span>
+                        </button>
+                        <div class="faq-accordion__content">
+                            <p>Напишите в службу поддержки на почту support@brt.ru с указанием email, который вы использовали при регистрации. Мы поможем восстановить доступ к аккаунту.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.querySelectorAll('.faq-accordion__trigger').forEach(trigger => {
+    trigger.addEventListener('click', function() {
+        const item = this.closest('.faq-accordion__item');
+        item.classList.toggle('open');
+    });
+});
+
+// Отправка формы обратной связи
+function submitFeedback(e) {
+    e.preventDefault();
+    const form = e.target;
+    const name = form.querySelector('input[type="text"]').value;
+    const email = form.querySelector('input[type="email"]').value;
+    const message = form.querySelector('textarea').value;
+    
+    fetch('/api/feedback', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({name, email, message})
+    })
+    .then(r => r.json())
+    .then(d => {
+        if (d.success) {
+            alert('Сообщение отправлено. Мы ответим вам в ближайшее время.');
+            form.reset();
+        } else {
+            alert('Ошибка отправки');
+        }
+    })
+    .catch(() => alert('Ошибка соединения'));
+}
+
+// Открытие раздела при переходе по якорю
+if (window.location.hash) {
+    setTimeout(() => {
+        const target = document.querySelector(window.location.hash);
+        if (target) {
+            target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            // Открываем первый аккордеон в секции
+            const firstAccordion = target.querySelector('.faq-accordion__item');
+            if (firstAccordion) firstAccordion.classList.add('open');
+        }
+    }, 300);
+}
+
+// Шапка как на confirm
+const header = document.getElementById('header');
+if (header) {
+    header.classList.add('scrolled');
+    header.style.boxShadow = 'none';
+    
+    const logoWhite = header.querySelector('.header__logo--white');
+    const logoDark = header.querySelector('.header__logo--dark');
+    if (logoWhite) logoWhite.style.display = 'none';
+    if (logoDark) logoDark.style.display = 'block';
+    
+    const sepImg = header.querySelector('.lang-cur img');
+    const favImg = header.querySelector('.fav');
+    const supportImg = header.querySelector('.support-image');
+    
+    if (sepImg) sepImg.src = '/static/icons/v-line-18.png';
+    if (favImg) favImg.src = '/static/icons/fav.svg';
+    if (supportImg) supportImg.src = '/static/icons/support.svg';
+    
+    window.addEventListener('scroll', function() {
+        if (window.scrollY > 50) {
+            header.style.background = '#EFF1F4';
+            header.style.boxShadow = '0 2px 20px rgba(0, 0, 0, 0.15)';
+        } else {
+            header.style.boxShadow = 'none';
+        }
+    });
+}
+</script>
+{% endblock %}

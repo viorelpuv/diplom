@@ -185,7 +185,7 @@
                         {% if price_data.free_seats > 0 %}
                         <div class="trip-card__class" data-wagon="{{ price_data.wagon_type }}" data-class="{{ price_data.class }}">
                             <div class="class-name">{{ price_data.wagon_name }}</div>
-                            <div class="class-price">от {{ "{:,}".format(price_data.price | convert_price).replace(',', ' ') }} {{ cur_sym }}</div>
+                            <div class="class-price">{{ "{:,}".format(price_data.price | convert_price).replace(',', ' ') }} {{ cur_sym }}</div>
                             <div class="class-seats">
                                 {% if price_data.free_seats == price_data.total_seats %}
                                     {{ price_data.free_seats }} {{ 'место' if price_data.free_seats == 1 else 'места' if price_data.free_seats in [2,3,4] else 'мест' }}

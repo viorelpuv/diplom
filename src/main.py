@@ -342,6 +342,41 @@ def month_name(month_num):
     return months.get(month_num, '')
 
 
+@app.route('/api/quick-search')
+def api_quick_search():
+    from_city = request.args.get('from', '').strip()
+    to_city = request.args.get('to', '').strip()
+    date_from = request.args.get('date', '').strip()
+    
+    if not from_city or not to_city:
+        return {'min_price': None}
+    
+    try:
+        tickets_data = api.search_tickets(
+            from_station=from_city,
+            to_station=to_city,
+            departure_date=date_from
+        )
+        
+        trains = []
+        if isinstance(tickets_data, list):
+            trains = tickets_data
+        elif isinstance(tickets_data, dict):
+            trains = tickets_data.get('forward', [])
+        
+        min_price = None
+        for train in trains:
+            formatted = format_train(train, from_city, to_city, 1)
+            if formatted and formatted.get('min_price'):
+                price = int(formatted['min_price'])  # округление вниз
+                if min_price is None or price < min_price:
+                    min_price = price
+        
+        return {'min_price': min_price}
+    except:
+        return {'min_price': None}
+
+
 @app.route('/select-seats')
 def select_seats():
     from_city = (request.args.get('from') or '').strip()
@@ -1038,6 +1073,22 @@ def api_promo_check():
 def api_admin_logs():
     return get_admin_actions()
 
+@app.route('/api/admin/logs/clear', methods=['POST'])
+def api_admin_clear_logs():
+    from utils.database.database import get_db
+    conn = get_db()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("DELETE FROM admin_actions")
+        conn.commit()
+        return {'success': True, 'message': 'Логи очищены'}
+    except Exception as e:
+        conn.rollback()
+        return {'success': False, 'message': str(e)}
+    finally:
+        cursor.close()
+        conn.close()
+
 @app.route('/api/admin/users/update', methods=['POST'])
 def api_admin_update_user():
     data = request.get_json()
@@ -1256,6 +1307,23 @@ def api_admin_create_user():
         return {'success': True, 'user_id': user_id}
     
     return {'success': False, 'message': 'Ошибка создания пользователя'}
+
+
+@app.route('/faq')
+def faq():
+    return render_template('faq.html')
+
+@app.route('/api/feedback', methods=['POST'])
+def api_feedback():
+    data = request.get_json()
+    name = data.get('name', '')
+    email = data.get('email', '')
+    message = data.get('message', '')
+    
+    # Здесь можно сохранить в БД или отправить на почту
+    print(f"Feedback: {name} ({email}): {message}")
+    
+    return {'success': True, 'message': 'Сообщение отправлено'}
 
 
 if __name__ == '__main__':
