@@ -1,5 +1,7 @@
 import random
 import json
+import threading
+import time
 from datetime import datetime, date
 
 from flask import Flask, render_template, request, redirect, g, make_response, session
@@ -19,7 +21,8 @@ from utils.database.database import (
     get_all_tickets, get_all_admins, delete_promocode, 
     get_admin_logs, toggle_user_active, add_admin, remove_admin, 
     get_sales_report, get_all_promocodes, create_promocode, update_order_promo,
-    get_tickets_by_date, save_admin_action, get_admin_actions, update_user_loyalty
+    get_tickets_by_date, save_admin_action, get_admin_actions, update_user_loyalty,
+    reserve_seats, release_seats, release_expired_orders
 )
 
 app = Flask(__name__)
@@ -202,6 +205,21 @@ def format_train(train, from_city, to_city, total_passengers):
         'min_price': min_price,
         'schemes': trip.get('schemes', None),
     }
+
+def cleanup_expired_orders():
+    """Фоновая очистка истёкших заказов."""
+    while True:
+        try:
+            count = release_expired_orders()
+            if count > 0:
+                print(f"[CLEANUP] Освобождено {count} истёкших заказов")
+        except Exception as e:
+            print(f"[CLEANUP] Ошибка: {e}")
+        time.sleep(60)  # Проверка каждую минуту
+
+# Запускаем в фоновом потоке
+cleanup_thread = threading.Thread(target=cleanup_expired_orders, daemon=True)
+cleanup_thread.start()
 
 
 @app.route('/')
@@ -676,21 +694,68 @@ def confirm():
         if applied_promo:
             update_order_promo(oid, applied_promo)
         
+        # Бронируем места
+        forward_trip_id = int(trip_info.get('forward_trip_id', 0)) if trip_info.get('forward_trip_id') and trip_info.get('forward_trip_id') != '' else 0
+        backward_trip_id = int(trip_info.get('backward_trip_id', 0)) if trip_info.get('backward_trip_id') and trip_info.get('backward_trip_id') != '' else 0
+        
+        from utils.database.database import get_db
+        
+        for direction in ['forward', 'backward']:
+            current_trip_id = forward_trip_id if direction == 'forward' else backward_trip_id
+            if current_trip_id:
+                for seat in seats.get(direction, []):
+                    conn = get_db()
+                    cursor = conn.cursor()
+                    
+                    wagon_num = str(seat.get('wagon', '1'))
+                    seat_num = str(seat.get('seat', '1'))
+                    
+                    cursor.execute("""
+                        SELECT ts.seat_id
+                        FROM trip_seats ts
+                        JOIN seats s ON ts.seat_id = s.id
+                        JOIN wagons w ON s.wagon_id = w.id
+                        WHERE ts.trip_id = ? AND w.number = ? AND s.number = ?
+                    """, (current_trip_id, wagon_num, seat_num))
+                    
+                    row = cursor.fetchone()
+                    conn.close()
+                    
+                    if row:
+                        reserve_seats(current_trip_id, [row['seat_id']])
+        
+        # Сохраняем в сессию
         session['order_number'] = order_number
         session['order_amount'] = total
-
         session['tickets_data'] = json.dumps({
             'order_id': oid,
             'seats': seats,
             'passengers': passengers,
             'trip_info': trip_info
         })
-
-        session.modified = True  
-
+        session.modified = True
+        
         return redirect(f'/payment/card')
     
     return render_template('confirm.html', trip_info={}, passengers=[], contact={}, seats={})
+
+
+@app.route('/api/payment/cancel', methods=['POST'])
+def api_payment_cancel():
+    data = request.get_json()
+    order_number = data.get('order_number')
+    
+    order = get_order_by_number(order_number)
+    if not order:
+        return {'success': False, 'message': 'Заказ не найден'}
+    
+    # Обновляем статус заказа
+    update_order_status(order['id'], 'expired')
+    
+    # Освобождаем места
+    release_expired_orders()
+    
+    return {'success': True, 'message': 'Бронь снята'}
 
 
 @app.route('/payment/card')

@@ -643,6 +643,90 @@ def get_available_seats(trip_id):
         cursor.close()
         conn.close()
 
+def reserve_seats(trip_id, seat_ids):
+    """Временно забронировать места."""
+    conn = get_db()
+    cursor = conn.cursor()
+    try:
+        for seat_id in seat_ids:
+            cursor.execute("""
+                UPDATE trip_seats SET is_available = 0 
+                WHERE trip_id = ? AND seat_id = ? AND is_available = 1
+            """, (trip_id, seat_id))
+        conn.commit()
+        return True
+    except Exception as e:
+        print(f"DB Error (reserve_seats): {e}")
+        conn.rollback()
+        return False
+    finally:
+        cursor.close()
+        conn.close()
+
+
+def release_seats(trip_id, seat_ids):
+    """Освободить забронированные места."""
+    conn = get_db()
+    cursor = conn.cursor()
+    try:
+        for seat_id in seat_ids:
+            cursor.execute("""
+                UPDATE trip_seats SET is_available = 1 
+                WHERE trip_id = ? AND seat_id = ?
+            """, (trip_id, seat_id))
+        conn.commit()
+        return True
+    except Exception as e:
+        print(f"DB Error (release_seats): {e}")
+        conn.rollback()
+        return False
+    finally:
+        cursor.close()
+        conn.close()
+
+
+def release_expired_orders():
+    """Освободить места по истёкшим заказам."""
+    conn = get_db()
+    cursor = conn.cursor()
+    try:
+        # Находим истёкшие заказы
+        cursor.execute("""
+            SELECT id FROM orders 
+            WHERE status = 'pending' AND expires_at < datetime('now')
+        """)
+        expired_orders = [row['id'] for row in cursor.fetchall()]
+        
+        for order_id in expired_orders:
+            # Находим билеты заказа
+            cursor.execute("""
+                SELECT t.seat_id, t.trip_id FROM tickets t
+                WHERE t.order_id = ?
+            """, (order_id,))
+            tickets = cursor.fetchall()
+            
+            # Освобождаем места
+            for ticket in tickets:
+                cursor.execute("""
+                    UPDATE trip_seats SET is_available = 1 
+                    WHERE trip_id = ? AND seat_id = ?
+                """, (ticket['trip_id'], ticket['seat_id']))
+            
+            # Отменяем заказ
+            cursor.execute("UPDATE orders SET status = 'expired' WHERE id = ?", (order_id,))
+            # Отменяем билеты
+            cursor.execute("UPDATE tickets SET status = 'cancelled' WHERE order_id = ?", (order_id,))
+        
+        conn.commit()
+        return len(expired_orders)
+    except Exception as e:
+        print(f"DB Error (release_expired_orders): {e}")
+        conn.rollback()
+        return 0
+    finally:
+        cursor.close()
+        conn.close()
+
 
 # ============================================
 # SUBSCRIPTIONS
