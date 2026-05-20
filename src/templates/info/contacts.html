@@ -1,0 +1,50 @@
+{% extends 'info/base_info.html' %}
+
+{% block subtitle %}Свяжитесь с нами удобным способом{% endblock %}
+
+{% block info_content %}
+<div class="info-section">
+    <h2 class="info-section__title">Способы связи</h2>
+    
+    <div class="info-contact-card">
+        <div class="info-contact-card__icon">📧</div>
+        <div>
+            <p class="info-contact-card__label">Email поддержки</p>
+            <p class="info-contact-card__value">
+                <a href="mailto:support@brt.ru">support@brt.ru</a>
+            </p>
+        </div>
+    </div>
+    
+    <div class="info-contact-card">
+        <div class="info-contact-card__icon">📱</div>
+        <div>
+            <p class="info-contact-card__label">Телефон</p>
+            <p class="info-contact-card__value">
+                <a href="tel:+78001234567">8 (800) 123-45-67</a>
+            </p>
+        </div>
+    </div>
+</div>
+
+<div class="info-section">
+    <h2 class="info-section__title">Реквизиты компании</h2>
+    <p class="info-section__text">ООО "Bahn Routing Tools"</p>
+    <p class="info-section__text">ИНН: 7700000000</p>
+    <p class="info-section__text">ОГРН: 1237700000000</p>
+    <p class="info-section__text">Юридический адрес: 123456, г. Москва, ул. Примерная, д. 1, офис 101</p>
+</div>
+
+<div class="info-section">
+    <h2 class="info-section__title">Время работы</h2>
+    <p class="info-section__text">
+        <strong>Поддержка клиентов:</strong><br>
+        Пн–Пт: 9:00 – 21:00 МСК<br>
+        Сб–Вс: 10:00 – 18:00 МСК
+    </p>
+    <p class="info-section__text">
+        <strong>Отдел продаж и сотрудничества:</strong><br>
+        Пн–Пт: 10:00 – 19:00 МСК
+    </p>
+</div>
+{% endblock %}

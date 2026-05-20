@@ -9,6 +9,7 @@
 @import 'payment_card.css';
 @import 'faq.css';
 @import 'responcive.css';
+@import 'base_info.css';
 @import url('https://fonts.googleapis.com/css2?family=Commissioner:wght@100..900&display=swap');
 
 ::-webkit-scrollbar {

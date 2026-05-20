@@ -1391,5 +1391,54 @@ def api_feedback():
     return {'success': True, 'message': 'Сообщение отправлено'}
 
 
+@app.route('/info/<page>')
+def info_page(page):
+    """Универсальный маршрут для информационных страниц"""
+    valid_pages = ['contacts', 'cookies', 'privacy', 'advertisers', 'bloggers', 
+                   'about', 'career', 'reviews']
+    
+    if page not in valid_pages:
+        abort(404)
+    
+    # Данные для каждой страницы
+    page_data = {
+        'contacts': {
+            'title': 'Контакты'
+        },
+        'cookies': {
+            'title': 'Использование cookie',
+            'icon': '🍪'
+        },
+        'privacy': {
+            'title': 'Конфиденциальность',
+            'icon': '🔒'
+        },
+        'advertisers': {
+            'title': 'Рекламодателям',
+            'icon': '📢'
+        },
+        'bloggers': {
+            'title': 'Блогерам',
+            'icon': '📱'
+        },
+        'about': {
+            'title': 'О компании',
+            'icon': '🏢'
+        },
+        'career': {
+            'title': 'Карьера',
+            'icon': '💼'
+        },
+        'reviews': {
+            'title': 'Отзывы',
+            'icon': '⭐'
+        }
+    }
+    
+    return render_template(f'info/{page}.html', 
+                         page=page, 
+                         data=page_data[page])
+
+
 if __name__ == '__main__':
     app.run(debug=True)
