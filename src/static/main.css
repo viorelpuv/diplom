@@ -8,6 +8,7 @@
 @import 'admin.css';
 @import 'payment_card.css';
 @import 'faq.css';
+@import 'responcive.css';
 @import url('https://fonts.googleapis.com/css2?family=Commissioner:wght@100..900&display=swap');
 
 ::-webkit-scrollbar {
@@ -1044,6 +1045,14 @@ header {
     justify-content: center;
 }
 
+.info-block__small-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    width: 100%;
+    max-width: 834px;
+}
+
 .info-block__large {
     flex: 1;
     height: 285px;
@@ -1197,7 +1206,7 @@ header {
 
 .footer__columns {
     display: flex;
-    gap: 160px;
+    gap: 40px;
 }
 
 .footer__title {

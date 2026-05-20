@@ -1,10 +1,7 @@
 @import "reset.css";
 @import 'fonts.css';
 @import url('https://fonts.googleapis.com/css2?family=Commissioner:wght@100..900&display=swap');
-
-/* ============================================
-   SEARCH PAGE - все стили обёрнуты в #search-page
-   ============================================ */
+ 
 
 #search-page {
     background: #EFF1F4;
@@ -1012,4 +1009,104 @@ body:has(#search-page) header .lang-cur {
 .scroll-to-top:hover img {
     transform: rotate(-90deg);
     filter: brightness(0) invert(1);
+}
+
+/* ============================================ */
+/*     SEARCH PAGE — MOBILE                     */
+/* ============================================ */
+@media (max-width: 767px) {
+    .search-page__container {
+        padding: 56px 10px 20px;
+    }
+
+    .search-page__sidebar {
+        width: 100%;
+        position: static;
+        height: auto;
+        margin-bottom: 12px;
+    }
+
+    .search-page__results {
+        margin-left: 0;
+        width: 100%;
+    }
+
+    /* Карточка билета — просто меньше */
+    .ticket-card {
+        padding: 14px 16px;
+        margin-bottom: 8px;
+        border-radius: 16px;
+        font-size: 13px;
+    }
+
+    .ticket-card__route h1 {
+        font-size: 20px;
+    }
+
+    .ticket-card__time {
+        font-size: 18px;
+    }
+
+    .ticket-card__date {
+        font-size: 11px;
+    }
+
+    .ticket-card__station {
+        font-size: 11px;
+        max-width: 90px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .ticket-card__travel-arrow {
+        width: 60px;
+    }
+
+    .ticket-card__travel-duration {
+        font-size: 11px;
+    }
+
+    .ticket-card__details {
+        font-size: 12px;
+    }
+
+    .ticket-card__change {
+        font-size: 12px;
+    }
+
+    /* Кнопка */
+    .ticket-card .sidebar__continue-btn,
+    .ticket-card__price-btn {
+        height: 36px;
+        font-size: 13px;
+        border-radius: 8px;
+    }
+
+    /* Фильтры */
+    .search-filters select,
+    .search-filters input,
+    .search-sort select {
+        height: 36px;
+        font-size: 12px;
+        padding: 0 8px;
+    }
+}
+
+@media (max-width: 400px) {
+    .ticket-card {
+        padding: 10px 12px;
+    }
+
+    .ticket-card__route h1 {
+        font-size: 18px;
+    }
+
+    .ticket-card__time {
+        font-size: 16px;
+    }
+
+    .ticket-card__travel-arrow {
+        width: 45px;
+    }
 }

@@ -245,7 +245,7 @@ BRT
                     <img src="{{ url_for('static', filename='icons/arrow-mid-white.svg') }}" alt="">
                 </div>
             </div>
-            <div class="info-block__small-row">
+            <div class="info-block__small-grid">
                 <div class="info-block__small" onclick="window.location.href='/faq#refund'">
                     <span>Вернуть билет</span>
                     <div class="info-block__small-arrow">
@@ -258,8 +258,6 @@ BRT
                         <img src="{{ url_for('static', filename='icons/arrow-mid.svg') }}" alt="">
                     </div>
                 </div>
-            </div>
-            <div class="info-block__small-row">
                 <div class="info-block__small" onclick="window.location.href='/faq#baggage'">
                     <span>Провоз багажа</span>
                     <div class="info-block__small-arrow">
@@ -559,7 +557,6 @@ window.addEventListener('scroll', function() {
     const logoDark = header.querySelector('.header__logo--dark');
     const supportImg = header.querySelector('.support img');
     const langSeparator = header.querySelector('.lang-cur img');
-    const favImg = header.querySelector('.fav');
     
     if (window.scrollY > 50) {
         header.classList.add('scrolled');
@@ -567,14 +564,12 @@ window.addEventListener('scroll', function() {
         logoDark.style.display = 'block';
         supportImg.src = "/static/icons/support.svg";
         langSeparator.src = "/static/icons/v-line-18.png";
-        favImg.src = "/static/icons/fav.svg";
     } else {
         header.classList.remove('scrolled');
         logoWhite.style.display = 'block';
         logoDark.style.display = 'none';
         supportImg.src = "/static/icons/support_white.svg";
         langSeparator.src = "/static/icons/v-line-18-white.png";
-        favImg.src = "/static/icons/fav_white.svg";
     }
 });
 

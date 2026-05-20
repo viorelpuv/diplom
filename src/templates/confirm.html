@@ -151,10 +151,8 @@ document.addEventListener('DOMContentLoaded', function() {
         if (logoWhite) logoWhite.style.display = 'none';
         if (logoDark) logoDark.style.display = 'block';
         const sepImg = header.querySelector('.lang-cur img');
-        const favImg = header.querySelector('.fav');
         const supportImg = header.querySelector('.support-image');
         if (sepImg) sepImg.src = '/static/icons/v-line-18.png';
-        if (favImg) favImg.src = '/static/icons/fav.svg';
         if (supportImg) supportImg.src = '/static/icons/support.svg';
         window.addEventListener('scroll', function() {
             if (window.scrollY > 50) {

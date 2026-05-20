@@ -266,7 +266,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const logoWhite = header.querySelector('.header__logo--white');
     const logoDark = header.querySelector('.header__logo--dark');
     const sepImg = header.querySelector('.lang-cur img');
-    const favImg = header.querySelector('.fav');
     const supportImg = header.querySelector('.support-image');
     
     header.classList.add('scrolled');
@@ -275,7 +274,6 @@ document.addEventListener('DOMContentLoaded', function() {
     logoDark.style.display = 'block';
     
     if (sepImg) sepImg.src = '/static/icons/v-line-18.png';
-    if (favImg) favImg.src = '/static/icons/fav.svg';
     if (supportImg) supportImg.src = '/static/icons/support.svg';
     
     window.addEventListener('scroll', function() {

@@ -1058,14 +1058,11 @@ def save_trip_seat(trip_id, seat_id, is_available=True):
 def save_train_full(train_data, from_city, to_city):
     """Сохраняет полную информацию о поезде из API."""
     train_number = train_data.get('train_number', '')
-    print(f"\n  📝 save_train_full: {train_number} | {from_city} → {to_city}")
     
     try:
         # 1. Станции
         from_code = from_city[:10].replace(' ', '_')
         to_code = to_city[:10].replace(' ', '_')
-        
-        print(f"     Станции: from_code={from_code}, to_code={to_code}")
         
         from_station_id = save_station(
             code=from_code,
@@ -1078,18 +1075,13 @@ def save_train_full(train_data, from_city, to_city):
             city=to_city
         )
         
-        print(f"     Станции сохранены: from_id={from_station_id}, to_id={to_station_id}")
-        
         if not from_station_id or not to_station_id:
-            print(f"     ❌ Станции не сохранились!")
             return None
         
         # 2. Маршрут
         route_id = save_route(from_station_id, to_station_id)
-        print(f"     Маршрут: route_id={route_id}")
         
         if not route_id:
-            print(f"     ❌ Маршрут не сохранился!")
             return None
         
         # 3. Поезд
@@ -1098,23 +1090,18 @@ def save_train_full(train_data, from_city, to_city):
             name=train_data.get('train_name', ''),
             train_type='passenger'
         )
-        print(f"     Поезд: train_id={train_id}")
         
         if not train_id:
-            print(f"     ❌ Поезд не сохранился (номер: '{train_number}')!")
             return None
         
         # 4. Рейс
         dep_date = train_data.get('date', datetime.now().strftime('%Y-%m-%d'))
         prices = train_data.get('prices', {})
 
-        # Собираем цены по типам вагонов
         prices_dict = {}
         for wagon_type, wagon_data in prices.items():
             if wagon_data.get('price', 0) > 0:
                 prices_dict[wagon_type] = wagon_data['price']
-
-        print(f"     Цены: {prices_dict}")
 
         trip_id = save_trip(
             route_id=route_id,
@@ -1124,44 +1111,92 @@ def save_train_full(train_data, from_city, to_city):
             prices_dict=prices_dict,
             service_fee=200
         )
-        print(f"     Рейс: trip_id={trip_id}")
         
         if not trip_id:
-            print(f"     ❌ Рейс не сохранился!")
             return None
         
-        # 5. Вагоны и места
+        # 5. Вагоны и места — ОПТИМИЗИРОВАННАЯ МАССОВАЯ ВСТАВКА
         prices = train_data.get('prices', {})
-        print(f"     Вагоны: {list(prices.keys())}")
         
-        wagon_num = 1
-        for wagon_type, wagon_data in prices.items():
-            if wagon_data.get('price', 0) <= 0:
-                continue
+        conn = get_db()
+        cursor = conn.cursor()
+        
+        try:
+            wagon_num = 1
+            all_seats_to_insert = []  # для массовой вставки мест
+            all_trip_seats_to_insert = []  # для массовой вставки trip_seats
             
-            wagon_id = save_wagon(
-                train_id=train_id,
-                number=str(wagon_num),
-                wagon_type=wagon_type,
-                wagon_class='economy',
-                total_seats=wagon_data.get('total_seats', wagon_data.get('free_seats', 36))
-            )
-            print(f"     Вагон {wagon_num}: wagon_id={wagon_id}, тип={wagon_type}")
-            
-            if wagon_id:
-                for seat_num in range(1, min(wagon_data.get('free_seats', 36) + 1, 61)):
-                    seat_id = save_seat(wagon_id, str(seat_num))
-                    if seat_id:
-                        save_trip_seat(trip_id, seat_id, True)
+            for wagon_type, wagon_data in prices.items():
+                if wagon_data.get('price', 0) <= 0:
+                    continue
+                
+                # Сохраняем вагон
+                cursor.execute("""
+                    SELECT id FROM wagons WHERE train_id = ? AND number = ?
+                """, (train_id, str(wagon_num)))
+                existing_wagon = cursor.fetchone()
+                
+                total_seats = wagon_data.get('total_seats', wagon_data.get('free_seats', 36))
+                
+                if existing_wagon:
+                    wagon_id = existing_wagon['id']
+                    cursor.execute("""
+                        UPDATE wagons SET type = ?, class = ?, total_seats = ? WHERE id = ?
+                    """, (wagon_type, 'economy', total_seats, wagon_id))
+                else:
+                    cursor.execute("""
+                        INSERT INTO wagons (train_id, number, type, class, total_seats)
+                        VALUES (?, ?, ?, ?, ?)
+                    """, (train_id, str(wagon_num), wagon_type, 'economy', total_seats))
+                    wagon_id = cursor.lastrowid
+                
+                if wagon_id:
+                    # Собираем места для массовой вставки
+                    free_seats = min(wagon_data.get('free_seats', 36), 60)
+                    for seat_num in range(1, free_seats + 1):
+                        all_seats_to_insert.append((wagon_id, str(seat_num), None))
+                    
                 wagon_num += 1
+            
+            # Массовая вставка мест через INSERT OR IGNORE
+            if all_seats_to_insert:
+                cursor.executemany("""
+                    INSERT OR IGNORE INTO seats (wagon_id, number, position)
+                    VALUES (?, ?, ?)
+                """, all_seats_to_insert)
+            
+            # Получаем ID всех мест для этих вагонов
+            cursor.execute("""
+                SELECT s.id as seat_id, s.number, w.number as wagon_number
+                FROM seats s
+                JOIN wagons w ON s.wagon_id = w.id
+                WHERE w.train_id = ? AND w.number IN ({})
+            """.format(','.join(['?'] * wagon_num)), [train_id] + [str(i) for i in range(1, wagon_num)])
+            
+            seat_rows = cursor.fetchall()
+            
+            # Массовая вставка trip_seats
+            for row in seat_rows:
+                all_trip_seats_to_insert.append((trip_id, row['seat_id'], 1))
+            
+            if all_trip_seats_to_insert:
+                cursor.executemany("""
+                    INSERT OR IGNORE INTO trip_seats (trip_id, seat_id, is_available)
+                    VALUES (?, ?, ?)
+                """, all_trip_seats_to_insert)
+            
+            conn.commit()
+            
+        except Exception as e:
+            conn.rollback()
+            return None
+        finally:
+            cursor.close()
+            conn.close()
         
-        print(f"     ✅ Поезд {train_number} сохранён, trip_id={trip_id}")
         return trip_id
         
     except Exception as e:
-        print(f"     ❌ Ошибка: {e}")
-        import traceback
-        traceback.print_exc()
         return None
     
 

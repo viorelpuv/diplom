@@ -1,0 +1,1521 @@
+/* ============================================ */
+/*                RESPONSIVE CSS                 */
+/* ============================================ */
+
+/* --- Средние экраны (1025px – 1350px) --- */
+@media (max-width: 1350px) {
+    .info-block {
+        flex-direction: column;
+        align-items: center;
+        gap: 24px;
+    }
+    .info-block__large {
+        width: 100%;
+        max-width: 834px;
+    }
+    .info-block__small-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 24px;
+        width: 100%;
+        max-width: 834px;
+    }
+    .info-block__small {
+        width: 100%;
+        max-width: none;
+    }
+}
+
+/* --- Средние экраны (1025px – 1385px) — перестраиваем + убираем "Обратно" --- */
+@media (max-width: 1385px) {
+    .liquid-nav {
+        padding: 15px;
+        border-radius: 25px;
+    }
+    .liquid-nav--trip {
+        flex-direction: column;
+        gap: 0;
+    }
+    .liquid-nav__separator {
+        display: none;
+    }
+    .liquid-nav__swap {
+        align-self: center;
+        margin: 4px 0;
+    }
+    .liquid-glass--info {
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+    .liquid-nav__item {
+        flex: 1 1 130px;
+    }
+    .liquid-nav__input {
+        min-width: 120px;
+        font-size: 15px;
+    }
+    .liquid-nav__input--divider {
+        border-right: none;
+        margin-right: 0;
+        padding-right: 0;
+    }
+    .liquid-nav__button {
+        padding: 12px 22px;
+        font-size: 17px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+    .liquid-glass--info .liquid-nav__item:nth-child(2) {
+        display: none;
+    }
+}
+
+/* --- Планшеты (768px – 1024px) --- */
+@media (max-width: 1024px) {
+    header {
+        padding: 0 30px;
+    }
+    .hero-block {
+        min-height: 100vh;
+    }
+    .hero-block img {
+        height: 100vh;
+        object-fit: cover;
+    }
+    .hero-block h1 {
+        font-size: 36px;
+    }
+    .liquid-nav {
+        padding: 12px;
+        border-radius: 20px;
+    }
+    .liquid-nav--trip {
+        flex-direction: column;
+        gap: 0;
+    }
+    .liquid-nav__separator {
+        display: none;
+    }
+    .liquid-nav__swap {
+        align-self: center;
+        margin: 6px 0;
+    }
+    .liquid-glass--info {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    .liquid-nav__item {
+        flex: 1 1 120px;
+    }
+    .liquid-nav__input {
+        min-width: 100px;
+        font-size: 14px;
+    }
+    .liquid-nav__input--divider {
+        border-right: none;
+        margin-right: 0;
+        padding-right: 0;
+    }
+    .liquid-nav__button {
+        padding: 10px 20px;
+        font-size: 16px;
+    }
+    .liquid-glass--info .liquid-nav__item:nth-child(2) {
+        display: none;
+    }
+    .info-block {
+        flex-direction: column;
+        align-items: center;
+        gap: 20px;
+    }
+    .info-block__large {
+        width: 100%;
+        max-width: 600px;
+    }
+    .info-block__small-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+        width: 100%;
+        max-width: 600px;
+    }
+    .info-block__small-grid div span {
+        font-size: 20px;
+    }
+    .info-block__small {
+        height: 100px;
+    }
+    .info-block__small span {
+        font-size: 18px;
+    }
+    .search-page__container {
+        flex-direction: column;
+        padding: 70px 16px 20px;
+    }
+    .search-page__sidebar {
+        width: 100%;
+        position: static;
+        height: auto;
+        margin-bottom: 16px;
+    }
+    .search-page__results {
+        margin-left: 0;
+        width: 100%;
+    }
+    .seat-selection__container,
+    .profile-page__container,
+    .admin-page__container {
+        flex-direction: column;
+    }
+    .seat-selection__sidebar,
+    .profile-page__sidebar,
+    .admin-page__sidebar {
+        width: 100%;
+        position: static;
+        margin-bottom: 20px;
+    }
+    .seat-selection__tickets,
+    .profile-page__content,
+    .admin-page__content {
+        width: 100%;
+    }
+    .faq-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    .ticket-card__right {
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 10px;
+    }
+    .ticket-card__travel-info {
+        width: 100%;
+        justify-content: center;
+    }
+    .footer__subscribe-wrapper {
+        display: none;
+    }
+    .footer__inner {
+        padding: 30px;
+        justify-content: space-between;
+    }
+    .footer__columns {
+        gap: 60px;
+    }
+    .footer__list a {
+        font-size: 16px;
+    }
+    .footer__title {
+        font-size: 16px;
+    }
+    .footer__bottom {
+        margin-top: 30px;
+    }
+    .footer__legal {
+        font-size: 13px;
+        max-width: 70%;
+    }
+    .footer__copyright {
+        font-size: 12px;
+    }
+    .footer__social span,
+    .footer__payment span {
+        font-size: 16px;
+    }
+}
+
+/* --- Телефоны (до 767px) --- */
+@media (max-width: 767px) {
+    /* Header */
+    header {
+        height: 50px;
+        padding: 0 12px !important;
+    }
+    .header__logo--dark,
+    .header__logo--white {
+        width: 90px !important;
+    }
+    header ul {
+        gap: 4px;
+    }
+    header ul .profile {
+        padding: 4px;
+        border-radius: 6px;
+        margin-left: 4px;
+    }
+    header ul .profile img {
+        width: 16px;
+        height: 16px;
+    }
+    .support,
+    .lang-cur,
+    .fav {
+        display: none !important;
+    }
+
+    /* Hero */
+    .hero-block {
+        min-height: 100vh;
+    }
+    .hero-block img {
+        height: 100vh;
+        object-fit: cover;
+    }
+    .hero-block h1 {
+        font-size: 24px;
+        margin-top: 80px;
+        padding: 0 16px;
+        text-align: center;
+    }
+    .hero-block--navigation {
+        margin-top: 20px;
+        width: 100%;
+        padding: 0 12px;
+        box-sizing: border-box;
+    }
+
+    /* Liquid nav — главная */
+    .hero-block .liquid-nav {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        padding: 12px;
+        border-radius: 18px;
+        width: 100%;
+        max-width: 380px;
+        margin: 0 auto;
+        box-sizing: border-box;
+    }
+    .hero-block .liquid-nav--trip {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        padding: 0;
+        width: 100%;
+        box-sizing: border-box;
+        background: transparent;
+    }
+    .hero-block .liquid-nav--trip .liquid-nav__input {
+        width: 100%;
+        height: 40px;
+        font-size: 14px;
+        padding: 0 12px;
+        border-radius: 10px;
+        background: #EFF1F4;
+        box-sizing: border-box;
+        border: none;
+    }
+    .hero-block .liquid-nav__separator {
+        display: none !important;
+    }
+    .hero-block .liquid-nav__swap {
+        display: none;
+    }
+    .hero-block .liquid-glass--info {
+        display: none !important;
+    }
+    .hero-block .liquid-nav__button {
+        width: 100%;
+        height: 40px;
+        font-size: 14px;
+        padding: 0;
+        justify-content: center;
+        border-radius: 10px;
+        box-sizing: border-box;
+    }
+
+    .content-block {
+        margin-top: -90px !important;
+    }
+
+    /* Карточки маршрутов */
+    .route-card {
+        width: 100% !important;
+        max-width: 100% !important;
+        height: 180px !important;
+        border-radius: 22px !important;
+    }
+    .route-card__image img {
+        border-radius: 22px !important;
+    }
+    .route-card__gradient {
+        border-radius: 0 0 22px 22px !important;
+        height: 40% !important;
+    }
+    .route-card__city {
+        font-size: 22px !important;
+    }
+    .route-card__country span {
+        font-size: 13px !important;
+    }
+    .route-card__country img {
+        width: 16px !important;
+        height: 12px !important;
+    }
+    .route-card__price {
+        font-size: 20px !important;
+    }
+    .route-card__content {
+        bottom: 28px !important;
+        left: 22px !important;
+    }
+    .route-card__content h2 {
+        font-size: 40px !important;
+    }
+    .route-card__glass-icon {
+        display: none !important;
+    }
+    .quick-route-card {
+        width: 100% !important;
+        max-width: 100% !important;
+        height: 110px;
+        border-radius: 25px;
+        padding: 4px;
+    }
+    .quick-route-card__image {
+        width: 100px;
+        height: 100px;
+        border-radius: 22px;
+    }
+    .quick-route-card__content {
+        padding: 8px 10px;
+        gap: 4px;
+    }
+    .quick-route-card__content span:first-child {
+        font-size: 15px;
+    }
+    .quick-route-card__content span:last-child {
+        font-size: 13px;
+    }
+    .quick-route-card__content img {
+        width: 18px;
+        margin-top: 3px;
+        margin-left: 2px;
+    }
+
+    /* Info block */
+    .info-block {
+        gap: 12px;
+    }
+    .info-block__large {
+        height: 80px;
+        padding: 14px 20px;
+        border-radius: 25px;
+        justify-content: center;
+        max-width: 100%;
+    }
+    .info-block__large h3 {
+        font-size: 18px;
+    }
+    .info-block__large p {
+        font-size: 12px;
+    }
+    .info-block__large-arrow,
+    .info-block__small-arrow {
+        display: none !important;
+    }
+    .info-block__small-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+        width: 100%;
+    }
+    .info-block__small {
+        height: 55px;
+        padding: 0 14px;
+        border-radius: 20px;
+        justify-content: center;
+    }
+    .info-block__small span {
+        font-size: 13px;
+    }
+    .popular-routes,
+    .quick-routes {
+        gap: 10px;
+        margin-top: 20px;
+        padding: 0 8px;
+    }
+    .content {
+        padding: 0 10px !important;
+    }
+    .content h1 {
+        font-size: 40px;
+    }
+
+    /* FAQ */
+    .faq-accordion__arrow {
+        display: none !important;
+    }
+    .faq-accordion__trigger {
+        padding: 10px;
+        font-size: 12px;
+    }
+    .faq-section {
+        padding: 14px;
+    }
+    .faq-section__title {
+        font-size: 16px;
+    }
+    .faq-grid {
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+    .faq-card {
+        padding: 14px;
+    }
+    .faq-card__title {
+        font-size: 14px;
+    }
+    .faq-card__text {
+        font-size: 11px;
+    }
+
+    /* Footer */
+    .footer__subscribe-wrapper {
+        display: none;
+    }
+    .footer {
+        padding: 16px 0 12px;
+    }
+    .footer__inner {
+        padding: 14px 12px;
+        flex-direction: column;
+        gap: 16px;
+    }
+    .footer__columns {
+        gap: 16px;
+        flex-wrap: wrap;
+    }
+    .footer__list a {
+        font-size: 12px;
+    }
+    .footer__title {
+        font-size: 12px;
+        margin-bottom: 6px;
+    }
+    .footer__list {
+        gap: 6px;
+    }
+    .footer__bottom-inner {
+        flex-direction: column;
+        gap: 8px;
+        text-align: center;
+        padding: 0 12px;
+    }
+    .footer__legal {
+        max-width: 100%;
+        font-size: 10px;
+    }
+    .footer__copyright {
+        align-self: center;
+        font-size: 9px;
+    }
+    .footer__info {
+        flex-direction: column;
+        gap: 8px;
+    }
+    .footer__social span,
+    .footer__payment span {
+        font-size: 12px;
+    }
+    .footer__social-icons img {
+        width: 22px;
+        height: 22px;
+    }
+    .footer__payment-icons img {
+        width: 28px;
+        height: 16px;
+    }
+
+    /* Modals */
+    .modal__content {
+        width: 95%;
+        max-width: 320px;
+        padding: 18px;
+        border-radius: 18px;
+    }
+    .modal__content h2 {
+        font-size: 20px;
+    }
+    .modal__content input {
+        height: 40px;
+        font-size: 13px;
+    }
+    .modal__content button[type="submit"] {
+        height: 40px;
+        font-size: 14px;
+    }
+
+    /* Passenger dropdown */
+    .passenger-select__dropdown {
+        width: 250px;
+        padding: 14px 18px 18px;
+        border-radius: 20px;
+        left: 50% !important;
+        transform: translateX(-50%);
+    }
+    .dropdown__label {
+        font-size: 13px;
+    }
+    .dropdown__sublabel {
+        font-size: 9px;
+    }
+    .dropdown__header {
+        font-size: 13px;
+    }
+    .counter__btn {
+        width: 20px;
+        height: 20px;
+        font-size: 13px;
+    }
+
+    /* Buttons */
+    .sidebar__continue-btn,
+    .profile-form__submit,
+    .card-form__submit,
+    .faq-form__submit,
+    .admin-form__submit {
+        height: 40px;
+        font-size: 14px;
+    }
+
+    /* Profile */
+    .profile-sidebar__user {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        gap: 6px;
+    }
+    .profile-form__row {
+        flex-direction: column;
+        gap: 8px;
+    }
+    .profile-form__group {
+        width: 100%;
+    }
+
+    /* Admin */
+    .dashboard-cards {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
+    }
+    .dashboard-card {
+        padding: 12px;
+    }
+    .dashboard-card__value {
+        font-size: 18px;
+    }
+    .dashboard-card__label {
+        font-size: 10px;
+    }
+    .admin-sidebar__nav {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 4px;
+    }
+    .admin-sidebar__link {
+        font-size: 11px;
+        padding: 6px 10px;
+        border-radius: 6px;
+    }
+    .admin-page__sidebar {
+        flex: 0 0 auto;
+        min-height: auto;
+        padding: 16px;
+    }
+    .admin-sidebar {
+        height: auto;
+    }
+    .admin-sidebar__nav {
+        padding-bottom: 0;
+    }
+
+    /* Payment card */
+    .payment-card {
+        padding: 20px;
+    }
+    .card-form__row {
+        flex-direction: column;
+        gap: 12px;
+    }
+    .card-form__input {
+        height: 40px;
+        font-size: 13px;
+    }
+    .card-form__submit {
+        height: 42px;
+        font-size: 14px;
+    }
+
+    /* Поиск */
+    #search-page .search-header {
+        padding-top: 70px;
+        height: 280px;
+    }
+    #search-page .search-header__nav {
+        padding: 0;
+    }
+    #search-page .search-results {
+        padding: 0;
+    }
+    #search-page .liquid-nav__separator {
+        display: none;
+    }
+    #search-page .search-filters {
+        padding: 0;
+    }
+}
+
+/* --- Тач-устройства --- */
+@media (hover: none) and (pointer: coarse) {
+    button,
+    a,
+    .route-card,
+    .quick-route-card,
+    .info-block__small,
+    .info-block__large,
+    .wagon-type-card,
+    .scheme-seat,
+    .faq-accordion__trigger {
+        -webkit-tap-highlight-color: transparent;
+    }
+}
+
+/* ============================================ */
+/*     SEARCH PAGE — MOBILE                     */
+/* ============================================ */
+@media (max-width: 767px) {
+    #search-page .search-header {
+        height: auto;
+        padding-top: 60px;
+        padding-bottom: 20px;
+    }
+    #search-page .search-header__nav {
+        padding: 0 10px;
+    }
+    #search-page .liquid-nav {
+        flex-direction: column;
+        gap: 8px;
+        padding: 10px;
+        border-radius: 16px;
+        background: #EFF1F4;
+    }
+    #search-page .liquid-nav--trip {
+        flex-direction: column;
+        gap: 6px;
+        padding: 0;
+        background: transparent;
+        box-shadow: none;
+        margin-right: 0;
+    }
+    #search-page .liquid-nav--trip .liquid-nav__input {
+        width: 100%;
+        height: 38px;
+        font-size: 14px;
+        padding: 0 12px;
+        border-radius: 10px;
+        background: #fff;
+        box-sizing: border-box;
+    }
+    #search-page .liquid-nav__separator,
+    #search-page .liquid-nav__swap {
+        display: none;
+    }
+    #search-page .liquid-glass--info {
+        display: none;
+    }
+    #search-page .liquid-nav__button {
+        width: 100%;
+        height: 40px;
+        font-size: 14px;
+        border-radius: 10px;
+        background: linear-gradient(135deg, #4672FF, #7193FF);
+        color: #fff;
+        padding: 0;
+        margin-left: 0;
+    }
+    #search-page .search-filters {
+        padding: 0 10px;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-top: 8px;
+    }
+    #search-page .search-filters__left {
+        flex-wrap: wrap;
+        gap: 6px;
+        width: 100%;
+    }
+    #search-page .search-filters__right {
+        width: 100%;
+    }
+    #search-page .filter-chip {
+        padding: 8px 12px;
+        font-size: 12px;
+        flex: 1 1 auto;
+        border-radius: 10px;
+    }
+    #search-page .filter-chip__label {
+        font-size: 12px;
+    }
+    #search-page .search-results {
+        padding: 15px 10px;
+    }
+    .trip-card {
+        flex-direction: column;
+        padding: 16px;
+        gap: 12px;
+        border-radius: 20px;
+        margin-bottom: 10px;
+        max-width: 100%;
+    }
+    .trip-card__main {
+        flex-wrap: nowrap;
+        gap: 8px;
+        width: 100%;
+    }
+    .trip-card__time-block {
+        min-width: 55px;
+        max-width: 70px;
+    }
+    .trip-card__time {
+        font-size: 22px;
+    }
+    .trip-card__date {
+        font-size: 11px;
+    }
+    .trip-card__station {
+        font-size: 10px;
+        max-width: 65px;
+    }
+    .trip-card__arrow {
+        width: auto;
+        min-width: 40px;
+        flex: 1;
+    }
+    .trip-card__arrow img {
+        width: 100%;
+        max-width: 80px;
+    }
+    .trip-card__details {
+        display: none;
+    }
+    .trip-card__info {
+        flex-direction: column;
+        width: 100%;
+        gap: 10px;
+        margin-left: 0;
+    }
+    .trip-card__classes {
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-right: 0;
+        margin-bottom: 0;
+        min-width: auto;
+    }
+    .trip-card__class {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 2px;
+        height: auto;
+        background: #F5F5F5;
+        border-radius: 10px;
+        padding: 8px 10px;
+        flex: 1 1 calc(50% - 6px);
+        min-width: 100px;
+        box-sizing: border-box;
+    }
+    .class-name {
+        font-size: 12px;
+        width: auto;
+    }
+    .class-price {
+        font-size: 13px;
+        font-weight: 600;
+        width: auto;
+    }
+    .class-seats {
+        font-size: 11px;
+        width: auto;
+    }
+    .trip-card__divider {
+        display: none;
+    }
+    .trip-card__price-block {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+        min-width: auto;
+        gap: 10px;
+    }
+    .trip-card__price {
+        font-size: 22px;
+        white-space: nowrap;
+    }
+    .trip-card__select-btn {
+        padding: 10px 16px;
+        font-size: 13px;
+        border-radius: 10px;
+    }
+    #selected-forward h2 {
+        margin-left: 10px;
+        font-size: 20px;
+        padding-bottom: 10px;
+    }
+    #search-page .filter-dropdown--price {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        min-width: 290px;
+        max-width: 95vw;
+        z-index: 9999;
+    }
+    #search-page .filter-chip--dropdown.open .filter-dropdown--price {
+        display: block;
+    }
+    #search-page .filter-chip--price.open::before {
+        content: '';
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.4);
+        z-index: 9998;
+    }
+}
+
+@media (max-width: 400px) {
+    .trip-card {
+        padding: 12px;
+        gap: 8px;
+        border-radius: 16px;
+    }
+    .trip-card__time {
+        font-size: 20px;
+    }
+    .trip-card__time-block {
+        min-width: 50px;
+        max-width: 60px;
+    }
+    .trip-card__price {
+        font-size: 18px;
+    }
+    .trip-card__select-btn {
+        padding: 8px 12px;
+        font-size: 12px;
+    }
+    .trip-card__class {
+        padding: 6px 8px;
+        flex: 1 1 calc(50% - 4px);
+    }
+    .class-name {
+        font-size: 11px;
+    }
+    .class-price {
+        font-size: 12px;
+    }
+    .class-seats {
+        font-size: 10px;
+    }
+}
+
+/* ============================================ */
+/*     SELECT SEATS — MOBILE                    */
+/* ============================================ */
+@media (max-width: 767px) {
+    .seat-selection__container {
+        flex-direction: column !important;
+        padding: 0 10px !important;
+        gap: 12px;
+    }
+    .seat-selection__tickets {
+        width: 100%;
+        gap: 12px;
+    }
+    .ticket-card {
+        flex-direction: column !important;
+        padding: 16px !important;
+        gap: 12px !important;
+        border-radius: 20px !important;
+    }
+    .ticket-card__left {
+        width: 100%;
+    }
+    .ticket-card__route {
+        gap: 8px;
+    }
+    .ticket-card__from,
+    .ticket-card__to {
+        font-size: 24px !important;
+    }
+    .ticket-card__route-arrow {
+        width: 24px !important;
+        height: 18px !important;
+    }
+    .ticket-card__details {
+        font-size: 12px !important;
+        flex-wrap: wrap;
+        gap: 4px;
+    }
+    .ticket-card__transfer span {
+        font-size: 12px !important;
+    }
+    .ticket-card__right {
+        width: 100% !important;
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: flex-start !important;
+        justify-content: flex-start !important;
+        gap: 6px !important;
+        flex-wrap: nowrap !important;
+    }
+    .ticket-card__time-block {
+        flex: 0 0 auto !important;
+    }
+    .ticket-card__time-block:first-child { order: 1; }
+    .ticket-card__travel-info {
+        order: 2;
+        flex: 0 0 auto !important;
+        width: auto !important;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-start;
+        padding: 0 2px;
+        padding-top: 8px;
+    }
+    .ticket-card__travel-info img { margin-top: 0; }
+    .ticket-card__time-block:last-child { order: 3; }
+    .ticket-card__time {
+        font-size: 28px !important;
+    }
+    .ticket-card__date {
+        font-size: 12px !important;
+    }
+    .ticket-card__station {
+        font-size: 11px !important;
+        width: auto !important;
+        max-width: 70px !important;
+    }
+    .ticket-card__travel-arrow {
+        width: 60px !important;
+    }
+    .ticket-card__travel-duration {
+        font-size: 12px !important;
+    }
+    .ticket-card__change {
+        font-size: 13px !important;
+    }
+    .tickets-control {
+        padding: 20px !important;
+        border-radius: 20px !important;
+    }
+    .tickets-control__title {
+        font-size: 20px !important;
+        margin-bottom: 16px !important;
+    }
+    .tickets-control__categories {
+        flex-direction: column !important;
+        gap: 12px !important;
+    }
+    .tickets-control__category {
+        justify-content: space-between;
+    }
+    .tickets-control__label {
+        font-size: 16px !important;
+    }
+    .tickets-control__sublabel {
+        font-size: 12px !important;
+    }
+    .tickets-control__counter .counter__btn {
+        width: 36px !important;
+        height: 36px !important;
+        font-size: 18px !important;
+    }
+    .wagon-select {
+        padding: 20px !important;
+        border-radius: 20px !important;
+    }
+    .wagon-select__types {
+        gap: 8px !important;
+        margin-bottom: 16px !important;
+    }
+    .wagon-type-card {
+        padding: 10px 14px !important;
+        border-radius: 12px !important;
+    }
+    .wagon-type-card__name {
+        font-size: 16px !important;
+    }
+    .wagon-type-card__seats {
+        font-size: 14px !important;
+    }
+    .wagon-type-card__price {
+        font-size: 16px !important;
+    }
+    .wagon-scheme {
+        padding: 10px !important;
+        border-radius: 14px !important;
+    }
+    .scheme-seat {
+        width: 30px !important;
+        height: 30px !important;
+        font-size: 10px !important;
+    }
+    .seat-selection__sidebar {
+        position: static !important;
+        width: 100% !important;
+        padding: 20px !important;
+        border-radius: 20px !important;
+        margin-bottom: 0 !important;
+        order: -1 !important;
+    }
+    .sidebar__title {
+        font-size: 20px !important;
+        margin-bottom: 12px !important;
+    }
+    .sidebar__route {
+        font-size: 15px !important;
+        margin-bottom: 12px !important;
+    }
+    .sidebar__passenger-row {
+        font-size: 14px !important;
+    }
+    .sidebar__total-row {
+        padding-top: 12px !important;
+        margin-bottom: 12px !important;
+    }
+    .sidebar__total-label,
+    .sidebar__total-price {
+        font-size: 20px !important;
+    }
+    .sidebar__continue-btn {
+        padding: 12px !important;
+        font-size: 15px !important;
+        margin-bottom: 12px !important;
+    }
+    .sidebar__subtitle {
+        font-size: 14px !important;
+    }
+    .sidebar__payment-icons img {
+        width: 30px !important;
+        height: 18px !important;
+    }
+    .seat-selection {
+        padding-top: 90px;
+    }
+}
+
+@media (max-width: 400px) {
+    .ticket-card {
+        padding: 12px !important;
+        gap: 8px !important;
+    }
+    .ticket-card__from,
+    .ticket-card__to {
+        font-size: 20px !important;
+    }
+    .ticket-card__time {
+        font-size: 24px !important;
+    }
+    .ticket-card__travel-arrow {
+        width: 45px !important;
+    }
+    .tickets-control {
+        padding: 14px !important;
+    }
+    .wagon-select {
+        padding: 14px !important;
+    }
+    .seat-selection__sidebar {
+        padding: 14px !important;
+    }
+}
+
+/* ============================================ */
+/*     PAYMENT PAGE — MOBILE                    */
+/* ============================================ */
+@media (max-width: 767px) {
+    .seat-selection__container {
+        flex-direction: column !important;
+        padding: 0 10px !important;
+        gap: 12px;
+    }
+    .seat-selection__tickets { width: 100%; gap: 12px; }
+    .ticket-card {
+        flex-direction: column !important;
+        padding: 16px !important;
+        gap: 12px !important;
+        border-radius: 20px !important;
+    }
+    .ticket-card__left { width: 100%; }
+    .ticket-card__route { gap: 8px; }
+    .ticket-card__from,
+    .ticket-card__to { font-size: 24px !important; }
+    .ticket-card__route-arrow { width: 24px !important; height: 18px !important; }
+    .ticket-card__details { font-size: 12px !important; flex-wrap: wrap; gap: 4px; }
+    .ticket-card__transfer span { font-size: 12px !important; }
+    .ticket-card__right {
+        width: 100% !important;
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: flex-start !important;
+        justify-content: flex-start !important;
+        gap: 6px !important;
+        flex-wrap: nowrap !important;
+    }
+    .ticket-card__time-block { flex: 0 0 auto !important; }
+    .ticket-card__time-block:first-child { order: 1; }
+    .ticket-card__travel-info {
+        order: 2;
+        flex: 0 0 auto !important;
+        width: auto !important;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-start;
+        padding: 0 2px;
+        padding-top: 8px;
+    }
+    .ticket-card__time-block:last-child { order: 3; }
+    .ticket-card__time { font-size: 28px !important; }
+    .ticket-card__date { font-size: 12px !important; }
+    .ticket-card__station { font-size: 11px !important; width: auto !important; max-width: 70px !important; }
+    .ticket-card__travel-arrow { width: 60px !important; }
+    .ticket-card__travel-duration { font-size: 12px !important; }
+    .ticket-card__change { font-size: 13px !important; }
+    .tickets-control { padding: 16px !important; border-radius: 20px !important; }
+    .tickets-control__title { font-size: 20px !important; margin-bottom: 14px !important; }
+    .passenger-form { padding: 16px !important; border-radius: 20px !important; }
+    .passenger-form__header { margin-bottom: 14px; }
+    .passenger-form__type { font-size: 20px !important; }
+    .passenger-form__row,
+    .passenger-form__row--fio { flex-direction: column !important; gap: 10px !important; }
+    .passenger-form__group { width: 100% !important; }
+    .passenger-form__input,
+    .passenger-form__select { height: 48px !important; font-size: 14px !important; }
+    .passenger-form__input::placeholder { font-size: 14px !important; }
+    .passenger-form__gender { height: 48px !important; }
+    .passenger-form__gender-btn { font-size: 14px !important; }
+    .passenger-form__checkbox-label { bottom: -22px; }
+    .passenger-form__label { font-size: 12px !important; }
+    .contact-info { padding: 16px !important; border-radius: 20px !important; margin-top: 12px; }
+    .contact-info__title { font-size: 20px !important; }
+    .contact-info__subtitle { font-size: 14px !important; }
+    .contact-info__row { flex-direction: column !important; gap: 10px !important; }
+    .contact-info__input { height: 48px !important; font-size: 14px !important; }
+    .contact-info__input::placeholder { font-size: 14px !important; }
+    .seat-selection__sidebar {
+        position: static !important;
+        width: 100% !important;
+        padding: 16px !important;
+        border-radius: 20px !important;
+        margin-bottom: 0 !important;
+        margin-top: 20px !important;
+    }
+    .sidebar__title { font-size: 20px !important; margin-bottom: 10px !important; }
+    .sidebar__route { font-size: 15px !important; margin-bottom: 10px !important; }
+    .sidebar__passenger-row { font-size: 14px !important; }
+    .sidebar__total-row { padding-top: 10px !important; margin-bottom: 10px !important; }
+    .sidebar__total-label,
+    .sidebar__total-price { font-size: 20px !important; }
+    .sidebar__continue-btn { padding: 12px !important; font-size: 15px !important; margin-bottom: 10px !important; }
+    .sidebar__subtitle { font-size: 14px !important; }
+    .sidebar__payment-icons img { width: 30px !important; height: 18px !important; }
+    .sidebar__promo-input { height: 40px !important; font-size: 13px !important; }
+    .sidebar__promo-btn { height: 40px !important; font-size: 13px !important; }
+    .seat-selection { padding-top: 70px; padding-bottom: 20px; }
+}
+
+@media (max-width: 400px) {
+    .ticket-card { padding: 12px !important; gap: 8px !important; }
+    .ticket-card__from,
+    .ticket-card__to { font-size: 20px !important; }
+    .ticket-card__time { font-size: 24px !important; }
+    .ticket-card__travel-arrow { width: 45px !important; }
+    .passenger-form { padding: 12px !important; }
+    .tickets-control { padding: 12px !important; }
+    .contact-info { padding: 12px !important; }
+    .seat-selection__sidebar { padding: 12px !important; }
+    .passenger-form__input,
+    .passenger-form__select,
+    .contact-info__input { height: 42px !important; font-size: 13px !important; }
+}
+
+/* ============================================ */
+/*     CONFIRM PAGE — MOBILE                    */
+/* ============================================ */
+@media (max-width: 767px) {
+    .seat-selection__container { flex-direction: column !important; padding: 0 10px !important; gap: 12px; }
+    .seat-selection__tickets { width: 100%; gap: 12px; }
+    .ticket-card { flex-direction: column !important; padding: 16px !important; gap: 12px !important; border-radius: 20px !important; }
+    .ticket-card__left { width: 100%; }
+    .ticket-card__route { gap: 8px; }
+    .ticket-card__from,
+    .ticket-card__to { font-size: 24px !important; }
+    .ticket-card__route-arrow { width: 24px !important; height: 18px !important; }
+    .ticket-card__details { font-size: 12px !important; flex-wrap: wrap; gap: 4px; }
+    .ticket-card__transfer span { font-size: 12px !important; }
+    .ticket-card__right {
+        width: 100% !important;
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: flex-start !important;
+        justify-content: flex-start !important;
+        gap: 6px !important;
+        flex-wrap: nowrap !important;
+    }
+    .ticket-card__time-block { flex: 0 0 auto !important; }
+    .ticket-card__time-block:first-child { order: 1; }
+    .ticket-card__travel-info {
+        order: 2;
+        flex: 0 0 auto !important;
+        width: auto !important;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-start;
+        padding: 0 2px;
+        padding-top: 8px;
+    }
+    .ticket-card__time-block:last-child { order: 3; }
+    .ticket-card__time { font-size: 28px !important; }
+    .ticket-card__date { font-size: 12px !important; }
+    .ticket-card__station { font-size: 11px !important; width: auto !important; max-width: 70px !important; }
+    .ticket-card__travel-arrow { width: 60px !important; }
+    .ticket-card__travel-duration { font-size: 12px !important; }
+    .ticket-card__change { font-size: 13px !important; }
+    .confirm-section { padding: 16px !important; border-radius: 20px !important; }
+    .confirm-section__title { font-size: 20px !important; margin-bottom: 14px !important; }
+    .confirm-seats__block { padding: 14px !important; border-radius: 14px !important; }
+    .confirm-seats__direction { font-size: 16px !important; }
+    .confirm-seat-card { padding: 10px 0 !important; }
+    .confirm-seat-card__info { font-size: 14px !important; }
+    .confirm-seat-card__price { font-size: 16px !important; }
+    .confirm-passenger-card { padding: 14px !important; border-radius: 14px !important; }
+    .confirm-passenger-card__header { margin-bottom: 12px; }
+    .confirm-passenger-card__type { font-size: 17px !important; }
+    .confirm-passenger-card__fields { padding-left: 0 !important; gap: 8px !important; }
+    .confirm-passenger-card__row { flex-direction: column !important; gap: 4px !important; }
+    .confirm-passenger-card__label { font-size: 12px !important; min-width: auto; }
+    .confirm-passenger-card__value { font-size: 14px !important; }
+    .contact-info { padding: 16px !important; border-radius: 20px !important; }
+    .contact-info__title { font-size: 20px !important; }
+    .contact-info__subtitle { font-size: 14px !important; }
+    .contact-info__row { flex-direction: column !important; gap: 10px !important; }
+    .contact-info__value { height: 48px !important; font-size: 14px !important; }
+    .seat-selection__sidebar {
+        position: static !important;
+        width: 100% !important;
+        padding: 16px !important;
+        border-radius: 20px !important;
+        margin-bottom: 0 !important;
+        margin-top: 12px !important;
+    }
+    .sidebar__title { font-size: 20px !important; margin-bottom: 10px !important; }
+    .sidebar__route { font-size: 15px !important; margin-bottom: 10px !important; }
+    .sidebar__passenger-row { font-size: 14px !important; }
+    .sidebar__total-row { padding-top: 10px !important; margin-bottom: 10px !important; }
+    .sidebar__total-label,
+    .sidebar__total-price { font-size: 20px !important; }
+    .sidebar__continue-btn { padding: 12px !important; font-size: 15px !important; margin-bottom: 10px !important; }
+    .sidebar__subtitle { font-size: 14px !important; }
+    .sidebar__payment-icons img { width: 30px !important; height: 18px !important; }
+    .sidebar__promo-input { height: 40px !important; font-size: 13px !important; }
+    .sidebar__promo-btn { height: 40px !important; font-size: 13px !important; }
+    .seat-selection { padding-top: 70px; padding-bottom: 20px; }
+}
+
+@media (max-width: 400px) {
+    .ticket-card { padding: 12px !important; gap: 8px !important; }
+    .ticket-card__from,
+    .ticket-card__to { font-size: 20px !important; }
+    .ticket-card__time { font-size: 24px !important; }
+    .ticket-card__travel-arrow { width: 45px !important; }
+    .confirm-section { padding: 12px !important; }
+    .confirm-passenger-card { padding: 10px !important; }
+    .contact-info { padding: 12px !important; }
+    .seat-selection__sidebar { padding: 12px !important; }
+}
+
+/* ============================================ */
+/*     ПОИСК — АДАПТАЦИЯ 768px – 1745px         */
+/* ============================================ */
+@media (min-width: 768px) and (max-width: 1745px) {
+    #search-page .search-header { height: auto; min-height: 280px; padding-top: 90px; padding-bottom: 25px; }
+    #search-page .search-header__nav { padding: 15px 30px 0; }
+    #search-page .search-results { padding: 25px 30px; }
+    #search-page .search-filters { padding: 0 30px; }
+}
+@media (min-width: 1385px) and (max-width: 1635px) {
+    #search-page .liquid-nav__input { min-width: 150px; font-size: 16px; }
+    #search-page .liquid-nav--trip,
+    #search-page .liquid-glass--info { padding: 16px; }
+    #search-page .liquid-nav__button { padding: 16px 26px; font-size: 18px; }
+}
+@media (min-width: 1050px) and (max-width: 1385px) {
+    #search-page .liquid-nav { padding: 12px 14px; border-radius: 22px; }
+    #search-page .liquid-nav--trip,
+    #search-page .liquid-glass--info { padding: 12px 14px; margin-right: 10px; }
+    #search-page .liquid-nav__input { min-width: 120px; font-size: 15px; }
+    #search-page .liquid-nav--trip .liquid-nav__input { min-width: 100px; }
+    #search-page .liquid-nav__separator { margin: 0 8px; height: 22px; }
+    #search-page .liquid-nav__button { padding: 14px 24px; font-size: 17px; }
+    #search-page .filter-chip { padding: 10px 16px; }
+    #search-page .filter-chip__label { font-size: 14px; }
+}
+@media (min-width: 768px) and (max-width: 1050px) {
+    #search-page .search-header { min-height: 300px; }
+    #search-page .liquid-nav { padding: 10px 12px; border-radius: 18px; }
+    #search-page .liquid-nav--trip,
+    #search-page .liquid-glass--info { padding: 10px 12px; margin-right: 8px; }
+    #search-page .liquid-nav__input { min-width: 90px; font-size: 14px; }
+    #search-page .liquid-nav--trip .liquid-nav__input { min-width: 80px; }
+    #search-page .liquid-nav__separator { margin: 0 6px; height: 18px; }
+    #search-page .liquid-nav__button { padding: 10px 20px; font-size: 15px; }
+    #search-page .filter-chip { padding: 10px 16px; border-radius: 11px; }
+    #search-page .filter-chip__label { font-size: 13px; }
+    #search-page .search-filters { gap: 8px; }
+}
+@media (min-width: 768px) and (max-width: 900px) {
+    #search-page .liquid-glass--info .liquid-nav__item:nth-child(2) { display: none; }
+}
+@media (min-width: 768px) and (max-width: 1385px) {
+    #search-page .liquid-nav__separator { display: none; }
+    #search-page .liquid-nav__swap { margin: 0; }
+}
+@media (min-width: 768px) and (max-width: 1070px) {
+    .trip-card__classes { margin-right: 20px; min-width: 180px; }
+    .class-name { font-size: 13px; width: 65px; }
+    .class-price { font-size: 13px; width: 90px; }
+    .class-seats { font-size: 12px; }
+    .trip-card__info { flex-wrap: wrap; }
+    .trip-card__divider { margin: 0 14px; height: 80px; }
+}
+
+/* ============================================ */
+/*     SELECT SEATS — АДАПТАЦИЯ 768px – 1550px  */
+/* ============================================ */
+@media (min-width: 768px) and (max-width: 1550px) {
+    .seat-selection__container { padding: 0 20px; gap: 16px; }
+    .seat-selection__tickets { gap: 16px; }
+    .ticket-card { padding: 30px 35px; border-radius: 28px; }
+    .ticket-card__from,
+    .ticket-card__to { font-size: 32px; }
+    .ticket-card__route-arrow { width: 30px; height: 22px; }
+    .ticket-card__details { font-size: 14px; gap: 6px; }
+    .ticket-card__time { font-size: 38px; }
+    .ticket-card__date { font-size: 15px; }
+    .ticket-card__station { font-size: 13px; width: 80px; }
+    .ticket-card__travel-arrow { width: 100px; }
+    .ticket-card__travel-duration { font-size: 14px; }
+    .ticket-card__change { font-size: 14px; }
+    .ticket-card__right { gap: 12px; }
+    .seat-selection__sidebar { padding: 24px; border-radius: 28px; top: 100px; }
+    .sidebar__title { font-size: 24px; margin-bottom: 14px; }
+    .sidebar__route { font-size: 15px; }
+    .sidebar__passenger-row { font-size: 15px; }
+    .sidebar__total-label,
+    .sidebar__total-price { font-size: 22px; }
+    .sidebar__continue-btn { padding: 14px; font-size: 16px; }
+    .tickets-control { padding: 28px 35px; border-radius: 28px; }
+    .tickets-control__title { font-size: 23px; margin-bottom: 20px; }
+    .tickets-control__categories { gap: 30px; }
+    .tickets-control__label { font-size: 18px; }
+    .tickets-control__sublabel { font-size: 14px; }
+    .tickets-control__counter .counter__btn { width: 40px; height: 40px; font-size: 20px; }
+    .wagon-select { padding: 28px 35px; border-radius: 28px; }
+    .wagon-select__types { gap: 14px; margin-bottom: 20px; }
+    .wagon-type-card { padding: 12px; border-radius: 12px; }
+    .wagon-type-card__name { font-size: 18px; }
+    .wagon-type-card__seats { font-size: 17px; }
+    .wagon-type-card__price { font-size: 18px; }
+    .wagon-scheme { padding: 16px; }
+}
+@media (min-width: 768px) and (max-width: 1100px) {
+    .seat-selection__container { flex-direction: column; padding: 0 16px; }
+    .seat-selection__sidebar { position: static; width: 100%; margin-bottom: 0; margin-top: 12px; }
+    .ticket-card { padding: 24px 28px; }
+    .ticket-card__from,
+    .ticket-card__to { font-size: 28px; }
+    .ticket-card__time { font-size: 32px; }
+    .ticket-card__travel-arrow { width: 80px; }
+    .tickets-control__categories { flex-direction: column; gap: 16px; }
+    .tickets-control { padding: 24px 28px; }
+    .wagon-select { padding: 24px 28px; }
+}
+
+/* ============================================ */
+/*     SELECT SEATS — ФИКС БИЛЕТА 768px–901px  */
+/* ============================================ */
+@media (min-width: 768px) and (max-width: 901px) {
+    .ticket-card { flex-direction: column !important; }
+    .ticket-card__left { width: 100%; }
+    .ticket-card__right {
+        width: 100% !important;
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: flex-start !important;
+        justify-content: flex-end !important;
+        gap: 8px !important;
+        flex-wrap: nowrap !important;
+    }
+    .ticket-card__time-block { flex: 0 0 auto !important; }
+    .ticket-card__time-block:first-child { order: 1 !important; }
+    .ticket-card__travel-info {
+        order: 2 !important;
+        flex: 0 0 auto !important;
+        width: auto !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: flex-start !important;
+        padding: 0 4px !important;
+        padding-top: 6px !important;
+    }
+    .ticket-card__time-block:last-child { order: 3 !important; }
+    #returnTicket:not(.ticket-card--selected) { display: none !important; }
+}
+
+/* ============================================ */
+/*     SELECT SEATS — ФИКС 768px – 1100px       */
+/* ============================================ */
+@media (min-width: 768px) and (max-width: 1100px) {
+    .seat-selection__container { flex-direction: column; padding: 0 14px; }
+    .seat-selection__tickets { width: 100%; gap: 12px; display: flex; flex-direction: column; }
+    .seat-selection__tickets > * { order: 1; }
+    .seat-selection__tickets > .wagon-select { order: 2; }
+    .seat-selection__sidebar {
+        position: static;
+        width: 100%;
+        padding: 20px;
+        border-radius: 24px;
+        margin: 0;
+        order: -1;
+    }
+    .ticket-card { padding: 24px 28px; border-radius: 24px; flex-direction: row; }
+    .ticket-card__from,
+    .ticket-card__to { font-size: 28px; }
+    .ticket-card__time { font-size: 30px; }
+    .ticket-card__date { font-size: 12px; }
+    .ticket-card__station { font-size: 11px; width: 65px; }
+    .ticket-card__travel-arrow { width: 65px; }
+    .ticket-card__right { gap: 6px; }
+    .tickets-control { padding: 20px 24px; border-radius: 24px; }
+    .tickets-control__title { font-size: 20px; margin-bottom: 16px; }
+    .tickets-control__categories { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+    .tickets-control__category { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
+    .tickets-control__label { font-size: 16px; }
+    .tickets-control__sublabel { font-size: 12px; }
+    .tickets-control__counter { align-self: flex-start; }
+    .tickets-control__counter .counter__btn { width: 36px; height: 36px; font-size: 18px; }
+    .wagon-select { padding: 20px 24px; border-radius: 24px; }
+    .wagon-select__types { gap: 8px; margin-bottom: 14px; }
+    .wagon-type-card { padding: 10px 12px; border-radius: 10px; }
+    .wagon-type-card__name { font-size: 16px; }
+    .wagon-type-card__seats { font-size: 14px; }
+    .wagon-type-card__price { font-size: 16px; }
+}
