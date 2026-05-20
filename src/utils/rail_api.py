@@ -143,9 +143,6 @@ class RZDApi:
             if schemes:
                 break
         
-        if not schemes:
-            print(f"[DEBUG] Schemes не найдены в CarGroups")
-        
         return {
             "trip_id": trip.get('ObjectId', trip.get('Id', '')),
             "train_number": trip.get('TrainNumber') or trip.get('DisplayTrainNumber', ''),

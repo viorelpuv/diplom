@@ -318,34 +318,6 @@ BRT
             <button class="counter__btn counter__btn--plus" data-target="infants">+</button>
         </div>
     </div>
-    
-    <div class="dropdown__divider"></div>
-    
-    <div class="dropdown__header dropdown__header--class">Класс обслуживания</div>
-    
-    <div class="dropdown__row dropdown__row--radio">
-        <span class="dropdown__label">Эконом</span>
-        <label class="dropdown__checkbox">
-            <input type="checkbox" class="class-checkbox" name="class" value="economy" checked>
-            <span class="checkmark">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-                    <polyline points="20 6 9 17 4 12"></polyline>
-                </svg>
-            </span>
-        </label>
-    </div>
-    
-    <div class="dropdown__row dropdown__row--radio">
-        <span class="dropdown__label">Бизнес</span>
-        <label class="dropdown__checkbox">
-            <input type="checkbox" class="class-checkbox" name="class" value="business">
-            <span class="checkmark">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-                    <polyline points="20 6 9 17 4 12"></polyline>
-                </svg>
-            </span>
-        </label>
-    </div>
 </div>
 
 <script>
@@ -421,16 +393,6 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('count-' + target).textContent = counters[target];
             document.getElementById('hidden' + target.charAt(0).toUpperCase() + target.slice(1)).value = counters[target];
             updatePassengerText();
-        });
-    });
-
-    document.querySelectorAll('.class-checkbox').forEach(checkbox => {
-        checkbox.addEventListener('click', function(e) {
-            e.stopPropagation();
-            document.querySelectorAll('.class-checkbox').forEach(cb => {
-                cb.checked = false;
-            });
-            this.checked = true;
         });
     });
 
