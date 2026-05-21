@@ -4,7 +4,7 @@ import threading
 import time
 from datetime import datetime, date
 
-from flask import Flask, render_template, request, redirect, g, make_response, session
+from flask import Flask, abort, render_template, request, redirect, g, make_response, session
 from flask_babel import Babel, _
 
 from utils.rail_api import RZDApi
@@ -1406,32 +1406,25 @@ def info_page(page):
             'title': 'Контакты'
         },
         'cookies': {
-            'title': 'Использование cookie',
-            'icon': '🍪'
+            'title': 'Использование cookie'
         },
         'privacy': {
-            'title': 'Конфиденциальность',
-            'icon': '🔒'
+            'title': 'Конфиденциальность'
         },
         'advertisers': {
-            'title': 'Рекламодателям',
-            'icon': '📢'
+            'title': 'Рекламодателям'
         },
         'bloggers': {
-            'title': 'Блогерам',
-            'icon': '📱'
+            'title': 'Блогерам'
         },
         'about': {
-            'title': 'О компании',
-            'icon': '🏢'
+            'title': 'О компании'
         },
         'career': {
-            'title': 'Карьера',
-            'icon': '💼'
+            'title': 'Карьера'
         },
         'reviews': {
-            'title': 'Отзывы',
-            'icon': '⭐'
+            'title': 'Отзывы'
         }
     }
     

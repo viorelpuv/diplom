@@ -22,7 +22,7 @@
     font-family: 'Commissioner', sans-serif;
     font-weight: 500;
     font-size: 16px;
-    color: #4672FF;
+    color: #1a1a1a;
     text-decoration: none;
     margin-bottom: 24px;
     transition: opacity 0.2s;
@@ -30,6 +30,12 @@
 
 .info-page__back:hover {
     opacity: 0.7;
+}
+
+.info-page__back img {
+    transform: rotate(90deg);
+    height: 15px;
+    width: 15px;
 }
 
 .info-page__title {
@@ -150,23 +156,4 @@
 
 .info-contact-card__value a:hover {
     text-decoration: underline;
-}
-
-@media (max-width: 767px) {
-    .info-page {
-        padding-top: 80px;
-    }
-    
-    .info-page__title {
-        font-size: 32px;
-    }
-    
-    .info-page__content {
-        padding: 24px;
-        border-radius: 24px;
-    }
-    
-    .info-section__title {
-        font-size: 22px;
-    }
 }

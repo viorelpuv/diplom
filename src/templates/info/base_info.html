@@ -9,9 +9,7 @@
     <div class="info-page__header">
         <div class="info-page__container">
             <a href="/" class="info-page__back">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M19 12H5M12 19L5 12L12 5" stroke="#1E1E1E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
+                <img src="{{ url_for('static', filename='icons/arrow-short.svg') }}" alt="">
                 На главную
             </a>
             <h1 class="info-page__title">{{ data.title }}</h1>
@@ -26,4 +24,29 @@
     </div>
 </div>
 
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const header = document.getElementById('header');
+    if (header) {
+        header.classList.add('scrolled');
+        header.style.boxShadow = 'none';
+        const logoWhite = header.querySelector('.header__logo--white');
+        const logoDark = header.querySelector('.header__logo--dark');
+        if (logoWhite) logoWhite.style.display = 'none';
+        if (logoDark) logoDark.style.display = 'block';
+        const sepImg = header.querySelector('.lang-cur img');
+        const supportImg = header.querySelector('.support-image');
+        if (sepImg) sepImg.src = '/static/icons/v-line-18.png';
+        if (supportImg) supportImg.src = '/static/icons/support.svg';
+        window.addEventListener('scroll', function() {
+            if (window.scrollY > 50) {
+                header.style.background = '#EFF1F4';
+                header.style.boxShadow = '0 2px 20px rgba(0, 0, 0, 0.15)';
+            } else {
+                header.style.boxShadow = 'none';
+            }
+        });
+    }
+});
+</script>
 {% endblock %}

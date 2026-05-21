@@ -1,0 +1,57 @@
+{% extends 'info/base_info.html' %}
+
+{% block subtitle %}Прозрачность и контроль ваших данных{% endblock %}
+
+{% block info_content %}
+<div class="info-section">
+    <h2 class="info-section__title">Что такое cookie?</h2>
+    <p class="info-section__text">
+        Cookie — это небольшие текстовые файлы, которые сохраняются на вашем устройстве при посещении сайта. 
+        Они помогают нам запоминать ваши предпочтения, анализировать работу сервиса и делать BRT удобнее.
+    </p>
+</div>
+
+<div class="info-section">
+    <h2 class="info-section__title">Какие cookie мы используем</h2>
+    
+    <p class="info-section__text"><strong>1. Необходимые cookie</strong></p>
+    <p class="info-section__text">
+        Обеспечивают базовую работу сайта: авторизацию, сохранение сессии, безопасность платежей. 
+        Без них сервис не сможет функционировать. Срок хранения — до закрытия браузера.
+    </p>
+    
+    <p class="info-section__text"><strong>2. Функциональные cookie</strong></p>
+    <p class="info-section__text">
+        Запоминают ваш язык, валюту, город отправления и другие настройки для ускорения поиска билетов. 
+        Срок хранения — до 12 месяцев.
+    </p>
+    
+    <p class="info-section__text"><strong>3. Аналитические cookie</strong></p>
+    <p class="info-section__text">
+        Помогают нам понимать, как пользователи взаимодействуют с сайтом: какие страницы посещают, 
+        сколько времени проводят. Используем обезличенные данные Яндекс.Метрики. Срок хранения — до 24 месяцев.
+    </p>
+    
+    <p class="info-section__text"><strong>4. Рекламные cookie</strong></p>
+    <p class="info-section__text">
+        Позволяют показывать релевантную рекламу наших сервисов на других сайтах. 
+        Не передаём данные третьим лицам для собственных рекламных целей. Срок хранения — до 12 месяцев.
+    </p>
+</div>
+
+<div class="info-section">
+    <h2 class="info-section__title">Как управлять cookie</h2>
+    <p class="info-section__text">
+        Вы можете в любой момент изменить настройки cookie в вашем браузере:
+    </p>
+    <ul class="info-section__list">
+        <li>Chrome: Настройки → Конфиденциальность → Файлы cookie</li>
+        <li>Firefox: Настройки → Приватность и защита → Куки</li>
+        <li>Safari: Настройки → Конфиденциальность → Управление данными</li>
+        <li>Яндекс.Браузер: Настройки → Сайты → Cookie</li>
+    </ul>
+    <p class="info-section__text">
+        Обратите внимание: отключение необходимых cookie может нарушить работу сервиса.
+    </p>
+</div>
+{% endblock %}
