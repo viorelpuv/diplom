@@ -1995,3 +1995,147 @@ def add_bonus_points(user_id, amount_paid):
     finally:
         cursor.close()
         conn.close()
+
+
+# ============================================
+# ADMIN — ТРАНСПОРТ (ПОЕЗДА И МАРШРУТЫ)
+# ============================================
+
+def get_all_trips_with_details(limit=100):
+    """Получить все рейсы с информацией о вагонах и местах."""
+    conn = get_db()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("""
+            SELECT 
+                t.id as trip_id,
+                t.departure_datetime,
+                t.arrival_datetime,
+                t.status,
+                t.service_fee,
+                t.price_sitting,
+                t.price_reserved_seat,
+                t.price_compartment,
+                t.price_luxury,
+                t.price_soft,
+                t.price_sv,
+                s_from.name as from_station,
+                s_from.city as from_city,
+                s_to.name as to_station,
+                s_to.city as to_city,
+                tr.number as train_number,
+                tr.name as train_name,
+                tr.type as train_type,
+                tr.operator as train_operator,
+                tr.id as train_id,
+                r.distance_km,
+                r.duration_minutes
+            FROM trips t
+            JOIN routes r ON t.route_id = r.id
+            JOIN stations s_from ON r.departure_station_id = s_from.id
+            JOIN stations s_to ON r.arrival_station_id = s_to.id
+            JOIN trains tr ON t.train_id = tr.id
+            ORDER BY t.departure_datetime DESC
+            LIMIT ?
+        """, (limit,))
+        
+        trips = []
+        for row in cursor.fetchall():
+            trip = dict(row)
+            
+            # Разделяем дату и время
+            if trip['departure_datetime']:
+                parts = trip['departure_datetime'].split(' ')
+                trip['departure_date'] = parts[0] if len(parts) > 0 else ''
+                trip['departure_time'] = parts[1][:5] if len(parts) > 1 else ''
+            
+            if trip['arrival_datetime']:
+                parts = trip['arrival_datetime'].split(' ')
+                trip['arrival_time'] = parts[1][:5] if len(parts) > 1 else ''
+            
+            # Получаем вагоны для этого рейса
+            wagons = get_wagons_for_trip(cursor, trip['trip_id'], trip['train_id'], trip)
+            
+            total_seats = sum(w['total_seats'] for w in wagons)
+            available_seats = sum(w['available_seats'] for w in wagons)
+            
+            # Находим минимальную цену
+            min_price = None
+            for w in wagons:
+                if w['price'] > 0 and (min_price is None or w['price'] < min_price):
+                    min_price = w['price']
+            
+            trip['wagons'] = wagons
+            trip['total_seats'] = total_seats
+            trip['available_seats'] = available_seats
+            trip['min_price'] = min_price or 0
+            
+            trips.append(trip)
+        
+        return trips
+        
+    except Exception as e:
+        print(f"Error in get_all_trips_with_details: {e}")
+        import traceback
+        traceback.print_exc()
+        return []
+    finally:
+        cursor.close()
+        conn.close()
+
+
+def get_wagons_for_trip(cursor, trip_id, train_id, trip_prices):
+    """Получить вагоны и места для конкретного рейса."""
+    try:
+        cursor.execute("""
+            SELECT 
+                w.id as wagon_id,
+                w.number as wagon_number,
+                w.type as wagon_type,
+                w.class as wagon_class,
+                w.total_seats,
+                COUNT(ts.id) as total_trip_seats,
+                SUM(CASE WHEN ts.is_available = 1 THEN 1 ELSE 0 END) as available_seats
+            FROM wagons w
+            JOIN seats s ON s.wagon_id = w.id
+            JOIN trip_seats ts ON ts.seat_id = s.id AND ts.trip_id = ?
+            WHERE w.train_id = ?
+            GROUP BY w.id
+            ORDER BY w.number
+        """, (trip_id, train_id))
+        
+        wagons = []
+        for w_row in cursor.fetchall():
+            wagon = dict(w_row)
+            
+            # Определяем цену для типа вагона
+            price = 0
+            wagon_type = (wagon.get('wagon_type') or '').lower()
+            
+            if wagon_type == 'sitting':
+                price = trip_prices.get('price_sitting', 0) or 0
+            elif wagon_type == 'reserved_seat' or wagon_type == 'reserved':
+                price = trip_prices.get('price_reserved_seat', 0) or 0
+            elif wagon_type == 'compartment' or wagon_type == 'coupe':
+                price = trip_prices.get('price_compartment', 0) or 0
+            elif wagon_type == 'luxury' or wagon_type == 'lux':
+                price = trip_prices.get('price_luxury', 0) or 0
+            elif wagon_type == 'sv':
+                price = trip_prices.get('price_sv', 0) or 0
+            elif wagon_type == 'soft':
+                price = trip_prices.get('price_soft', 0) or 0
+            
+            wagons.append({
+                'number': wagon.get('wagon_number', '—'),
+                'type': wagon.get('wagon_type', '—'),
+                'class': wagon.get('wagon_class', '—'),
+                'total_seats': wagon.get('total_seats', 0) or 0,
+                'available_seats': wagon.get('available_seats', 0) or 0,
+                'price': price
+            })
+        
+        return wagons
+        
+    except Exception as e:
+        print(f"Error in get_wagons_for_trip: {e}")
+        return []

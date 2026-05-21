@@ -22,6 +22,7 @@
     flex: 1;
     padding: 32px;
     background: #1A1A1A;
+    overflow-x: auto;
 }
 
 .admin-sidebar__header {
@@ -81,6 +82,9 @@
     margin: 0 0 24px 0;
 }
 
+/* ============================================ */
+/*           DASHBOARD CARDS                     */
+/* ============================================ */
 .dashboard-cards {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
@@ -108,6 +112,9 @@
     font-size: 14px;
 }
 
+/* ============================================ */
+/*           ADMIN ITEMS & TABLES                */
+/* ============================================ */
 .admin-item {
     display: flex;
     gap: 16px;
@@ -120,6 +127,13 @@
     font-size: 14px;
 }
 
+.admin-item span {
+    flex: 1;
+}
+
+/* ============================================ */
+/*           ADMIN FORMS                         */
+/* ============================================ */
 .admin-form {
     background: #252525;
     border-radius: 20px;
@@ -167,20 +181,87 @@
     font-weight: 500;
     font-size: 16px;
     cursor: pointer;
+    transition: background 0.2s;
 }
 
-.expand-arrow {
-    display: inline-block;
-    width: 16px;
-    height: 16px;
-    text-align: center;
-    line-height: 16px;
-    transition: all 0.2s ease;
+.admin-form__submit:hover {
+    background: #3A5EE0;
 }
 
-/* Добавь в main.css */
+/* ============================================ */
+/*           MODAL WINDOWS                       */
+/* ============================================ */
+.admin-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
 
-/* Форма промокодов */
+.admin-modal__overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(5px);
+}
+
+.admin-modal__content {
+    position: relative;
+    background: #1E1E1E;
+    border-radius: 20px;
+    padding: 32px;
+    width: 90%;
+    max-width: 800px;
+    min-width: 600px;
+    max-height: 85vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    border: 1px solid #333;
+    box-sizing: border-box;
+}
+
+.admin-modal__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+}
+
+.admin-modal__title {
+    color: #fff;
+    font-family: 'Commissioner', sans-serif;
+    font-size: 20px;
+    font-weight: 600;
+    margin: 0;
+}
+
+.admin-modal__close {
+    background: none;
+    border: none;
+    color: #A3A3A3;
+    font-size: 24px;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 6px;
+    transition: all 0.2s;
+}
+
+.admin-modal__close:hover {
+    background: #333;
+    color: #fff;
+}
+
+/* ============================================ */
+/*           PROMO FORM STYLES                   */
+/* ============================================ */
 #promoForm {
     background: #252525;
     border-radius: 20px;
@@ -264,69 +345,9 @@
     border-color: #4672FF;
 }
 
-.admin-modal {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: 10000;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-.admin-modal__overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.7);
-    backdrop-filter: blur(5px);
-}
-.admin-modal__content {
-    position: relative;
-    background: #1E1E1E;
-    border-radius: 20px;
-    padding: 32px;
-    width: 90%;
-    max-width: 800px;
-    min-width: 600px;
-    max-height: 85vh;
-    overflow-y: auto;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-    border: 1px solid #333;
-    box-sizing: border-box;
-}
-.admin-modal__header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 24px;
-}
-.admin-modal__title {
-    color: #fff;
-    font-family: 'Commissioner', sans-serif;
-    font-size: 20px;
-    font-weight: 600;
-    margin: 0;
-}
-.admin-modal__close {
-    background: none;
-    border: none;
-    color: #A3A3A3;
-    font-size: 24px;
-    cursor: pointer;
-    padding: 4px 8px;
-    border-radius: 6px;
-    transition: all 0.2s;
-}
-.admin-modal__close:hover {
-    background: #333;
-    color: #fff;
-}
-
-/* Стили для формы внутри модалки */
+/* ============================================ */
+/*           EDIT USER FORM                      */
+/* ============================================ */
 #editUserForm {
     width: 100%;
     box-sizing: border-box;
@@ -343,12 +364,467 @@
     box-sizing: border-box;
 }
 
-/* Сетка полей */
 #editUserForm > div {
     width: 100%;
     box-sizing: border-box;
 }
 
+/* ============================================ */
+/*   TRANSPORT — МАРШРУТЫ И ПОЕЗДА              */
+/* ============================================ */
+
+.transport-route-card {
+    background: #1E1E1E;
+    border: 1px solid #333;
+    border-radius: 16px;
+    margin-bottom: 16px;
+    overflow: hidden;
+    transition: border-color 0.2s ease;
+}
+
+.transport-route-card:hover {
+    border-color: #4672FF;
+}
+
+.transport-route-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 24px;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.2s ease;
+}
+
+.transport-route-header:hover {
+    background: rgba(70, 114, 255, 0.05);
+}
+
+.transport-route-header__left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex: 1;
+    min-width: 0;
+}
+
+.transport-route-header__arrow {
+    color: #4672FF;
+    font-size: 14px;
+    transition: transform 0.2s ease;
+    width: 20px;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+.transport-route-header__cities {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+}
+
+.transport-route-city {
+    color: #FFFFFF !important;
+    font-family: 'Commissioner', sans-serif;
+    font-weight: 600;
+    font-size: 18px;
+    white-space: nowrap;
+}
+
+.transport-route-header__right {
+    flex-shrink: 0;
+    margin-left: 16px;
+}
+
+.transport-route-badge {
+    display: inline-block;
+    background: #333;
+    color: #A3A3A3;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-family: 'Commissioner', sans-serif;
+    font-size: 13px;
+    white-space: nowrap;
+}
+
+.transport-route-details {
+    border-top: 1px solid #333;
+    padding: 24px;
+}
+
+.transport-route-info-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+/* Информационные карточки */
+.transport-info-item {
+    background: #252525;
+    border-radius: 12px;
+    padding: 14px 16px;
+}
+
+.transport-info-label {
+    display: block;
+    color: #A3A3A3 !important;
+    font-family: 'Commissioner', sans-serif;
+    font-size: 12px;
+    margin-bottom: 4px;
+}
+
+.transport-info-value {
+    display: block;
+    color: #FFFFFF !important;
+    font-family: 'Commissioner', sans-serif;
+    font-size: 16px;
+    font-weight: 500;
+}
+
+/* Заголовок секции поездов */
+.transport-trips-title {
+    color: #FFFFFF !important;
+    font-family: 'Commissioner', sans-serif;
+    font-weight: 600;
+    font-size: 16px;
+    margin: 0 0 16px 0;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #333;
+}
+
+/* Карточка поезда внутри маршрута */
+.transport-train-card-inner {
+    background: #252525;
+    border-radius: 12px;
+    margin-bottom: 8px;
+    overflow: hidden;
+    transition: border-color 0.2s;
+    border: 1px solid transparent;
+}
+
+.transport-train-card-inner:hover {
+    border-color: #4672FF;
+}
+
+/* Шапка поезда (кликабельная) */
+.transport-train-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.2s ease;
+}
+
+.transport-train-header:hover {
+    background: rgba(70, 114, 255, 0.05);
+}
+
+.transport-train-header__left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+    min-width: 0;
+}
+
+.transport-train-header__arrow {
+    color: #4672FF;
+    font-size: 12px;
+    width: 16px;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+.transport-train-header__number {
+    color: #FFFFFF !important;
+    font-family: 'Commissioner', sans-serif;
+    font-weight: 600;
+    font-size: 16px;
+    margin-bottom: 4px;
+}
+
+.transport-train-header__info {
+    color: #A3A3A3 !important;
+    font-family: 'Commissioner', sans-serif;
+    font-size: 13px;
+}
+
+.transport-train-header__right {
+    flex-shrink: 0;
+    margin-left: 16px;
+}
+
+.transport-train-badge {
+    display: inline-block;
+    background: #333;
+    color: #A3A3A3;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-family: 'Commissioner', sans-serif;
+    font-size: 13px;
+    white-space: nowrap;
+}
+
+/* Детали поезда (скрытые) */
+.transport-train-details-inner {
+    border-top: 1px solid #333;
+    padding: 20px 24px;
+}
+
+/* Секция вагонов */
+.transport-wagons-section {
+    margin-top: 20px;
+}
+
+.transport-wagon-card {
+    background: #1A1A1A;
+    border-radius: 10px;
+    padding: 14px;
+    border: 1px solid #333;
+}
+
+.transport-wagon-card__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #333;
+}
+
+.transport-wagon-card__number {
+    color: #FFFFFF !important;
+    font-family: 'Commissioner', sans-serif;
+    font-weight: 600;
+    font-size: 15px;
+}
+
+.transport-wagon-card__type {
+    color: #4672FF !important;
+    font-family: 'Commissioner', sans-serif;
+    font-size: 12px;
+    background: rgba(70, 114, 255, 0.1);
+    padding: 3px 10px;
+    border-radius: 6px;
+    font-weight: 500;
+}
+
+.transport-wagon-card__body {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.transport-wagon-card__stat {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.transport-wagon-card__stat-label {
+    color: #A3A3A3 !important;
+    font-family: 'Commissioner', sans-serif;
+    font-size: 12px;
+}
+
+.transport-wagon-card__stat-value {
+    color: #FFFFFF !important;
+    font-family: 'Commissioner', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+/* Прогресс-бар */
+.transport-wagon-card__progress {
+    margin-top: 10px;
+}
+
+.transport-wagon-card__progress-label {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 4px;
+    font-size: 11px;
+    color: #A3A3A3 !important;
+    font-family: 'Commissioner', sans-serif;
+}
+
+.transport-wagon-card__progress-bar {
+    height: 4px;
+    background: #333;
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.transport-wagon-card__progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #4CAF50, #FFC107, #FF5722);
+    border-radius: 2px;
+    transition: width 0.3s ease;
+}
+
+/* Адаптивность для транспортного раздела */
+@media (max-width: 1024px) {
+    .transport-route-info-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .transport-route-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+    
+    .transport-route-header__right {
+        align-self: flex-end;
+        margin-left: 0;
+    }
+    
+    .transport-train-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+    
+    .transport-train-header__right {
+        align-self: flex-end;
+        margin-left: 0;
+    }
+    
+    .transport-wagon-card__body {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 767px) {
+    .transport-route-details {
+        padding: 16px;
+    }
+    
+    .transport-route-info-grid {
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+    
+    .transport-route-city {
+        font-size: 15px;
+    }
+    
+    .transport-train-header__number {
+        font-size: 14px;
+    }
+    
+    .transport-train-details-inner {
+        padding: 14px 16px;
+    }
+    
+    .transport-wagon-card {
+        padding: 12px;
+    }
+}
+
+/* ============================================ */
+/*           EXPAND ARROW                        */
+/* ============================================ */
+.expand-arrow {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    text-align: center;
+    font-size: 16px;
+    transition: transform 0.2s ease;
+    color: #A3A3A3;
+}
+
+/* ============================================ */
+/*           TABLES                               */
+/* ============================================ */
+.admin-table {
+    width: 100%;
+    border-collapse: collapse;
+    color: #fff;
+    font-family: 'Commissioner', sans-serif;
+    font-size: 14px;
+}
+
+.admin-table th {
+    padding: 10px;
+    text-align: left;
+    border-bottom: 1px solid #333;
+    color: #A3A3A3;
+    font-weight: 500;
+    font-size: 13px;
+}
+
+.admin-table td {
+    padding: 10px;
+    border-bottom: 1px solid #2A2A2A;
+}
+
+.admin-table tr:hover td {
+    background: rgba(70, 114, 255, 0.05);
+}
+
+/* ============================================ */
+/*           BUTTONS                              */
+/* ============================================ */
+.admin-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border: none;
+    border-radius: 8px;
+    font-family: 'Commissioner', sans-serif;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.admin-btn--primary {
+    background: #4672FF;
+    color: #fff;
+}
+
+.admin-btn--primary:hover {
+    background: #3A5EE0;
+}
+
+.admin-btn--danger {
+    background: #C62828;
+    color: #fff;
+}
+
+.admin-btn--danger:hover {
+    background: #B71C1C;
+}
+
+.admin-btn--success {
+    background: #31BD24;
+    color: #1E1E1E;
+}
+
+.admin-btn--success:hover {
+    background: #2E7D32;
+    color: #fff;
+}
+
+.admin-btn--warning {
+    background: #E89313;
+    color: #fff;
+}
+
+.admin-btn--warning:hover {
+    background: #C77800;
+}
+
+/* ============================================ */
+/*           NUMBER INPUT FIX                    */
+/* ============================================ */
 input[type="number"]::-webkit-inner-spin-button,
 input[type="number"]::-webkit-outer-spin-button {
     -webkit-appearance: none;
@@ -358,4 +834,128 @@ input[type="number"]::-webkit-outer-spin-button {
 input[type="number"] {
     -moz-appearance: textfield;
     appearance: textfield;
+}
+
+/* ============================================ */
+/*           RESPONSIVE                          */
+/* ============================================ */
+@media (max-width: 1024px) {
+    .admin-page__container {
+        flex-direction: column;
+    }
+    
+    .admin-page__sidebar {
+        flex: 0 0 auto;
+        min-height: auto;
+        padding: 16px;
+    }
+    
+    .admin-sidebar__nav {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 4px;
+        padding-bottom: 0;
+    }
+    
+    .admin-sidebar__link {
+        font-size: 13px;
+        padding: 8px 12px;
+        border-radius: 8px;
+    }
+    
+    .admin-page__content {
+        padding: 20px;
+    }
+    
+    .dashboard-cards {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .transport-info-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .transport-train-header {
+        flex-direction: column;
+        gap: 12px;
+        align-items: flex-start;
+    }
+    
+    .transport-train-header__right {
+        align-self: flex-end;
+    }
+    
+    .transport-trip-header {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    
+    .admin-modal__content {
+        min-width: auto;
+        max-width: 95%;
+    }
+}
+
+@media (max-width: 767px) {
+    .admin-page {
+        padding-top: 70px;
+    }
+    
+    .admin-page__content {
+        padding: 16px;
+    }
+    
+    .admin-tab__title {
+        font-size: 22px;
+    }
+    
+    .dashboard-cards {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
+    }
+    
+    .dashboard-card {
+        padding: 16px;
+    }
+    
+    .dashboard-card__value {
+        font-size: 24px;
+    }
+    
+    .dashboard-card__label {
+        font-size: 12px;
+    }
+    
+    .admin-sidebar__nav {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .transport-info-grid {
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+    
+    .transport-trip-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .transport-trip-route {
+        width: 100%;
+    }
+    
+    .transport-trip-date,
+    .transport-trip-time,
+    .transport-trip-seats,
+    .transport-trip-price {
+        text-align: left;
+        flex: none;
+        width: 100%;
+    }
+    
+    .admin-modal__content {
+        padding: 20px;
+        max-width: 100%;
+        max-height: 90vh;
+    }
 }

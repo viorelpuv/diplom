@@ -3,14 +3,15 @@ import json
 import threading
 import time
 from datetime import datetime, date
+from functools import wraps
 
-from flask import Flask, abort, render_template, request, redirect, g, make_response, session
+from flask import Flask, abort, jsonify, render_template, request, redirect, g, make_response, session
 from flask_babel import Babel, _
 
 from utils.rail_api import RZDApi
 from utils.currency import format_price
 from utils.database.database import (
-    add_bonus_points, apply_promocode, calculate_loyalty_level, check_promocode, get_user_total_spent, init_db, save_passenger, create_order, save_ticket, 
+    add_bonus_points, apply_promocode, calculate_loyalty_level, check_promocode, get_all_trips_with_details, get_user_total_spent, init_db, save_passenger, create_order, save_ticket, 
     save_transaction, update_order_status, save_train_full, 
     get_order_by_number, get_user_by_document, register_user,
     login_user, save_login_history, get_user_by_id,
@@ -1294,6 +1295,12 @@ def api_admin_users():
 @app.route('/api/admin/trains')
 def api_admin_trains():
     return get_all_trains()
+
+@app.route('/api/admin/trips/all')
+def admin_trips_all():
+    """Получить все рейсы с информацией о вагонах и местах."""
+    trips = get_all_trips_with_details(limit=100)
+    return jsonify(trips)
 
 @app.route('/api/admin/stations')
 def api_admin_stations():
