@@ -100,7 +100,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (!orderNumber || orderNumber === 'None') return;
     
     // Таймер обратного отсчёта (20 минут)
-    let timeLeft = 20 * 60; // 20 минут в секундах
+    let timeLeft = 20 * 60;
     const timerEl = document.createElement('div');
     timerEl.style.cssText = 'text-align:center; margin-bottom:16px; font-family:Commissioner,sans-serif; font-size:14px; color:#A3A3A3;';
     timerEl.id = 'paymentTimer';
@@ -115,7 +115,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const seconds = timeLeft % 60;
         timerEl.textContent = `⏱ Время на оплату: ${minutes}:${seconds.toString().padStart(2, '0')}`;
         
-        if (timeLeft <= 300) { // 5 минут
+        if (timeLeft <= 300) {
             timerEl.style.color = '#FF3B30';
             timerEl.style.fontWeight = '600';
         }
@@ -126,21 +126,18 @@ document.addEventListener('DOMContentLoaded', function() {
             timerEl.style.color = '#FF3B30';
             timerEl.style.fontWeight = '600';
             
-            // Освобождаем места
             fetch('/api/payment/cancel', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({order_number: orderNumber})
             });
             
-            // Блокируем форму
             const cardForm = document.getElementById('cardForm');
             if (cardForm) {
                 cardForm.style.opacity = '0.5';
                 cardForm.style.pointerEvents = 'none';
             }
             
-            // Редирект через 3 секунды
             setTimeout(() => {
                 window.location.href = '/';
             }, 3000);
@@ -165,7 +162,6 @@ document.addEventListener('DOMContentLoaded', function() {
             const cardCvv = document.getElementById('cardCvv').value;
             const cardHolder = document.getElementById('cardHolder').value;
             
-            // Валидация
             let valid = true;
             
             if (cardNumber.length !== 16) {
@@ -201,16 +197,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
             
-            // Блокируем кнопку
             const payBtn = document.getElementById('payBtn');
             payBtn.disabled = true;
             document.getElementById('payBtnText').style.display = 'none';
             document.getElementById('payBtnLoader').style.display = 'inline';
             
-            // Останавливаем таймер
             clearInterval(timerInterval);
             
-            // Имитация обработки платежа
             setTimeout(() => {
                 fetch('/api/payment/process', {
                     method: 'POST',
@@ -222,25 +215,62 @@ document.addEventListener('DOMContentLoaded', function() {
                     })
                 }).then(r => r.json()).then(d => {
                     if (d.success) {
-                        // Скрываем таймер
                         if (timerEl) timerEl.style.display = 'none';
                         
-                        document.querySelector('.payment-card__body').innerHTML = `
-                            <div class="payment-success">
-                                <div class="payment-success__icon">✅</div>
-                                <h3 class="payment-success__title">Оплата прошла успешно!</h3>
-                                <p class="payment-success__text">Заказ #${orderNumber} оплачен. Билеты активны.</p>
-                                <p class="payment-success__text" style="color:#34C759;">Спасибо за покупку!</p>
-                                <a href="/profile" class="payment-success__btn">Мои билеты</a>
-                            </div>
-                        `;
+                        // Получаем билеты и показываем кнопки скачивания
+                        fetch('/api/tickets-by-order/' + orderNumber)
+                            .then(r => r.json())
+                            .then(tickets => {
+                                let downloadButtons = '';
+                                if (tickets && tickets.length > 0) {
+                                    tickets.forEach(function(ticket, index) {
+                                        const label = tickets.length > 1 ? 'Билет ' + (index + 1) : 'Скачать билет';
+                                        downloadButtons += `
+                                            <button onclick="downloadTicket('${ticket.ticket_number}')" 
+                                            class="payment-success__btn" 
+                                            style="margin-top:8px; width:100%; background:#34C759; display:block; padding:14px 28px; border:none; border-radius:12px; color:#fff; font-family:'Commissioner',sans-serif; font-size:16px; font-weight:500; cursor:pointer; text-align:center; box-sizing:border-box;">
+                                                📥 ${label}
+                                            </button>
+                                        `;
+                                    });
+                                    
+                                    // Автоскачивание первого билета
+                                    if (tickets[0] && tickets[0].ticket_number) {
+                                        setTimeout(function() {
+                                            downloadTicket(tickets[0].ticket_number);
+                                        }, 500);
+                                    }
+                                }
+                                
+                                document.querySelector('.payment-card__body').innerHTML = `
+                                    <div class="payment-success">
+                                        <div class="payment-success__icon">✅</div>
+                                        <h3 class="payment-success__title">Оплата прошла успешно!</h3>
+                                        <p class="payment-success__text">Заказ #${orderNumber} оплачен. Билеты активны.</p>
+                                        <p class="payment-success__text" style="color:#34C759;">Спасибо за покупку!</p>
+                                        ${downloadButtons}
+                                        <a href="/profile" class="payment-success__btn" style="margin-top:12px; background:#4672FF;">Мои билеты</a>
+                                    </div>
+                                `;
+                            })
+                            .catch(function() {
+                                document.querySelector('.payment-card__body').innerHTML = `
+                                    <div class="payment-success">
+                                        <div class="payment-success__icon">✅</div>
+                                        <h3 class="payment-success__title">Оплата прошла успешно!</h3>
+                                        <p class="payment-success__text">Заказ #${orderNumber} оплачен. Билеты активны.</p>
+                                        <p class="payment-success__text" style="color:#34C759;">Спасибо за покупку!</p>
+                                        <a href="/profile" class="payment-success__btn">Мои билеты</a>
+                                    </div>
+                                `;
+                            });
+                        
                     } else {
                         alert(d.message || 'Ошибка оплаты');
                         payBtn.disabled = false;
                         document.getElementById('payBtnText').style.display = 'inline';
                         document.getElementById('payBtnLoader').style.display = 'none';
                         
-                        // Перезапускаем таймер
                         timeLeft = 20 * 60;
                         updateTimer();
                         setInterval(updateTimer, 1000);
@@ -251,7 +281,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     document.getElementById('payBtnText').style.display = 'inline';
                     document.getElementById('payBtnLoader').style.display = 'none';
                     
-                    // Перезапускаем таймер
                     timeLeft = 20 * 60;
                     updateTimer();
                     setInterval(updateTimer, 1000);
@@ -276,6 +305,25 @@ function formatCardExpiry(input) {
     } else {
         input.value = value;
     }
+}
+
+function downloadTicket(ticketNumber) {
+    fetch('/api/ticket/' + ticketNumber + '/pdf')
+        .then(response => response.blob())
+        .then(blob => {
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'Билет_' + ticketNumber + '.html';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+        })
+        .catch(() => {
+            // Если fetch не сработал, пробуем прямой переход
+            window.location.href = '/api/ticket/' + ticketNumber + '/pdf';
+        });
 }
 </script>
 {% endblock %}

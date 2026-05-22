@@ -765,6 +765,111 @@ function translateDynamicContent() {
         });
     });
 }
+
+// Автоматическое открытие модалки входа
+document.addEventListener('DOMContentLoaded', function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const showLogin = urlParams.get('show_login');
+    const redirectUrl = urlParams.get('redirect_url');
+    
+    if (showLogin === '1') {
+        // Сохраняем URL для редиректа после входа
+        if (redirectUrl) {
+            sessionStorage.setItem('brt_redirect_after_login', redirectUrl);
+        }
+        // Открываем модалку
+        setTimeout(function() {
+            openModal('loginModal');
+        }, 500);
+    }
+    
+    // Проверяем сохранённый email
+    const savedEmail = getCookie('brt_saved_email');
+    if (savedEmail) {
+        const emailInput = document.querySelector('#loginModal input[type="email"]');
+        if (emailInput) {
+            emailInput.value = savedEmail;
+        }
+    }
+});
+
+// Обновлённая функция handleLogin
+function handleLogin(e) {
+    e.preventDefault();
+    const form = e.target;
+    const email = form.querySelector('input[type="email"]').value;
+    const password = form.querySelector('input[type="password"]').value;
+    const redirectUrl = sessionStorage.getItem('brt_redirect_after_login') || '';
+    
+    fetch('/api/login', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+            email: email, 
+            password: password,
+            redirect_url: redirectUrl
+        })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            sessionStorage.removeItem('brt_redirect_after_login');
+            // Если есть URL для редиректа — переходим
+            if (data.redirect_url) {
+                window.location.href = data.redirect_url;
+            } else {
+                window.location.reload();
+            }
+        } else {
+            alert(data.message || 'Ошибка входа');
+        }
+    });
+}
+
+// Обновлённая функция handleRegister
+function handleRegister(e) {
+    e.preventDefault();
+    const form = e.target;
+    const inputs = form.querySelectorAll('input');
+    const redirectUrl = sessionStorage.getItem('brt_redirect_after_login') || '';
+    
+    const data = {
+        first_name: inputs[0].value,
+        last_name: inputs[1].value,
+        email: inputs[2].value,
+        password: inputs[3].value
+    };
+    
+    fetch('/api/register', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(data)
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            sessionStorage.removeItem('brt_redirect_after_login');
+            window.location.reload();
+        } else {
+            alert(data.message || 'Ошибка регистрации');
+        }
+    });
+}
+
+// Перехват fetch-запросов для автоматического показа модалки
+const originalFetch = window.fetch;
+window.fetch = function(...args) {
+    return originalFetch.apply(this, args).then(response => {
+        if (response.status === 401) {
+            response.clone().json().then(data => {
+                if (data.show_login) {
+                    openModal('loginModal');
+                }
+            });
+        }
+        return response;
+    });
+};
 </script>
 
 </body>

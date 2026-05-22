@@ -11,7 +11,7 @@ from flask_babel import Babel, _
 from utils.rail_api import RZDApi
 from utils.currency import format_price
 from utils.database.database import (
-    add_bonus_points, apply_promocode, calculate_loyalty_level, check_promocode, get_all_trips_with_details, get_user_total_spent, init_db, save_passenger, create_order, save_ticket, 
+    add_bonus_points, apply_promocode, calculate_loyalty_level, check_promocode, get_all_trips_with_details, get_tickets_by_order_number, get_user_total_spent, init_db, save_passenger, create_order, save_ticket, 
     save_transaction, update_order_status, save_train_full, 
     get_order_by_number, get_user_by_document, register_user,
     login_user, save_login_history, get_user_by_id,
@@ -23,7 +23,7 @@ from utils.database.database import (
     get_admin_logs, toggle_user_active, add_admin, remove_admin, 
     get_sales_report, get_all_promocodes, create_promocode, update_order_promo,
     get_tickets_by_date, save_admin_action, get_admin_actions, update_user_loyalty,
-    reserve_seats, release_seats, release_expired_orders
+    reserve_seats, release_seats, release_expired_orders, get_ticket_by_number
 )
 
 app = Flask(__name__)
@@ -225,7 +225,8 @@ cleanup_thread.start()
 
 @app.route('/')
 def main():
-    return render_template('index.html')
+    today = date.today().strftime('%Y-%m-%d')
+    return render_template('index.html', today=today)
 
 
 @app.route('/search')
@@ -853,14 +854,27 @@ def api_payment_process():
         
         session.pop('tickets_data', None)
     
-    add_bonus_points(order['user_id'], amount)
-    update_user_loyalty(order['user_id'])
-    
-    session.pop('order_number', None)
-    session.pop('order_amount', None)
-    session.modified = True
-    
-    return {'success': True, 'message': 'Оплата прошла успешно'}
+        add_bonus_points(order['user_id'], amount)
+        update_user_loyalty(order['user_id'])
+        
+        session.pop('order_number', None)
+        session.pop('order_amount', None)
+        session.modified = True
+        
+        last_ticket_number = None
+        
+        # В цикле сохранения билетов добавьте:
+        for direction, tid in [('forward', fwd_id), ('backward', bwd_id)]:
+            if not tid: continue
+            for seat in seats.get(direction, []):
+                if p_idx < len(passengers):
+                    ticket_number = 'BRT-' + datetime.now().strftime('%Y%m%d') + '-' + str(random.randint(10000, 99999))
+                    last_ticket_number = ticket_number  # Сохраняем номер
+                    # ... сохранение билета ...
+                    p_idx += 1
+        
+        # В конце функции, в ответе добавьте:
+        return {'success': True, 'message': 'Оплата прошла успешно', 'ticket_number': last_ticket_number}
 
 @app.route('/pay/<order_number>')
 def pay_order(order_number):
@@ -1439,6 +1453,48 @@ def info_page(page):
                          page=page, 
                          data=page_data[page])
 
+
+@app.route('/api/ticket/<ticket_number>/pdf')
+def download_ticket_pdf(ticket_number):
+    from urllib.parse import quote
+    
+    ticket = get_ticket_by_number(ticket_number)
+    if not ticket:
+        return "Билет не найден", 404
+    
+    ticket = dict(ticket)
+    
+    dep_dt = str(ticket.get('departure_datetime', ''))
+    arr_dt = str(ticket.get('arrival_datetime', ''))
+    dep_date = dep_time = arr_date = arr_time = ''
+    if dep_dt:
+        parts = dep_dt.split(' ')
+        dep_date = parts[0] if len(parts) > 0 else ''
+        dep_time = parts[1][:5] if len(parts) > 1 else ''
+    if arr_dt:
+        parts = arr_dt.split(' ')
+        arr_date = parts[0] if len(parts) > 0 else ''
+        arr_time = parts[1][:5] if len(parts) > 1 else ''
+    
+    passenger_name = f"{ticket.get('last_name', '')} {ticket.get('first_name', '')} {ticket.get('middle_name', '')}".strip()
+    
+    html_content = f"""<!DOCTYPE html><html lang="ru"><head><meta charset="UTF-8"><title>Билет {ticket_number}</title><style>@page{{size:A4;margin:10mm}}*{{margin:0;padding:0;box-sizing:border-box}}body{{font-family:Arial,sans-serif;padding:20px}}.ticket{{border:2px solid #4672FF;border-radius:20px;padding:30px;max-width:800px;margin:0 auto}}.ticket__header{{text-align:center;border-bottom:2px solid #E4E5E8;padding-bottom:20px;margin-bottom:20px}}.ticket__logo{{font-size:28px;font-weight:700;color:#4672FF}}.ticket__number{{font-size:14px;color:#999;margin-top:5px}}.ticket__route{{text-align:center;margin:20px 0;font-size:24px;font-weight:600;color:#1E1E1E}}.ticket__info{{width:100%;border-collapse:collapse;margin:20px 0}}.ticket__info td{{padding:10px;border-bottom:1px solid #eee;vertical-align:top}}.ticket__info-label{{font-size:12px;color:#999}}.ticket__info-value{{font-size:16px;font-weight:500;color:#1E1E1E}}.ticket__passenger{{background:#F5F5F7;border-radius:12px;padding:15px;margin:15px 0}}.ticket__footer{{text-align:center;margin-top:20px;padding-top:20px;border-top:2px solid #eee;font-size:12px;color:#999}}@media print{{body{{padding:0}}}}</style></head><body><div class="ticket"><div class="ticket__header"><div class="ticket__logo">BRT</div><div class="ticket__number">Билет № {ticket_number}</div></div><div class="ticket__route">{ticket.get('from_city', '—')} → {ticket.get('to_city', '—')}</div><table class="ticket__info"><tr><td><span class="ticket__info-label">Поезд</span><br><span class="ticket__info-value">{ticket.get('train_number', '—')} {ticket.get('train_name', '')}</span></td><td><span class="ticket__info-label">Вагон / Место</span><br><span class="ticket__info-value">{ticket.get('wagon_number', '—')} / {ticket.get('seat_number', '—')}</span></td></tr><tr><td><span class="ticket__info-label">Отправление</span><br><span class="ticket__info-value">{dep_date} в {dep_time}</span></td><td><span class="ticket__info-label">Прибытие</span><br><span class="ticket__info-value">{arr_date} в {arr_time}</span></td></tr><tr><td><span class="ticket__info-label">Станция отправления</span><br><span class="ticket__info-value">{ticket.get('from_station', ticket.get('from_city', '—'))}</span></td><td><span class="ticket__info-label">Станция прибытия</span><br><span class="ticket__info-value">{ticket.get('to_station', ticket.get('to_city', '—'))}</span></td></tr><tr><td><span class="ticket__info-label">Тип вагона</span><br><span class="ticket__info-value">{ticket.get('wagon_type', '—')}</span></td><td><span class="ticket__info-label">Цена</span><br><span class="ticket__info-value">{ticket.get('price', 0)} ₽</span></td></tr></table><div class="ticket__passenger"><span class="ticket__info-label">Пассажир</span><br><span class="ticket__info-value">{passenger_name or '—'}</span></div><div class="ticket__footer"><p>BRT — Bahn Routing Tools</p><p>Счастливого пути!</p></div></div></body></html>"""
+    
+    response = make_response(html_content)
+    response.headers['Content-Type'] = 'text/html; charset=utf-8'
+    
+    # Кодируем имя файла для избежания ошибки latin-1
+    filename = f'Билет_{ticket_number}.html'
+    encoded_filename = quote(filename)
+    response.headers['Content-Disposition'] = f"attachment; filename*=UTF-8''{encoded_filename}"
+    
+    return response
+
+
+@app.route('/api/tickets-by-order/<order_number>')
+def api_tickets_by_order(order_number):
+    tickets = get_tickets_by_order_number(order_number)
+    return jsonify(tickets)
 
 if __name__ == '__main__':
     app.run(debug=True)

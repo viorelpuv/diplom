@@ -147,3 +147,23 @@
     font-size: 16px;
     font-weight: 600;
 }
+
+.payment-success__btn {
+    display: block;
+    width: 100%;
+    padding: 14px 28px;
+    border-radius: 12px;
+    color: #fff;
+    font-family: 'Commissioner', sans-serif;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    text-align: center;
+    text-decoration: none;
+    box-sizing: border-box;
+    transition: background 0.2s;
+}
+
+.payment-success__btn:hover {
+    background: #3A5EE0;
+}

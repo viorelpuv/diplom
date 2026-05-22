@@ -28,10 +28,14 @@ BRT
             
             <div class="liquid-glass--info">
                 <div class="liquid-nav__item">
-                    <input type="date" class="liquid-nav__input liquid-nav__input--date liquid-nav__input--divider" name="date_from" placeholder="Когда">
+                    <input type="date" class="liquid-nav__input liquid-nav__input--date liquid-nav__input--divider" 
+                        name="date_from" placeholder="Когда" 
+                        min="{{ today }}" required>
                 </div>
                 <div class="liquid-nav__item">
-                    <input type="date" class="liquid-nav__input liquid-nav__input--date liquid-nav__input--divider" name="date_to" placeholder="Обратно">
+                    <input type="date" class="liquid-nav__input liquid-nav__input--date liquid-nav__input--divider" 
+                        name="date_to" placeholder="Обратно" 
+                        min="{{ today }}">
                 </div>
                 
                 <div class="liquid-nav__item">

@@ -10,6 +10,7 @@ werkzeug = "*"
 rzd-api = "*"
 cbrapi = "*"
 flask-babel = "*"
+fpdf2 = "*"
 
 [dev-packages]
 

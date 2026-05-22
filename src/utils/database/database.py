@@ -2139,3 +2139,54 @@ def get_wagons_for_trip(cursor, trip_id, train_id, trip_prices):
     except Exception as e:
         print(f"Error in get_wagons_for_trip: {e}")
         return []
+    
+
+def get_ticket_by_number(ticket_number):
+    """Получить полную информацию о билете для печати."""
+    conn = get_db()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("""
+            SELECT t.*, o.order_number, o.user_id,
+                   s.number as seat_number, w.number as wagon_number, w.type as wagon_type,
+                   tr.departure_datetime, tr.arrival_datetime, tr2.number as train_number, tr2.name as train_name,
+                   st_from.city as from_city, st_from.name as from_station,
+                   st_to.city as to_city, st_to.name as to_station,
+                   u.first_name, u.last_name, u.middle_name
+            FROM tickets t
+            JOIN orders o ON t.order_id = o.id
+            JOIN users u ON t.user_id = u.id
+            LEFT JOIN seats s ON t.seat_id = s.id
+            LEFT JOIN wagons w ON s.wagon_id = w.id
+            LEFT JOIN trips tr ON t.trip_id = tr.id
+            LEFT JOIN trains tr2 ON tr.train_id = tr2.id
+            LEFT JOIN routes r ON tr.route_id = r.id
+            LEFT JOIN stations st_from ON r.departure_station_id = st_from.id
+            LEFT JOIN stations st_to ON r.arrival_station_id = st_to.id
+            WHERE t.ticket_number = ?
+        """, (ticket_number,))
+        
+        row = cursor.fetchone()
+        return dict(row) if row else None
+    finally:
+        cursor.close()
+        conn.close()
+
+
+def get_tickets_by_order_number(order_number):
+    """Получить билеты по номеру заказа (без авторизации)."""
+    conn = get_db()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("""
+            SELECT t.*, o.order_number
+            FROM tickets t
+            JOIN orders o ON t.order_id = o.id
+            WHERE o.order_number = ?
+            ORDER BY t.id DESC
+        """, (order_number,))
+        
+        return [dict(row) for row in cursor.fetchall()]
+    finally:
+        cursor.close()
+        conn.close()

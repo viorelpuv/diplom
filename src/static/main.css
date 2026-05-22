@@ -239,6 +239,8 @@ header {
         position: absolute;
         top: 0;
         left: 0;
+        min-width: 100%;
+        min-height: 100%;
         object-fit: cover;       
         z-index: -999;
         user-select: none;
@@ -435,8 +437,8 @@ header {
             }
 
             .passenger-select__arrow img {
-                width: 14px;
-                height: 14px;
+                width: 12px;
+                height: 12px;
                 filter: brightness(0) saturate(100%);
                 position: absolute;
                 top: 50%;
