@@ -157,6 +157,28 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Проверяем, была ли отложенная оплата (после регистрации/входа)
+    checkPendingPayment();
+
+    function checkPendingPayment() {
+        const pending = sessionStorage.getItem('brt_pending_payment');
+        if (pending === '1') {
+            fetch('/api/user-status')
+                .then(r => r.json())
+                .then(data => {
+                    if (data.logged_in) {
+                        // Пользователь только что авторизовался — выполняем оплату
+                        sessionStorage.removeItem('brt_pending_payment');
+                        const savedBonus = sessionStorage.getItem('brt_pending_bonus') || '0';
+                        sessionStorage.removeItem('brt_pending_bonus');
+                        
+                        document.getElementById('hiddenBonus').value = savedBonus;
+                        document.getElementById('confirmPostForm').submit();
+                    }
+                });
+        }
+    }
+    
     const header = document.getElementById('header');
     if (header) {
         header.classList.add('scrolled');
@@ -344,9 +366,27 @@ document.addEventListener('DOMContentLoaded', function() {
         updateTotal();
     });
     
-    document.getElementById('confirmPayBtn').addEventListener('click', function() {
-        document.getElementById('hiddenBonus').value = bonusApplied ? bonusAmount : '0';
-        document.getElementById('confirmPostForm').submit();
+    document.getElementById('confirmPayBtn').addEventListener('click', function(e) {
+        e.preventDefault();
+        
+        // Проверяем авторизацию перед оплатой
+        fetch('/api/user-status')
+            .then(r => r.json())
+            .then(data => {
+                if (data.logged_in) {
+                    // Пользователь авторизован — продолжаем оплату
+                    document.getElementById('hiddenBonus').value = bonusApplied ? bonusAmount : '0';
+                    document.getElementById('confirmPostForm').submit();
+                } else {
+                    // Пользователь не авторизован — показываем окно регистрации
+                    sessionStorage.setItem('brt_pending_payment', '1');
+                    sessionStorage.setItem('brt_pending_bonus', bonusApplied ? bonusAmount : '0');
+                    openModal('loginModal');
+                }
+            })
+            .catch(() => {
+                alert('Ошибка проверки авторизации. Попробуйте снова.');
+            });
     });
     
     document.getElementById('applyPromoBtn')?.addEventListener('click', function() {

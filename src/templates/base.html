@@ -404,9 +404,47 @@ function handleLogin(e) {
     .then(r => r.json())
     .then(data => {
         if (data.success) {
-            window.location.reload();
+            // Проверяем, есть ли отложенная оплата
+            const pending = sessionStorage.getItem('brt_pending_payment');
+            if (pending === '1') {
+                // Перезагружаем страницу — checkPendingPayment выполнит оплату
+                window.location.reload();
+            } else {
+                window.location.reload();
+            }
         } else {
             alert(data.message || 'Ошибка входа');
+        }
+    });
+}
+
+function handleRegister(e) {
+    e.preventDefault();
+    const form = e.target;
+    const inputs = form.querySelectorAll('input');
+    
+    fetch('/api/register', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+            first_name: inputs[0].value,
+            last_name: inputs[1].value,
+            email: inputs[2].value,
+            password: inputs[3].value
+        })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            // Проверяем, есть ли отложенная оплата
+            const pending = sessionStorage.getItem('brt_pending_payment');
+            if (pending === '1') {
+                window.location.reload();
+            } else {
+                window.location.reload();
+            }
+        } else {
+            alert(data.message || 'Ошибка регистрации');
         }
     });
 }
