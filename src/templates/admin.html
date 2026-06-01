@@ -419,8 +419,12 @@ function filterUsers() {
                         <td><span id="phone-${u.id}">${u.phone || '—'}</span></td>
                         <td>${new Date(u.created_at).toLocaleDateString('ru-RU')}</td>
                         <td>
-                            <button onclick="editUser(${u.id}, '${u.email}', '${u.first_name || ''}', '${u.last_name || ''}', '${u.phone || ''}')" class="admin-btn admin-btn--primary">✏️</button>
-                            <button onclick="deleteUser(${u.id})" class="admin-btn admin-btn--danger">🗑️</button>
+                            <button onclick="editUser(${u.id}, '${u.email}', '${u.first_name || ''}', '${u.last_name || ''}', '${u.phone || ''}')" class="admin-btn admin-btn--primary">
+                                <img src="{{ url_for('static', filename='icons/admin/users/edit_24dp_F3F3F3_FILL0_wght400_GRAD0_opsz24.svg') }}" alt="" style="width: 15px;">   
+                            </button>
+                            <button onclick="deleteUser(${u.id})" class="admin-btn admin-btn--danger">
+                                <img src="{{ url_for('static', filename='icons/admin/users/delete_24dp_F3F3F3_FILL0_wght400_GRAD0_opsz24.svg') }}" alt="" style="width: 15px;">       
+                            </button>
                         </td>
                     </tr>
                 `).join('')}
@@ -917,10 +921,14 @@ function loadAdmins() {
                                 </td>
                                 <td>
                                     ${!a.is_superadmin ? `
-                                        <button onclick="toggleAdminRole(${a.user_id}, true)" class="admin-btn admin-btn--success" title="Сделать супер-админом">⬆</button>
-                                        <button onclick="removeAdmin(${a.user_id})" class="admin-btn admin-btn--danger" title="Удалить админа">🗑️</button>
+                                        <button onclick="toggleAdminRole(${a.user_id}, true)" class="admin-btn admin-btn--success" title="Сделать супер-админом">
+                                            <img src="{{ url_for('static', filename='icons/admin/admins/keyboard_double_arrow_down_24dp_F3F3F3_FILL0_wght400_GRAD0_opsz24.svg') }}" alt="" style="width: 15px; transform: rotate(180deg);">                                               
+                                        </button>
+                                        <button onclick="removeAdmin(${a.user_id})" class="admin-btn admin-btn--danger" title="Удалить админа"><img src="{{ url_for('static', filename='icons/admin/users/delete_24dp_F3F3F3_FILL0_wght400_GRAD0_opsz24.svg') }}" alt="" style="width: 15px;"></button>
                                     ` : `
-                                        <button onclick="toggleAdminRole(${a.user_id}, false)" class="admin-btn admin-btn--warning" title="Понизить до админа">⬇</button>
+                                        <button onclick="toggleAdminRole(${a.user_id}, false)" class="admin-btn admin-btn--warning" title="Понизить до админа">
+                                            <img src="{{ url_for('static', filename='icons/admin/admins/keyboard_double_arrow_down_24dp_F3F3F3_FILL0_wght400_GRAD0_opsz24.svg') }}" alt="" style="width: 15px;">           
+                                        </button>
                                     `}
                                 </td>
                             </tr>
@@ -1102,7 +1110,7 @@ function loadReports() {
                 </div>
                 <div style="margin-bottom:16px; display:flex; justify-content:space-between; align-items:center;">
                     <h3 style="color:#fff; margin:0; font-size:16px;">Детализация по дням</h3>
-                    <button onclick="downloadReportsCSV()" class="admin-btn admin-btn--primary">📥 Скачать CSV</button>
+                    <button onclick="downloadReportsCSV()" class="admin-btn admin-btn--primary">                                <img src="{{ url_for('static', filename='icons/admin/reports/download_24dp_F3F3F3_FILL0_wght400_GRAD0_opsz24.svg') }}" alt="" style="width: 15px;"> Скачать CSV</button>
                 </div>
                 <table class="admin-table">
                     <thead>
@@ -1262,7 +1270,9 @@ function loadPromocodes() {
                                 <td>${p.used_count}/${p.max_uses || '∞'}</td>
                                 <td><span style="color:${p.is_active ? '#4CAF50' : '#C62828'};">${p.is_active ? 'Активен' : 'Неактивен'}</span></td>
                                 <td>${p.expires_at ? new Date(p.expires_at).toLocaleDateString('ru-RU') : '—'}</td>
-                                <td><button onclick="deletePromo(${p.id})" class="admin-btn admin-btn--danger">🗑️</button></td>
+                                <td><button onclick="deletePromo(${p.id})" class="admin-btn admin-btn--danger">
+                                    <img src="{{ url_for('static', filename='icons/admin/users/delete_24dp_F3F3F3_FILL0_wght400_GRAD0_opsz24.svg') }}" alt="" style="width: 15px;">           
+                                </button></td>
                             </tr>
                         `).join('')}
                     </tbody>
@@ -1271,7 +1281,8 @@ function loadPromocodes() {
         });
     
     const discountType = document.getElementById('discountType');
-    if (discountType) {
+    if (discountType && !discountType.dataset.listenerAttached) {
+        discountType.dataset.listenerAttached = 'true';
         discountType.addEventListener('click', function(e) {
             if (e.target.classList.contains('passenger-form__gender-btn')) {
                 discountType.querySelectorAll('.passenger-form__gender-btn').forEach(b => b.classList.remove('passenger-form__gender-btn--active'));
@@ -1285,7 +1296,8 @@ function loadPromocodes() {
     }
     
     const promoForm = document.getElementById('promoForm');
-    if (promoForm) {
+    if (promoForm && !promoForm.dataset.listenerAttached) {
+        promoForm.dataset.listenerAttached = 'true';
         promoForm.addEventListener('submit', function(e) {
             e.preventDefault();
             const formData = new FormData(this);
@@ -1336,6 +1348,18 @@ function deletePromo(id) {
     });
 }
 
+function deletePromo(id) {
+    if (!confirm('Удалить промокод?')) return;
+    fetch('/api/admin/promocodes/delete', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({id: id})
+    }).then(r => r.json()).then(d => {
+        if (d.success) loadPromocodes();
+        else alert('Ошибка удаления');
+    });
+}
+
 // ============================================
 //           LOGS
 // ============================================
@@ -1345,7 +1369,7 @@ function loadLogs() {
     c.innerHTML = `
         <div style="margin-bottom:16px; display:flex; justify-content:space-between; align-items:center;">
             <h3 style="color:#fff; margin:0; font-size:16px;">Журнал действий</h3>
-            <button onclick="clearLogs()" class="admin-btn admin-btn--danger">🗑️ Очистить логи</button>
+            <button onclick="clearLogs()" class="admin-btn admin-btn--danger">                                <img src="{{ url_for('static', filename='icons/admin/users/delete_24dp_F3F3F3_FILL0_wght400_GRAD0_opsz24.svg') }}" alt="" style="width: 15px;"> Очистить логи</button>
         </div>
         <div id="logsTableContainer">Загрузка...</div>
     `;

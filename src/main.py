@@ -801,50 +801,37 @@ def api_payment_process():
         passengers = tickets_data.get('passengers', [])
         trip_info = tickets_data.get('trip_info', {})
         
-        # Безопасное преобразование в int
         fwd_id = trip_info.get('forward_trip_id', '0')
         bwd_id = trip_info.get('backward_trip_id', '0')
-        forward_trip_id = int(fwd_id) if fwd_id and fwd_id != '' else 0
-        backward_trip_id = int(bwd_id) if bwd_id and bwd_id != '' else 0
-        
-        print(f"DEBUG: forward_trip_id={forward_trip_id}, backward_trip_id={backward_trip_id}")
+        forward_trip_id = int(fwd_id) if fwd_id and str(fwd_id) != '' else 0
+        backward_trip_id = int(bwd_id) if bwd_id and str(bwd_id) != '' else 0
         
         p_idx = 0
         for direction in ['forward', 'backward']:
             current_trip_id = forward_trip_id if direction == 'forward' else backward_trip_id
             
             if not current_trip_id:
-                print(f"⚠️ Нет trip_id для {direction}, пропускаем")
                 continue
             
             for seat in seats.get(direction, []):
                 if p_idx < len(passengers):
-                    passenger = passengers[p_idx]
                     ticket_number = 'BRT-' + datetime.now().strftime('%Y%m%d') + '-' + str(random.randint(10000, 99999))
                     
-                    wagon_num = str(seat.get('wagon', '1'))
-                    seat_num = str(seat.get('seat', '1'))
-                    
+                    # Сохраняем билет с seat_id=1 (заглушка)
                     from utils.database.database import get_db
                     conn = get_db()
                     cursor = conn.cursor()
                     
-                    cursor.execute("""
-                        SELECT ts.seat_id
-                        FROM trip_seats ts
-                        JOIN seats s ON ts.seat_id = s.id
-                        JOIN wagons w ON s.wagon_id = w.id
-                        WHERE ts.trip_id = ? AND w.number = ? AND s.number = ?
-                    """, (current_trip_id, wagon_num, seat_num))
-                    
+                    # Проверяем, есть ли хоть какой-то seat_id для этого trip
+                    cursor.execute("SELECT MIN(seat_id) as sid FROM trip_seats WHERE trip_id = ?", (current_trip_id,))
                     row = cursor.fetchone()
                     conn.close()
                     
-                    real_seat_id = row['seat_id'] if row else 1
+                    seat_id = row['sid'] if row and row['sid'] else 1
                     
                     save_ticket(order['id'], {
                         'trip_id': current_trip_id,
-                        'seat_id': real_seat_id,
+                        'seat_id': seat_id,
                         'user_id': order['user_id'],
                         'passenger_type': 'adult',
                         'price': seat.get('price', 0),
@@ -854,27 +841,14 @@ def api_payment_process():
         
         session.pop('tickets_data', None)
     
-        add_bonus_points(order['user_id'], amount)
-        update_user_loyalty(order['user_id'])
-        
-        session.pop('order_number', None)
-        session.pop('order_amount', None)
-        session.modified = True
-        
-        last_ticket_number = None
-        
-        # В цикле сохранения билетов добавьте:
-        for direction, tid in [('forward', fwd_id), ('backward', bwd_id)]:
-            if not tid: continue
-            for seat in seats.get(direction, []):
-                if p_idx < len(passengers):
-                    ticket_number = 'BRT-' + datetime.now().strftime('%Y%m%d') + '-' + str(random.randint(10000, 99999))
-                    last_ticket_number = ticket_number  # Сохраняем номер
-                    # ... сохранение билета ...
-                    p_idx += 1
-        
-        # В конце функции, в ответе добавьте:
-        return {'success': True, 'message': 'Оплата прошла успешно', 'ticket_number': last_ticket_number}
+    add_bonus_points(order['user_id'], int(amount) if amount else 0)
+    update_user_loyalty(order['user_id'])
+    
+    session.pop('order_number', None)
+    session.pop('order_amount', None)
+    session.modified = True
+    
+    return {'success': True, 'message': 'Оплата прошла успешно'}
 
 @app.route('/pay/<order_number>')
 def pay_order(order_number):
@@ -1020,11 +994,13 @@ def api_profile(user_id):
     
     result = {}
     for key in ['id', 'email', 'phone', 'first_name', 'last_name', 'middle_name', 
-                'birth_date', 'gender', 'citizenship', 'bonus_points', 'loyalty_level']:
+                'birth_date', 'gender', 'citizenship', 'bonus_points', 'loyalty_level',
+                'document_type', 'document_number']:
         if user.get(key):
             result[key] = user[key]
     
     return result
+    
 
 @app.route('/api/profile/update', methods=['POST'])
 def api_profile_update():
@@ -1495,6 +1471,28 @@ def download_ticket_pdf(ticket_number):
 def api_tickets_by_order(order_number):
     tickets = get_tickets_by_order_number(order_number)
     return jsonify(tickets)
+
+@app.route('/api/subscribe', methods=['POST'])
+def api_subscribe():
+    try:
+        data = request.get_json()
+        email = data.get('email', '').strip().lower()
+        
+        if not email or '@' not in email or '.' not in email:
+            return jsonify({'success': False, 'message': 'Введите корректный email'}), 400
+        
+        from utils.database.database import subscribe_email
+        result = subscribe_email(email)
+        
+        if result:
+            return jsonify({'success': True, 'message': 'Спасибо за подписку!'})
+        else:
+            return jsonify({'success': False, 'message': 'Ошибка сохранения'}), 500
+            
+    except Exception as e:
+        print(f"API Error (subscribe): {e}")
+        return jsonify({'success': False, 'message': 'Ошибка сервера'}), 500
+
 
 if __name__ == '__main__':
     app.run(debug=True)

@@ -557,9 +557,14 @@ function loadDocuments() {
             
             const docTypeLabels = {
                 'passport_rf': 'Паспорт РФ',
+                'passport_int': 'Загранпаспорт',
                 'passport_foreign': 'Загранпаспорт',
+                'birth_cert': 'Свидетельство о рождении',
                 'birth_certificate': 'Свидетельство о рождении',
-                'military_id': 'Военный билет',
+                'seaman': 'Паспорт моряка',
+                'military': 'Военный билет',
+                'military_id': 'Удостоверение военнослужащего',
+                'foreign_doc': 'Иностранный документ',
                 'other': 'Другой документ'
             };
             
@@ -574,12 +579,6 @@ function loadDocuments() {
                             <span style="color:#A3A3A3; font-size:13px;">Номер документа</span>
                             <p style="color:#1E1E1E; font-size:15px; margin-top:4px;">${user.document_number || '—'}</p>
                         </div>
-                        ${user.document_series ? `
-                        <div>
-                            <span style="color:#A3A3A3; font-size:13px;">Серия</span>
-                            <p style="color:#1E1E1E; font-size:15px; margin-top:4px;">${user.document_series}</p>
-                        </div>
-                        ` : ''}
                     </div>
                 </div>
             `;

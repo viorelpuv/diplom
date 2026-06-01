@@ -9,3 +9,5 @@ def generate_hash(password: str) -> str:
 def check_hash(hash: str, password: str) -> bool:
     """ Проверка хэша пароля """
     return check_password_hash(pwhash=hash, password=password)
+
+print(generate_hash('123'))

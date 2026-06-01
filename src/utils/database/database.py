@@ -1,4 +1,3 @@
-# database.py — SQLite версия
 import sqlite3
 import json
 from datetime import datetime
@@ -28,9 +27,7 @@ def init_db():
             last_name TEXT,
             middle_name TEXT,
             birth_date TEXT,
-            citizenship TEXT,
             document_type TEXT,
-            document_series TEXT,
             document_number TEXT,
             bonus_points INTEGER DEFAULT 0,
             loyalty_level TEXT DEFAULT 'none',
@@ -45,7 +42,6 @@ def init_db():
             code TEXT NOT NULL UNIQUE,
             name TEXT NOT NULL,
             city TEXT,
-            country TEXT,
             timezone TEXT DEFAULT 'Europe/Moscow',
             is_active INTEGER DEFAULT 1
         );
@@ -54,8 +50,6 @@ def init_db():
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             departure_station_id INTEGER NOT NULL,
             arrival_station_id INTEGER NOT NULL,
-            distance_km REAL,
-            duration_minutes INTEGER,
             is_active INTEGER DEFAULT 1,
             FOREIGN KEY (departure_station_id) REFERENCES stations(id),
             FOREIGN KEY (arrival_station_id) REFERENCES stations(id)
@@ -65,8 +59,7 @@ def init_db():
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             number TEXT NOT NULL UNIQUE,
             name TEXT,
-            type TEXT NOT NULL,
-            operator TEXT
+            type TEXT NOT NULL
         );
 
         CREATE TABLE IF NOT EXISTS wagons (
@@ -164,20 +157,6 @@ def init_db():
             FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE
         );
 
-        CREATE TABLE IF NOT EXISTS search_history (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id INTEGER,
-            from_station_id INTEGER NOT NULL,
-            to_station_id INTEGER NOT NULL,
-            departure_date TEXT NOT NULL,
-            passengers_json TEXT,
-            class TEXT,
-            searched_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
-            FOREIGN KEY (from_station_id) REFERENCES stations(id),
-            FOREIGN KEY (to_station_id) REFERENCES stations(id)
-        );
-
         CREATE TABLE IF NOT EXISTS subscriptions (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             email TEXT NOT NULL UNIQUE,
@@ -189,12 +168,9 @@ def init_db():
         CREATE TABLE IF NOT EXISTS admins (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             user_id INTEGER NOT NULL UNIQUE,
-            permissions TEXT DEFAULT '[]',
             is_superadmin INTEGER DEFAULT 0,
-            created_by INTEGER,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-            FOREIGN KEY (created_by) REFERENCES users(id)
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
         );
 
         CREATE TABLE IF NOT EXISTS login_history (
@@ -203,17 +179,6 @@ def init_db():
             ip_address TEXT,
             user_agent TEXT,
             success INTEGER DEFAULT 1,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-        );
-
-        CREATE TABLE IF NOT EXISTS sessions (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id INTEGER NOT NULL,
-            token TEXT UNIQUE NOT NULL,
-            ip_address TEXT,
-            user_agent TEXT,
-            expires_at TIMESTAMP NOT NULL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
         );
@@ -241,28 +206,51 @@ def init_db():
             FOREIGN KEY (admin_id) REFERENCES users(id)
         );
 
+        CREATE TABLE IF NOT EXISTS settings (
+            id INTEGER PRIMARY KEY DEFAULT 1,
+            service_fee REAL DEFAULT 200,
+            payment_timeout INTEGER DEFAULT 20,
+            max_tickets_per_order INTEGER DEFAULT 5,
+            bonus_rate INTEGER DEFAULT 1,
+            bonus_value INTEGER DEFAULT 1,
+            bonus_register INTEGER DEFAULT 100,
+            min_bonus_order INTEGER DEFAULT 500,
+            max_bonus_percent INTEGER DEFAULT 30,
+            max_login_attempts INTEGER DEFAULT 5,
+            block_minutes INTEGER DEFAULT 30,
+            min_password_length INTEGER DEFAULT 6,
+            maintenance_mode INTEGER DEFAULT 0,
+            maintenance_message TEXT DEFAULT 'Сайт на техническом обслуживании'
+        );
+
         CREATE INDEX IF NOT EXISTS idx_orders_user ON orders(user_id);
         CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status);
         CREATE INDEX IF NOT EXISTS idx_tickets_order ON tickets(order_id);
         CREATE INDEX IF NOT EXISTS idx_tickets_trip ON tickets(trip_id);
         CREATE INDEX IF NOT EXISTS idx_tickets_user ON tickets(user_id);
         CREATE INDEX IF NOT EXISTS idx_trips_departure ON trips(departure_datetime);
-        CREATE INDEX IF NOT EXISTS idx_search_history_user ON search_history(user_id);
-        
         CREATE INDEX IF NOT EXISTS idx_admins_user ON admins(user_id);
         CREATE INDEX IF NOT EXISTS idx_login_history_user ON login_history(user_id);
-        CREATE INDEX IF NOT EXISTS idx_sessions_token ON sessions(token);
-        CREATE INDEX IF NOT EXISTS idx_sessions_user ON sessions(user_id);
     """)
     
     # Создаём супер-админа
     try:
+        # Сначала проверяем, есть ли пользователь с ID=1
+        cursor.execute("SELECT id FROM users WHERE id = 1")
+        if not cursor.fetchone():
+            # Создаём пользователя-заглушку для админа
+            cursor.execute("""
+                INSERT INTO users (id, email, password_hash, first_name, last_name)
+                VALUES (1, 'admin@brt.ru', 'scrypt:32768:8:1$jxStRcbgzPXuXypm$47b074046fdc205381f45f9a0d24432c107e2c037e2a1706fa606b7783fcfe74316f54a93222baa286ee7df3957d86c0f22873253b48b86ee9379b7854bf553b', 
+                           'Admin', 'Super')
+            """)
+        
         cursor.execute("SELECT id FROM admins WHERE is_superadmin = 1")
         if not cursor.fetchone():
             cursor.execute("""
-                INSERT INTO admins (user_id, permissions, is_superadmin, created_at)
-                VALUES (?, ?, ?, datetime('now'))
-            """, (1, '["all"]', 1))
+                INSERT INTO admins (user_id, is_superadmin, created_at)
+                VALUES (?, ?, datetime('now'))
+            """, (1, 1))
             print("✅ Супер-админ создан (user_id=1, права=all)")
         else:
             print("ℹ️ Супер-админ уже существует")
@@ -283,8 +271,8 @@ def save_passenger(data):
     try:
         cursor.execute("""
             INSERT INTO users (first_name, last_name, middle_name, birth_date, 
-                               document_type, document_number, citizenship, phone, email)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                               document_type, document_number, phone, email)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(email) DO UPDATE SET 
                 first_name = excluded.first_name,
                 last_name = excluded.last_name,
@@ -292,7 +280,6 @@ def save_passenger(data):
                 birth_date = excluded.birth_date,
                 document_type = excluded.document_type,
                 document_number = excluded.document_number,
-                citizenship = excluded.citizenship,
                 phone = excluded.phone
         """, (
             data.get('first_name'),
@@ -301,7 +288,6 @@ def save_passenger(data):
             data.get('birth_date'),
             data.get('document_type'),
             data.get('document_number'),
-            data.get('citizenship', 'Россия'),
             data.get('phone'),
             data.get('email')
         ))
@@ -419,7 +405,7 @@ def get_order_by_number(order_number):
 # TICKETS
 # ============================================
 def save_ticket(order_id, ticket_data):
-    """Сохраняет билет и обновляет доступность места."""
+    """Сохраняет билет. БЕЗ обновления trip_seats."""
     conn = get_db()
     cursor = conn.cursor()
     try:
@@ -436,14 +422,6 @@ def save_ticket(order_id, ticket_data):
             ticket_data.get('ticket_number')
         ))
         ticket_id = cursor.lastrowid
-        
-        # Обновляем доступность места
-        if ticket_data.get('trip_id') and ticket_data.get('seat_id'):
-            cursor.execute("""
-                UPDATE trip_seats SET is_available = 0 
-                WHERE trip_id = ? AND seat_id = ?
-            """, (ticket_data.get('trip_id'), ticket_data.get('seat_id')))
-        
         conn.commit()
         return ticket_id
     except Exception as e:
@@ -521,59 +499,6 @@ def save_transaction(order_id, amount, trans_type, gateway, external_id, status=
 
 
 # ============================================
-# SEARCH HISTORY
-# ============================================
-def save_search_history(from_station_id, to_station_id, departure_date, passengers, user_id=None):
-    """Сохраняет историю поиска."""
-    conn = get_db()
-    cursor = conn.cursor()
-    try:
-        cursor.execute("""
-            INSERT INTO search_history (user_id, from_station_id, to_station_id, departure_date, passengers_json)
-            VALUES (?, ?, ?, ?, ?)
-        """, (user_id, from_station_id, to_station_id, departure_date, json.dumps(passengers)))
-        conn.commit()
-        return cursor.lastrowid
-    except Exception as e:
-        print(f"DB Error (save_search_history): {e}")
-        conn.rollback()
-        return None
-    finally:
-        cursor.close()
-        conn.close()
-
-
-def get_search_history(user_id=None, limit=10):
-    """Получить историю поиска."""
-    conn = get_db()
-    cursor = conn.cursor()
-    try:
-        if user_id:
-            cursor.execute("""
-                SELECT sh.*, fs.name as from_name, ts.name as to_name
-                FROM search_history sh
-                JOIN stations fs ON sh.from_station_id = fs.id
-                JOIN stations ts ON sh.to_station_id = ts.id
-                WHERE sh.user_id = ?
-                ORDER BY sh.searched_at DESC
-                LIMIT ?
-            """, (user_id, limit))
-        else:
-            cursor.execute("""
-                SELECT sh.*, fs.name as from_name, ts.name as to_name
-                FROM search_history sh
-                JOIN stations fs ON sh.from_station_id = fs.id
-                JOIN stations ts ON sh.to_station_id = ts.id
-                ORDER BY sh.searched_at DESC
-                LIMIT ?
-            """, (limit,))
-        return [dict(row) for row in cursor.fetchall()]
-    finally:
-        cursor.close()
-        conn.close()
-
-
-# ============================================
 # STATIONS
 # ============================================
 def get_station_by_name(name):
@@ -643,6 +568,7 @@ def get_available_seats(trip_id):
         cursor.close()
         conn.close()
 
+
 def reserve_seats(trip_id, seat_ids):
     """Временно забронировать места."""
     conn = get_db()
@@ -690,7 +616,6 @@ def release_expired_orders():
     conn = get_db()
     cursor = conn.cursor()
     try:
-        # Находим истёкшие заказы
         cursor.execute("""
             SELECT id FROM orders 
             WHERE status = 'pending' AND expires_at < datetime('now')
@@ -698,23 +623,19 @@ def release_expired_orders():
         expired_orders = [row['id'] for row in cursor.fetchall()]
         
         for order_id in expired_orders:
-            # Находим билеты заказа
             cursor.execute("""
                 SELECT t.seat_id, t.trip_id FROM tickets t
                 WHERE t.order_id = ?
             """, (order_id,))
             tickets = cursor.fetchall()
             
-            # Освобождаем места
             for ticket in tickets:
                 cursor.execute("""
                     UPDATE trip_seats SET is_available = 1 
                     WHERE trip_id = ? AND seat_id = ?
                 """, (ticket['trip_id'], ticket['seat_id']))
             
-            # Отменяем заказ
             cursor.execute("UPDATE orders SET status = 'expired' WHERE id = ?", (order_id,))
-            # Отменяем билеты
             cursor.execute("UPDATE tickets SET status = 'cancelled' WHERE order_id = ?", (order_id,))
         
         conn.commit()
@@ -773,26 +694,24 @@ def unsubscribe_email(email):
 
 
 # ============================================
-# STATIONS
+# STATIONS SAVE
 # ============================================
-def save_station(code, name, city=None, country=None, timezone='Europe/Moscow'):
+def save_station(code, name, city=None, timezone='Europe/Moscow'):
     """Сохраняет или обновляет станцию."""
     conn = get_db()
     cursor = conn.cursor()
     try:
         cursor.execute("""
-            INSERT INTO stations (code, name, city, country, timezone)
-            VALUES (?, ?, ?, ?, ?)
+            INSERT INTO stations (code, name, city, timezone)
+            VALUES (?, ?, ?, ?)
             ON CONFLICT(code) DO UPDATE SET
                 name = excluded.name,
                 city = excluded.city,
-                country = excluded.country,
                 timezone = excluded.timezone
-        """, (code, name, city, country, timezone))
+        """, (code, name, city, timezone))
         
         conn.commit()
         
-        # Всегда получаем id через SELECT
         cursor.execute("SELECT id FROM stations WHERE code = ?", (code,))
         row = cursor.fetchone()
         return row['id'] if row else None
@@ -809,7 +728,7 @@ def save_station(code, name, city=None, country=None, timezone='Europe/Moscow'):
 # ============================================
 # ROUTES
 # ============================================
-def save_route(departure_station_id, arrival_station_id, distance_km=None, duration_minutes=None):
+def save_route(departure_station_id, arrival_station_id):
     """Сохраняет маршрут."""
     conn = get_db()
     cursor = conn.cursor()
@@ -821,20 +740,14 @@ def save_route(departure_station_id, arrival_station_id, distance_km=None, durat
         existing = cursor.fetchone()
         
         if existing:
-            route_id = existing['id']
-            if distance_km or duration_minutes:
-                cursor.execute("""
-                    UPDATE routes SET distance_km = ?, duration_minutes = ? WHERE id = ?
-                """, (distance_km, duration_minutes, route_id))
+            return existing['id']
         else:
             cursor.execute("""
-                INSERT INTO routes (departure_station_id, arrival_station_id, distance_km, duration_minutes)
-                VALUES (?, ?, ?, ?)
-            """, (departure_station_id, arrival_station_id, distance_km, duration_minutes))
-            route_id = cursor.lastrowid
-        
-        conn.commit()
-        return route_id
+                INSERT INTO routes (departure_station_id, arrival_station_id)
+                VALUES (?, ?)
+            """, (departure_station_id, arrival_station_id))
+            conn.commit()
+            return cursor.lastrowid
     except Exception as e:
         print(f"DB Error (save_route): {e}")
         conn.rollback()
@@ -847,7 +760,7 @@ def save_route(departure_station_id, arrival_station_id, distance_km=None, durat
 # ============================================
 # TRAINS
 # ============================================
-def save_train(number, name=None, train_type=None, operator=None):
+def save_train(number, name=None, train_type=None):
     """Сохраняет или обновляет поезд."""
     if not number or number.strip() == '':
         print(f"     ⚠️ save_train: пустой номер поезда")
@@ -856,26 +769,21 @@ def save_train(number, name=None, train_type=None, operator=None):
     conn = get_db()
     cursor = conn.cursor()
     try:
-        # Пробуем вставить
         cursor.execute("""
-            INSERT INTO trains (number, name, type, operator)
-            VALUES (?, ?, ?, ?)
+            INSERT INTO trains (number, name, type)
+            VALUES (?, ?, ?)
             ON CONFLICT(number) DO UPDATE SET
                 name = COALESCE(excluded.name, trains.name),
-                type = COALESCE(excluded.type, trains.type),
-                operator = COALESCE(excluded.operator, trains.operator)
-        """, (number, name or '', train_type or 'passenger', operator or ''))
+                type = COALESCE(excluded.type, trains.type)
+        """, (number, name or '', train_type or 'passenger'))
         
         conn.commit()
         
-        # Получаем id — ВСЕГДА через SELECT
         cursor.execute("SELECT id FROM trains WHERE number = ?", (number,))
         row = cursor.fetchone()
         
         if row:
-            train_id = row['id']
-            print(f"     save_train: {number} → id={train_id}")
-            return train_id
+            return row['id']
         else:
             print(f"     save_train: {number} → НЕ НАЙДЕН после вставки!")
             return None
@@ -960,7 +868,7 @@ def save_seat(wagon_id, number, position=None):
 
 
 # ============================================
-# TRIPS
+# TRIPS SAVE
 # ============================================
 def save_trip(route_id, train_id, departure_datetime, arrival_datetime, 
               prices_dict=None, service_fee=0):
@@ -1058,136 +966,105 @@ def save_trip_seat(trip_id, seat_id, is_available=True):
 def save_train_full(train_data, from_city, to_city):
     """Сохраняет полную информацию о поезде из API."""
     train_number = train_data.get('train_number', '')
+    prices = train_data.get('prices', {})
+    
+    if not prices:
+        return None
     
     try:
-        # 1. Станции
         from_code = from_city[:10].replace(' ', '_')
         to_code = to_city[:10].replace(' ', '_')
         
-        from_station_id = save_station(
-            code=from_code,
-            name=train_data.get('from_station', from_city),
-            city=from_city
-        )
-        to_station_id = save_station(
-            code=to_code,
-            name=train_data.get('to_station', to_city),
-            city=to_city
-        )
+        from_station_id = save_station(code=from_code, name=train_data.get('from_station', from_city), city=from_city)
+        to_station_id = save_station(code=to_code, name=train_data.get('to_station', to_city), city=to_city)
         
         if not from_station_id or not to_station_id:
             return None
         
-        # 2. Маршрут
         route_id = save_route(from_station_id, to_station_id)
-        
         if not route_id:
             return None
         
-        # 3. Поезд
-        train_id = save_train(
-            number=train_number,
-            name=train_data.get('train_name', ''),
-            train_type='passenger'
-        )
-        
+        train_id = save_train(number=train_number, name=train_data.get('train_name', ''), train_type='passenger')
         if not train_id:
             return None
         
-        # 4. Рейс
         dep_date = train_data.get('date', datetime.now().strftime('%Y-%m-%d'))
-        prices = train_data.get('prices', {})
-
+        dep_time = train_data.get('departure', '00:00')
+        arr_time = train_data.get('arrival', '00:00')
+        
         prices_dict = {}
         for wagon_type, wagon_data in prices.items():
             if wagon_data.get('price', 0) > 0:
                 prices_dict[wagon_type] = wagon_data['price']
-
-        trip_id = save_trip(
-            route_id=route_id,
-            train_id=train_id,
-            departure_datetime=f"{dep_date} {train_data.get('departure', '00:00')}",
-            arrival_datetime=f"{dep_date} {train_data.get('arrival', '00:00')}",
-            prices_dict=prices_dict,
-            service_fee=200
-        )
         
-        if not trip_id:
-            return None
-        
-        # 5. Вагоны и места — ОПТИМИЗИРОВАННАЯ МАССОВАЯ ВСТАВКА
-        prices = train_data.get('prices', {})
-        
+        # Проверяем, существует ли уже такой рейс
         conn = get_db()
         cursor = conn.cursor()
         
+        cursor.execute("""
+            SELECT t.id FROM trips t
+            WHERE t.route_id = ? AND t.train_id = ? AND t.departure_datetime = ?
+        """, (route_id, train_id, f"{dep_date} {dep_time}"))
+        existing = cursor.fetchone()
+        
+        if existing:
+            # Рейс уже существует, удаляем старые места
+            old_trip_id = existing['id']
+            cursor.execute("DELETE FROM trip_seats WHERE trip_id = ?", (old_trip_id,))
+            trip_id = old_trip_id
+        else:
+            trip_id = save_trip(
+                route_id=route_id, train_id=train_id,
+                departure_datetime=f"{dep_date} {dep_time}",
+                arrival_datetime=f"{dep_date} {arr_time}",
+                prices_dict=prices_dict, service_fee=200
+            )
+        
+        if not trip_id:
+            conn.close()
+            return None
+        
+        # Сохраняем вагоны и места
         try:
             wagon_num = 1
-            all_seats_to_insert = []  # для массовой вставки мест
-            all_trip_seats_to_insert = []  # для массовой вставки trip_seats
-            
             for wagon_type, wagon_data in prices.items():
                 if wagon_data.get('price', 0) <= 0:
                     continue
                 
-                # Сохраняем вагон
-                cursor.execute("""
-                    SELECT id FROM wagons WHERE train_id = ? AND number = ?
-                """, (train_id, str(wagon_num)))
-                existing_wagon = cursor.fetchone()
-                
                 total_seats = wagon_data.get('total_seats', wagon_data.get('free_seats', 36))
+                free_seats = wagon_data.get('free_seats', total_seats)
+                
+                cursor.execute("SELECT id FROM wagons WHERE train_id = ? AND number = ?", (train_id, str(wagon_num)))
+                existing_wagon = cursor.fetchone()
                 
                 if existing_wagon:
                     wagon_id = existing_wagon['id']
-                    cursor.execute("""
-                        UPDATE wagons SET type = ?, class = ?, total_seats = ? WHERE id = ?
-                    """, (wagon_type, 'economy', total_seats, wagon_id))
+                    cursor.execute("UPDATE wagons SET type = ?, class = ?, total_seats = ? WHERE id = ?", (wagon_type, 'economy', total_seats, wagon_id))
                 else:
-                    cursor.execute("""
-                        INSERT INTO wagons (train_id, number, type, class, total_seats)
-                        VALUES (?, ?, ?, ?, ?)
-                    """, (train_id, str(wagon_num), wagon_type, 'economy', total_seats))
+                    cursor.execute("INSERT INTO wagons (train_id, number, type, class, total_seats) VALUES (?, ?, ?, ?, ?)", (train_id, str(wagon_num), wagon_type, 'economy', total_seats))
                     wagon_id = cursor.lastrowid
                 
                 if wagon_id:
-                    # Собираем места для массовой вставки
-                    free_seats = min(wagon_data.get('free_seats', 36), 60)
-                    for seat_num in range(1, free_seats + 1):
-                        all_seats_to_insert.append((wagon_id, str(seat_num), None))
+                    # Удаляем старые места для этого вагона
+                    cursor.execute("DELETE FROM seats WHERE wagon_id = ?", (wagon_id,))
                     
+                    for seat_num in range(1, total_seats + 1):
+                        cursor.execute("INSERT OR IGNORE INTO seats (wagon_id, number) VALUES (?, ?)", (wagon_id, str(seat_num)))
+                    
+                    # Получаем ID мест и создаём trip_seats
+                    cursor.execute("SELECT id FROM seats WHERE wagon_id = ?", (wagon_id,))
+                    seat_rows = cursor.fetchall()
+                    for s_row in seat_rows:
+                        cursor.execute("INSERT OR IGNORE INTO trip_seats (trip_id, seat_id, is_available) VALUES (?, ?, 1)", (trip_id, s_row['id']))
+                
                 wagon_num += 1
             
-            # Массовая вставка мест через INSERT OR IGNORE
-            if all_seats_to_insert:
-                cursor.executemany("""
-                    INSERT OR IGNORE INTO seats (wagon_id, number, position)
-                    VALUES (?, ?, ?)
-                """, all_seats_to_insert)
-            
-            # Получаем ID всех мест для этих вагонов
-            cursor.execute("""
-                SELECT s.id as seat_id, s.number, w.number as wagon_number
-                FROM seats s
-                JOIN wagons w ON s.wagon_id = w.id
-                WHERE w.train_id = ? AND w.number IN ({})
-            """.format(','.join(['?'] * wagon_num)), [train_id] + [str(i) for i in range(1, wagon_num)])
-            
-            seat_rows = cursor.fetchall()
-            
-            # Массовая вставка trip_seats
-            for row in seat_rows:
-                all_trip_seats_to_insert.append((trip_id, row['seat_id'], 1))
-            
-            if all_trip_seats_to_insert:
-                cursor.executemany("""
-                    INSERT OR IGNORE INTO trip_seats (trip_id, seat_id, is_available)
-                    VALUES (?, ?, ?)
-                """, all_trip_seats_to_insert)
-            
             conn.commit()
+            print(f"✅ save_train_full: train={train_number}, trip_id={trip_id}, wagons={wagon_num-1}")
             
         except Exception as e:
+            print(f"❌ Ошибка сохранения вагонов: {e}")
             conn.rollback()
             return None
         finally:
@@ -1197,6 +1074,7 @@ def save_train_full(train_data, from_city, to_city):
         return trip_id
         
     except Exception as e:
+        print(f"❌ save_train_full error: {e}")
         return None
     
 
@@ -1216,7 +1094,6 @@ def register_user(email, password, first_name=None, last_name=None, phone=None):
         existing = cursor.fetchone()
         
         if existing:
-            # Пользователь уже есть — обновляем пароль
             cursor.execute("""
                 UPDATE users SET 
                     password_hash = ?,
@@ -1225,7 +1102,6 @@ def register_user(email, password, first_name=None, last_name=None, phone=None):
             """, (password_hash, existing['id']))
             user_id = existing['id']
         else:
-            # Новый пользователь
             cursor.execute("""
                 INSERT INTO users (email, password_hash, first_name, last_name, phone)
                 VALUES (?, ?, ?, ?, ?)
@@ -1257,10 +1133,9 @@ def login_user(email, password):
             return None
         
         if check_hash(user['password_hash'], password):
-            # Обновляем last_login
             cursor.execute("""
                 UPDATE users SET 
-                    phone = COALESCE(users.phone, '')  -- заглушка, last_login не храним в этой версии
+                    phone = COALESCE(users.phone, '')
                 WHERE id = ?
             """, (user['id'],))
             conn.commit()
@@ -1302,7 +1177,7 @@ def update_profile(user_id, data):
         values = []
         
         allowed_fields = ['first_name', 'last_name', 'middle_name', 'birth_date', 
-                          'phone', 'citizenship', 'gender']
+                          'phone', 'gender', 'document_type', 'document_number', 'citizenship']
         
         for field in allowed_fields:
             if field in data and data[field]:
@@ -1423,6 +1298,7 @@ def get_user_bonus(user_id):
         cursor.close()
         conn.close()
 
+
 # ============================================
 # ADMIN
 # ============================================
@@ -1487,7 +1363,7 @@ def get_all_users(limit=100):
     conn = get_db()
     cursor = conn.cursor()
     try:
-        cursor.execute("SELECT id, email, phone, first_name, last_name, COALESCE(is_active, 1) as is_active, created_at FROM users ORDER BY id ASC LIMIT ?", (limit,))
+        cursor.execute("SELECT id, email, phone, first_name, last_name, created_at FROM users ORDER BY id ASC LIMIT ?", (limit,))
         return [dict(row) for row in cursor.fetchall()]
     finally:
         cursor.close()
@@ -1546,6 +1422,7 @@ def get_all_admins():
         cursor.close()
         conn.close()
 
+
 # ============================================
 # PROMOCODES
 # ============================================
@@ -1559,6 +1436,7 @@ def get_all_promocodes():
         cursor.close()
         conn.close()
 
+
 def create_promocode(code, discount_percent=10, discount_amount=0, min_order=0, max_uses=0, expires_at=None):
     conn = get_db()
     cursor = conn.cursor()
@@ -1571,13 +1449,12 @@ def create_promocode(code, discount_percent=10, discount_amount=0, min_order=0, 
         return cursor.lastrowid
     except Exception as e:
         print(f"Ошибка создания промокода: {e}")
-        import traceback
-        traceback.print_exc()
         conn.rollback()
         return None
     finally:
         cursor.close()
         conn.close()
+
 
 def delete_promocode(promo_id):
     conn = get_db()
@@ -1593,54 +1470,53 @@ def delete_promocode(promo_id):
         cursor.close()
         conn.close()
 
+
 # ============================================
-# ADMIN LOGS
+# ADMIN ACTIONS
 # ============================================
-def get_admin_logs(limit=50):
+def save_admin_action(admin_id, action, details=None, ip_address=None):
     conn = get_db()
     cursor = conn.cursor()
     try:
         cursor.execute("""
-            SELECT lh.*, u.email 
-            FROM login_history lh 
-            JOIN users u ON lh.user_id = u.id 
-            JOIN admins a ON u.id = a.user_id 
-            ORDER BY lh.created_at DESC LIMIT ?
+            INSERT INTO admin_actions (admin_id, action, details, ip_address)
+            VALUES (?, ?, ?, ?)
+        """, (admin_id, action, details, ip_address))
+        conn.commit()
+    except:
+        conn.rollback()
+    finally:
+        cursor.close()
+        conn.close()
+
+
+def get_admin_actions(limit=100):
+    conn = get_db()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("""
+            SELECT aa.*, u.email 
+            FROM admin_actions aa 
+            JOIN users u ON aa.admin_id = u.id 
+            ORDER BY aa.created_at DESC LIMIT ?
         """, (limit,))
         return [dict(row) for row in cursor.fetchall()]
     finally:
         cursor.close()
         conn.close()
 
-# ============================================
-# ADMIN USERS MANAGEMENT
-# ============================================
-
-def toggle_user_active(user_id, is_active):
-    conn = get_db()
-    cursor = conn.cursor()
-    try:
-        cursor.execute("UPDATE users SET is_active = ? WHERE id = ?", (is_active, user_id))
-        conn.commit()
-        return True
-    except:
-        conn.rollback()
-        return False
-    finally:
-        cursor.close()
-        conn.close()
 
 # ============================================
 # ADMIN ADMINS MANAGEMENT
 # ============================================
-def add_admin(user_id, permissions='["all"]', is_superadmin=0):
+def add_admin(user_id, is_superadmin=0):
     conn = get_db()
     cursor = conn.cursor()
     try:
         cursor.execute("""
-            INSERT OR REPLACE INTO admins (user_id, permissions, is_superadmin)
-            VALUES (?, ?, ?)
-        """, (user_id, permissions, is_superadmin))
+            INSERT OR REPLACE INTO admins (user_id, is_superadmin, created_at)
+            VALUES (?, ?, datetime('now'))
+        """, (user_id, is_superadmin))
         conn.commit()
         return True
     except:
@@ -1649,6 +1525,7 @@ def add_admin(user_id, permissions='["all"]', is_superadmin=0):
     finally:
         cursor.close()
         conn.close()
+
 
 def remove_admin(user_id):
     conn = get_db()
@@ -1663,6 +1540,7 @@ def remove_admin(user_id):
     finally:
         cursor.close()
         conn.close()
+
 
 # ============================================
 # REPORTS
@@ -1693,6 +1571,7 @@ def get_sales_report(start_date=None, end_date=None):
         cursor.close()
         conn.close()
 
+
 def get_tickets_by_date(date):
     """Получает билеты за конкретную дату."""
     conn = get_db()
@@ -1711,36 +1590,6 @@ def get_tickets_by_date(date):
             WHERE date(o.created_at) = ?
             ORDER BY o.created_at DESC
         """, (date,))
-        return [dict(row) for row in cursor.fetchall()]
-    finally:
-        cursor.close()
-        conn.close()
-
-def save_admin_action(admin_id, action, details=None, ip_address=None):
-    conn = get_db()
-    cursor = conn.cursor()
-    try:
-        cursor.execute("""
-            INSERT INTO admin_actions (admin_id, action, details, ip_address)
-            VALUES (?, ?, ?, ?)
-        """, (admin_id, action, details, ip_address))
-        conn.commit()
-    except:
-        conn.rollback()
-    finally:
-        cursor.close()
-        conn.close()
-
-def get_admin_actions(limit=100):
-    conn = get_db()
-    cursor = conn.cursor()
-    try:
-        cursor.execute("""
-            SELECT aa.*, u.email 
-            FROM admin_actions aa 
-            JOIN users u ON aa.admin_id = u.id 
-            ORDER BY aa.created_at DESC LIMIT ?
-        """, (limit,))
         return [dict(row) for row in cursor.fetchall()]
     finally:
         cursor.close()
@@ -1963,7 +1812,6 @@ def update_user_loyalty(user_id):
             WHERE id = ?
         """, (level, user_id))
         conn.commit()
-        print(f"DEBUG: loyalty_level обновлён: user_id={user_id}, level={level}, total_spent={total_spent}")
         return level
     except Exception as e:
         print(f"ERROR update_user_loyalty: {e}")
@@ -1976,9 +1824,7 @@ def update_user_loyalty(user_id):
 
 def add_bonus_points(user_id, amount_paid):
     """Начислить бонусные баллы за покупку."""
-    # Фиксированное значение — 1 балл за 1 рубль
-    bonus_rate = 1
-    points = int(amount_paid * bonus_rate)
+    points = int(amount_paid / 100)
     
     conn = get_db()
     cursor = conn.cursor()
@@ -2026,10 +1872,7 @@ def get_all_trips_with_details(limit=100):
                 tr.number as train_number,
                 tr.name as train_name,
                 tr.type as train_type,
-                tr.operator as train_operator,
-                tr.id as train_id,
-                r.distance_km,
-                r.duration_minutes
+                tr.id as train_id
             FROM trips t
             JOIN routes r ON t.route_id = r.id
             JOIN stations s_from ON r.departure_station_id = s_from.id
@@ -2043,7 +1886,6 @@ def get_all_trips_with_details(limit=100):
         for row in cursor.fetchall():
             trip = dict(row)
             
-            # Разделяем дату и время
             if trip['departure_datetime']:
                 parts = trip['departure_datetime'].split(' ')
                 trip['departure_date'] = parts[0] if len(parts) > 0 else ''
@@ -2053,22 +1895,58 @@ def get_all_trips_with_details(limit=100):
                 parts = trip['arrival_datetime'].split(' ')
                 trip['arrival_time'] = parts[1][:5] if len(parts) > 1 else ''
             
-            # Получаем вагоны для этого рейса
-            wagons = get_wagons_for_trip(cursor, trip['trip_id'], trip['train_id'], trip)
+            # Собираем информацию о вагонах напрямую
+            cursor.execute("""
+                SELECT w.type as wagon_type, w.class as wagon_class, w.total_seats,
+                       COUNT(ts.id) as total_trip_seats,
+                       SUM(CASE WHEN ts.is_available = 1 THEN 1 ELSE 0 END) as available_seats
+                FROM wagons w
+                JOIN seats s ON s.wagon_id = w.id
+                LEFT JOIN trip_seats ts ON ts.seat_id = s.id AND ts.trip_id = ?
+                WHERE w.train_id = ?
+                GROUP BY w.id
+            """, (trip['trip_id'], trip['train_id']))
             
-            total_seats = sum(w['total_seats'] for w in wagons)
-            available_seats = sum(w['available_seats'] for w in wagons)
-            
-            # Находим минимальную цену
+            wagons = []
+            total_seats = 0
+            available_seats = 0
             min_price = None
-            for w in wagons:
-                if w['price'] > 0 and (min_price is None or w['price'] < min_price):
-                    min_price = w['price']
+            
+            for w_row in cursor.fetchall():
+                w = dict(w_row)
+                wagon_type = w.get('wagon_type', 'sitting')
+                
+                # Определяем цену для типа вагона
+                price_map = {
+                    'sitting': trip.get('price_sitting', 0) or 0,
+                    'reserved_seat': trip.get('price_reserved_seat', 0) or 0,
+                    'compartment': trip.get('price_compartment', 0) or 0,
+                    'luxury': trip.get('price_luxury', 0) or 0,
+                    'sv': trip.get('price_sv', 0) or 0,
+                    'soft': trip.get('price_soft', 0) or 0,
+                }
+                price = price_map.get(wagon_type, 0)
+                
+                if price > 0 and (min_price is None or price < min_price):
+                    min_price = price
+                
+                wagons.append({
+                    'number': '1',
+                    'type': wagon_type,
+                    'class': w.get('wagon_class', 'economy'),
+                    'total_seats': w.get('total_seats', 0) or 0,
+                    'available_seats': w.get('available_seats', 0) or 0,
+                    'price': price
+                })
+                
+                total_seats += (w.get('total_seats', 0) or 0)
+                available_seats += (w.get('available_seats', 0) or 0)
             
             trip['wagons'] = wagons
             trip['total_seats'] = total_seats
             trip['available_seats'] = available_seats
             trip['min_price'] = min_price or 0
+            trip['train_operator'] = 'РЖД'
             
             trips.append(trip)
         
@@ -2108,7 +1986,6 @@ def get_wagons_for_trip(cursor, trip_id, train_id, trip_prices):
         for w_row in cursor.fetchall():
             wagon = dict(w_row)
             
-            # Определяем цену для типа вагона
             price = 0
             wagon_type = (wagon.get('wagon_type') or '').lower()
             
@@ -2187,6 +2064,39 @@ def get_tickets_by_order_number(order_number):
         """, (order_number,))
         
         return [dict(row) for row in cursor.fetchall()]
+    finally:
+        cursor.close()
+        conn.close()
+
+
+def get_admin_logs(limit=50):
+    """Получить логи действий администраторов."""
+    conn = get_db()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("""
+            SELECT aa.*, u.email 
+            FROM admin_actions aa 
+            JOIN users u ON aa.admin_id = u.id 
+            ORDER BY aa.created_at DESC LIMIT ?
+        """, (limit,))
+        return [dict(row) for row in cursor.fetchall()]
+    finally:
+        cursor.close()
+        conn.close()
+
+
+def toggle_user_active(user_id, is_active):
+    """Активировать или деактивировать пользователя."""
+    conn = get_db()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("UPDATE users SET is_active = ? WHERE id = ?", (is_active, user_id))
+        conn.commit()
+        return True
+    except:
+        conn.rollback()
+        return False
     finally:
         cursor.close()
         conn.close()

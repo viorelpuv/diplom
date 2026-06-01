@@ -110,7 +110,17 @@
                 <span class="sidebar__total-price" id="sidebarTotal">0 ₽</span>
             </div>
             
-            <div class="sidebar__promo">
+            <!-- Бонусы -->
+            <div class="sidebar__promo" id="bonusSection" style="display:none;">
+                <label class="sidebar__promo-label" style="display:flex;align-items:center;gap:10px;cursor:pointer;margin-bottom:8px;">
+                    <input type="checkbox" id="useBonusCheckbox" style="width:20px;height:20px;accent-color:#4672FF;cursor:pointer;">
+                    <span>Списать бонусы</span>
+                </label>
+                <span class="sidebar__promo-message" id="bonusMessage" style="display:block;margin-bottom:12px;"></span>
+            </div>
+            
+            <!-- Промокод -->
+            <div class="sidebar__promo" id="promoSection">
                 <label class="sidebar__promo-label">Промокод</label>
                 <div class="sidebar__promo-row">
                     <input type="text" class="sidebar__promo-input" id="promoInputField" placeholder="Введите промокод">
@@ -125,6 +135,7 @@
                 <input type="hidden" name="seats" id="confirmSeatsData">
                 <input type="hidden" name="trip_info" id="confirmTripData">
                 <input type="hidden" name="promo" id="confirmPromoData">
+                <input type="hidden" name="use_bonus" id="hiddenBonus" value="0">
             </form>
             
             <button class="sidebar__continue-btn" id="confirmPayBtn">Оплатить</button>
@@ -164,19 +175,16 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Читаем данные из sessionStorage
     const passengers = JSON.parse(sessionStorage.getItem('confirm_passengers') || '[]');
     const contact = JSON.parse(sessionStorage.getItem('confirm_contact') || '{}');
     const seats = JSON.parse(sessionStorage.getItem('confirm_seats') || '{}');
     const trip = JSON.parse(sessionStorage.getItem('confirm_trip') || '{}');
     
-    // Заполняем скрытую форму
     document.getElementById('confirmPassengersData').value = JSON.stringify(passengers);
     document.getElementById('confirmContactData').value = JSON.stringify(contact);
     document.getElementById('confirmSeatsData').value = JSON.stringify(seats);
     document.getElementById('confirmTripData').value = JSON.stringify(trip);
     
-    // Заполняем билет "Туда"
     document.getElementById('fwdFrom').textContent = trip.from_city || '—';
     document.getElementById('fwdTo').textContent = trip.to_city || '—';
     document.getElementById('fwdDep').textContent = trip.departure || '—';
@@ -193,7 +201,6 @@ document.addEventListener('DOMContentLoaded', function() {
         '<span class="ticket-card__transfer"><span class="transfer-text">' + (trip.transfer_text || '—') + '</span></span>';
     document.getElementById('fwdChange').href = '/select-seats?from=' + encodeURIComponent(trip.from_city || '') + '&to=' + encodeURIComponent(trip.to_city || '') + '&date_from=' + encodeURIComponent(trip.dep_date || '') + '&trip_index=0';
     
-    // Заполняем билет "Обратно"
     if (trip.has_return === '1') {
         document.getElementById('backwardTicket').style.display = 'flex';
         document.getElementById('bwdFrom').textContent = trip.return_from_city || '—';
@@ -213,7 +220,6 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('bwdChange').href = '/select-seats?from=' + encodeURIComponent(trip.to_city || '') + '&to=' + encodeURIComponent(trip.from_city || '') + '&date_from=' + encodeURIComponent(trip.return_dep_date || '') + '&trip_index=1';
     }
     
-    // Выбранные места
     let seatsHTML = '';
     if (seats.forward && seats.forward.length > 0) {
         seatsHTML += '<div class="confirm-seats__block"><h4 class="confirm-seats__direction">Туда</h4>';
@@ -231,7 +237,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     document.getElementById('confirmSeats').innerHTML = seatsHTML;
     
-    // Данные пассажиров
     let passengersHTML = '';
     const docTypes = {'passport_rf': 'Паспорт РФ', 'passport_int': 'Загранпаспорт', 'birth_cert': 'Свидетельство о рождении', 'seaman': 'Паспорт моряка', 'military': 'Военный билет', 'military_id': 'Удостоверение военнослужащего', 'foreign_doc': 'Иностранный документ'};
     passengers.forEach((p, i) => {
@@ -247,7 +252,6 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     document.getElementById('confirmPassengers').innerHTML = passengersHTML;
     
-    // Контактная информация
     document.getElementById('confirmContact').innerHTML = 
         '<div class="contact-info__header"><h3 class="contact-info__title">Контактная информация покупателя</h3><p class="contact-info__subtitle">Информацию о бронировании направим на вашу электронную почту</p></div>' +
         '<div class="contact-info__fields"><div class="contact-info__row">' +
@@ -255,7 +259,6 @@ document.addEventListener('DOMContentLoaded', function() {
         '<div class="contact-info__group"><label class="contact-info__label">Телефон</label><div class="contact-info__value">' + (contact.phone || '—') + '</div></div>' +
         '</div></div>';
     
-    // Сайдбар
     document.getElementById('sidebarFrom').textContent = trip.from_city || '—';
     document.getElementById('sidebarTo').textContent = trip.to_city || '—';
     
@@ -278,15 +281,51 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('sidebarPassengers').innerHTML = sidebarHTML;
     document.getElementById('sidebarTotal').textContent = total.toLocaleString('ru-RU') + ' ₽';
     
-    // Кнопка "Оплатить"
+    let originalTotal = total;
+    let bonusApplied = false;
+    let promoApplied = false;
+    let bonusAmount = 0;
+    
+    fetch('/api/user-status')
+        .then(r => r.json())
+        .then(userStatus => {
+            if (userStatus.logged_in) {
+                return fetch('/api/profile/bonus');
+            }
+            return null;
+        })
+        .then(r => r ? r.json() : null)
+        .then(data => {
+            if (data && data.points > 0) {
+                document.getElementById('bonusSection').style.display = 'block';
+                const maxBonus = Math.floor(originalTotal * 0.3);
+                bonusAmount = Math.min(data.points, maxBonus);
+                
+                document.getElementById('bonusMessage').textContent = 
+                    'Доступно: ' + data.points.toLocaleString('ru-RU') + ' баллов. Спишется: ' + bonusAmount.toLocaleString('ru-RU') + ' баллов (30% от суммы)';
+                document.getElementById('bonusMessage').style.color = '#34C759';
+            }
+        });
+    
+    document.getElementById('useBonusCheckbox').addEventListener('change', function() {
+        bonusApplied = this.checked;
+        
+        if (this.checked && promoApplied) {
+            this.checked = false;
+            bonusApplied = false;
+            document.getElementById('bonusMessage').textContent = 'Нельзя использовать бонусы вместе с промокодом';
+            document.getElementById('bonusMessage').style.color = '#FF3B30';
+            return;
+        }
+        
+        updateTotal();
+    });
+    
     document.getElementById('confirmPayBtn').addEventListener('click', function() {
+        document.getElementById('hiddenBonus').value = bonusApplied ? bonusAmount : '0';
         document.getElementById('confirmPostForm').submit();
     });
     
-    // Промокод
-    let appliedPromo = null;
-    let originalTotal = total;
-
     document.getElementById('applyPromoBtn')?.addEventListener('click', function() {
         const code = document.getElementById('promoInputField').value.trim();
         const msg = document.getElementById('promoMessage');
@@ -297,7 +336,6 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
-        // Проверяем промокод через API
         fetch('/api/promo/check', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
@@ -306,10 +344,16 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(r => r.json())
         .then(d => {
             if (d.valid) {
-                appliedPromo = code;
+                if (bonusApplied) {
+                    document.getElementById('useBonusCheckbox').checked = false;
+                    bonusApplied = false;
+                    document.getElementById('bonusMessage').textContent = 'Бонусы отключены (нельзя с промокодом)';
+                    document.getElementById('bonusMessage').style.color = '#FF3B30';
+                }
+                
+                promoApplied = true;
                 document.getElementById('confirmPromoData').value = code;
                 
-                // Применяем скидку
                 let newTotal = originalTotal;
                 if (d.discount_percent) {
                     newTotal = Math.round(originalTotal * (1 - d.discount_percent / 100));
@@ -323,6 +367,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 document.getElementById('promoInputField').disabled = true;
                 document.getElementById('applyPromoBtn').disabled = true;
                 document.getElementById('applyPromoBtn').textContent = '✓';
+                document.getElementById('useBonusCheckbox').disabled = true;
             } else {
                 msg.textContent = d.message || 'Промокод недействителен';
                 msg.style.color = '#FF3B30';
@@ -333,6 +378,16 @@ document.addEventListener('DOMContentLoaded', function() {
             msg.style.color = '#FF3B30';
         });
     });
+    
+    function updateTotal() {
+        let newTotal = originalTotal;
+        
+        if (bonusApplied) {
+            newTotal = Math.max(0, originalTotal - bonusAmount);
+        }
+        
+        document.getElementById('sidebarTotal').textContent = newTotal.toLocaleString('ru-RU') + ' ₽';
+    }
 });
 </script>
 {% endblock %}

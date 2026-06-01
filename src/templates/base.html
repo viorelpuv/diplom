@@ -103,11 +103,11 @@
         </div>
         
         <div class="footer__subscribe-wrapper">
-            <div class="footer__subscribe">
+            <div class="footer__subscribe" style="position: relative;">
                 <span class="footer__subscribe-text">Рассылка с выгодными билетами</span>
-                <div class="footer__subscribe-form">
-                    <input type="email" placeholder="Ваш email" class="footer__subscribe-input">
-                    <button class="footer__subscribe-btn">
+                <div class="footer__subscribe-form" id="subscribeForm">
+                    <input type="email" placeholder="Ваш email" class="footer__subscribe-input" id="subscribeEmail">
+                    <button class="footer__subscribe-btn" id="subscribeBtn">
                         <img src="{{ url_for('static', filename='icons/arrow-short.svg') }}" alt="">
                     </button>
                 </div>
@@ -212,7 +212,6 @@ function closeModal(id) {
     document.body.style.overflow = '';
 }
 
-// Проверка статуса пользователя при загрузке
 document.addEventListener('DOMContentLoaded', function() {
     fetch('/api/user-status')
         .then(r => r.json())
@@ -236,7 +235,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Язык и валюта
     const langCur = document.getElementById('langCur');
     if (langCur) {
         const urlParams = new URLSearchParams(window.location.search);
@@ -289,8 +287,85 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         
         if (currentLang === 'en') {
-            setTimeout(() => translatePage('en'), 200);
+            setTimeout(function() {
+                translateDynamicContent();
+                const observer = new MutationObserver(function(mutations) {
+                    mutations.forEach(function(mutation) {
+                        if (mutation.addedNodes.length) {
+                            setTimeout(translateDynamicContent, 100);
+                        }
+                    });
+                });
+                observer.observe(document.body, { childList: true, subtree: true });
+            }, 300);
         }
+    }
+    
+    const urlParams = new URLSearchParams(window.location.search);
+    const showLogin = urlParams.get('show_login');
+    const redirectUrl = urlParams.get('redirect_url');
+    
+    if (showLogin === '1') {
+        if (redirectUrl) {
+            sessionStorage.setItem('brt_redirect_after_login', redirectUrl);
+        }
+        setTimeout(function() {
+            openModal('loginModal');
+        }, 500);
+    }
+    
+    const savedEmail = getCookie('brt_saved_email');
+    if (savedEmail) {
+        const emailInput = document.querySelector('#loginModal input[type="email"]');
+        if (emailInput) {
+            emailInput.value = savedEmail;
+        }
+    }
+
+    // Обработчик подписки на рассылку
+    const subscribeBtn = document.getElementById('subscribeBtn');
+    const subscribeEmail = document.getElementById('subscribeEmail');
+    const subscribeMessage = document.getElementById('subscribeMessage');
+
+    if (subscribeBtn && subscribeEmail) {
+        subscribeBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const email = subscribeEmail.value.trim();
+            
+            if (!email || !email.includes('@')) {
+                subscribeMessage.textContent = data.message;
+                subscribeMessage.style.color = data.success ? '#34C759' : '#FF3B30';
+                subscribeMessage.style.display = 'block';
+                subscribeMessage.style.position = 'static';
+                return;
+            }
+            
+            fetch('/api/subscribe', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({email: email})
+            })
+            .then(r => r.json())
+            .then(data => {
+                subscribeMessage.textContent = data.message;
+                subscribeMessage.style.color = data.success ? '#34C759' : '#FF3B30';
+                subscribeMessage.style.display = 'block';
+                if (data.success) {
+                    subscribeEmail.value = '';
+                    subscribeEmail.placeholder = 'Вы подписаны.';
+                    setTimeout(() => {
+                        subscribeMessage.style.display = 'none';
+                    }, 3000);
+                }
+            });
+        });
+        
+        subscribeEmail.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                subscribeBtn.click();
+            }
+        });
     }
 });
 
@@ -324,7 +399,7 @@ function handleLogin(e) {
     fetch('/api/login', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({email, password})
+        body: JSON.stringify({email: email, password: password})
     })
     .then(r => r.json())
     .then(data => {
@@ -340,17 +415,16 @@ function handleRegister(e) {
     e.preventDefault();
     const form = e.target;
     const inputs = form.querySelectorAll('input');
-    const data = {
-        first_name: inputs[0].value,
-        last_name: inputs[1].value,
-        email: inputs[2].value,
-        password: inputs[3].value
-    };
     
     fetch('/api/register', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify(data)
+        body: JSON.stringify({
+            first_name: inputs[0].value,
+            last_name: inputs[1].value,
+            email: inputs[2].value,
+            password: inputs[3].value
+        })
     })
     .then(r => r.json())
     .then(data => {
@@ -362,7 +436,6 @@ function handleRegister(e) {
     });
 }
 
-// Закрытие по клику вне окна
 document.addEventListener('click', function(e) {
     if (e.target.classList.contains('modal')) {
         e.target.style.display = 'none';
@@ -370,9 +443,6 @@ document.addEventListener('click', function(e) {
     }
 });
 
-// ============================================
-// COOKIE HELPER
-// ============================================
 function setCookie(name, value, days) {
     const date = new Date();
     date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
@@ -389,9 +459,6 @@ function getCookie(name) {
     return null;
 }
 
-// ============================================
-// PRELOADER
-// ============================================
 (function() {
     var preloader = document.getElementById('preloader');
     if (!preloader) return;
@@ -406,12 +473,14 @@ function getCookie(name) {
     
     document.addEventListener('click', function(e) {
         var el = e.target.closest('a, button, .route-card, .quick-route-card, .info-block__large, .info-block__small, .sidebar__continue-btn, .ticket-card__change');
-        if (el && !el.closest('#scrollToTopBtn') && !el.closest('#langCur') && !el.closest('#profileDropdown') && !el.closest('#cookieConsent') && !el.closest('.faq-accordion__trigger') && !el.closest('.faq-card')) {
+        if (el && !el.closest('#langCur') && !el.closest('#profileDropdown') && !el.closest('#cookieConsent') && !el.closest('.faq-accordion__trigger') && !el.closest('.faq-card')) {
             var href = el.getAttribute('href');
-            // Пропускаем якорные ссылки (начинаются с #)
             if (href && href !== '#' && !href.startsWith('#') && !href.startsWith('javascript:') && !href.startsWith('?lang') && !href.startsWith('?cur')) {
-                showPreloader();
-                setTimeout(hidePreloader, 5000);
+                preloader.style.display = 'flex';
+                preloader.classList.add('preloader--show');
+                preloader.classList.remove('preloader--hide');
+                sessionStorage.setItem('preloader_active', '1');
+                setTimeout(hideNow, 5000);
             }
         }
     });
@@ -428,174 +497,155 @@ function getCookie(name) {
     window.addEventListener('load', hideNow);
 })();
 
-// ============================================
-// TRANSLATIONS
-// ============================================
 const translations = {
-    'Админ-панель': 'Admin Panel',
-    'Супер-админ': 'Super Admin',
-    'Администратор': 'Administrator',
-    'Дашборд': 'Dashboard',
-    'Выручка сегодня': 'Today\'s Revenue',
-    'Продано билетов': 'Tickets Sold',
-    'Активных заказов': 'Active Orders',
-    'Пользователей': 'Users',
-    'Заказы': 'Orders',
-    'Пользователи': 'Users',
-    'Поезда и рейсы': 'Trains & Trips',
-    'Станции и маршруты': 'Stations & Routes',
-    'Билеты': 'Tickets',
-    'Отчёты': 'Reports',
-    'Промокоды': 'Promo Codes',
-    'Логи': 'Logs',
-    'Телефон': 'Phone',
-    'Настройки': 'Settings',
-    'Администраторы': 'Administrators',
-    'Нет заказов': 'No Orders',
-    'Нет пользователей': 'No Users',
-    'Нет данных': 'No Data',
-    'Нет билетов': 'No Tickets',
-    'Нет администраторов': 'No Administrators',
-    'Нет данных о продажах': 'No Sales Data',
-    'Нет промокодов': 'No Promo Codes',
-    'Нет записей': 'No Records',
-    'Загрузка...': 'Loading...',
-    'Ничего не найдено': 'Nothing Found',
-    'Поиск по номеру заказа...': 'Search by Order Number...',
-    'Поиск по email, имени или телефону...': 'Search by Email, Name or Phone...',
-    'Поиск по номеру или названию поезда...': 'Search by Train Number or Name...',
-    'Поиск по названию, городу или коду станции...': 'Search by Station Name, City or Code...',
-    'Поиск по номеру билета...': 'Search by Ticket Number...',
-    'Все статусы': 'All Statuses',
-    'Все действия': 'All Actions',
-    'Ожидает оплаты': 'Awaiting Payment',
-    'Оплачен': 'Paid',
-    'Отменён': 'Cancelled',
-    'Истёк': 'Expired',
-    'Возврат': 'Refund',
-    'Активен': 'Active',
-    'Использован': 'Used',
-    'ID': 'ID',
-    'Имя': 'Name',
-    'Дата регистрации': 'Registration Date',
-    'Действия': 'Actions',
-    'Роль': 'Role',
-    'Нет': 'None',
-    'Серебряный': 'Silver',
-    'Золотой': 'Gold',
-    'Платиновый': 'Platinum',
-    'Сохранить изменения': 'Save Changes',
-    'Сохранить': 'Save',
-    'Добавить администратора': 'Add Administrator',
-    'Добавить': 'Add',
-    'Сделать супер-админом': 'Make Super Admin',
-    'Повысить до супер-админа': 'Promote to Super Admin',
-    'Понизить до админа': 'Demote to Admin',
-    'Удалить админа': 'Remove Admin',
-    'Удалить администратора?': 'Remove Administrator?',
-    'Пользователь останется в системе, но потеряет права админа.': 'User will remain in system but lose admin rights.',
-    'Администратор добавлен': 'Administrator Added',
-    'Администратор удалён': 'Administrator Removed',
-    'Роль обновлена': 'Role Updated',
-    'Ошибка добавления': 'Add Error',
-    'Ошибка удаления': 'Remove Error',
-    'Ошибка обновления роли': 'Role Update Error',
-    'Ошибка создания пользователя': 'User Creation Error',
-    'Пользователь с таким email не найден': 'User with this email not found',
-    'Пользователь уже существует': 'User Already Exists',
-    'Пользователь обновлён': 'User Updated',
-    'Пользователь не найден': 'User Not Found',
-    'Ошибка загрузки данных пользователя': 'User Data Load Error',
-    'Ошибка загрузки данных': 'Data Load Error',
-    'Ошибка сохранения': 'Save Error',
-    'Вы уверены, что хотите': 'Are you sure you want to',
-    'Удалить пользователя навсегда?': 'Permanently Delete User?',
-    'Удалить промокод?': 'Delete Promo Code?',
-    'Ошибка создания': 'Creation Error',
-    'Ошибка соединения': 'Connection Error',
-    'Ошибка при формировании отчёта': 'Report Generation Error',
-    'Нет данных для скачивания': 'No Data to Download',
-    'Оплата картой': 'Card Payment',
-    'Безопасный платёж через платёжный шлюз': 'Secure Payment via Gateway',
-    'Заказ не найден': 'Order Not Found',
-    'Пожалуйста, начните оформление заново': 'Please Start Over',
-    'На главную': 'To Home',
-    'Платёж защищён. Данные карты не сохраняются.': 'Payment Secured. Card Data Not Stored.',
-    'Номер карты': 'Card Number',
-    'Срок действия': 'Expiry Date',
-    'Имя держателя карты': 'Cardholder Name',
-    'Оплатить': 'Pay',
-    'Обработка...': 'Processing...',
-    'Пожалуйста, проверьте данные карты': 'Please Check Card Details',
-    'Оплата прошла успешно!': 'Payment Successful!',
-    'Заказ оплачен. Билеты активны.': 'Order Paid. Tickets Active.',
-    'Спасибо за покупку!': 'Thank You for Your Purchase!',
+    'Служба поддержки': 'Support',
+    'В путь без переплат.': 'Travel without overpay.',
+    'Найти': 'Search',
+    'Откуда': 'From',
+    'Куда': 'To',
+    'Когда': 'When',
+    'Обратно': 'Return',
+    'пассажир': 'passenger',
+    'пассажира': 'passengers',
+    'пассажиров': 'passengers',
+    'Популярные маршруты': 'Popular Routes',
+    'Россия': 'Russia',
+    'Польша': 'Poland',
+    'От': 'From',
+    'Справочный раздел': 'Information',
+    'С ответами на часто задаваемые': 'With answers to frequently asked',
+    'вопросы': 'questions',
+    'Вернуть билет': 'Return Ticket',
+    'Перевозка животных': 'Pet Transport',
+    'Провоз багажа': 'Baggage',
+    'Обратная связь': 'Feedback',
+    'Количество пассажиров': 'Passenger Count',
+    'Взрослые': 'Adults',
+    'Дети': 'Children',
+    'Младенцы': 'Infants',
+    '12 лет и старше': '12 years and older',
+    'От 2 до 11 лет': '2 to 11 years',
+    'Младше 2 лет, без места': 'Under 2, no seat',
+    'Класс обслуживания': 'Service Class',
+    'Эконом': 'Economy',
+    'Бизнес': 'Business',
+    'Клиентам': 'For Clients',
+    'Частые вопросы': 'FAQ',
+    'Контакты': 'Contacts',
+    'Использование cookie': 'Cookie Usage',
+    'Конфиденциальность': 'Privacy',
+    'Сотрудничество': 'Partnership',
+    'Рекламодателям': 'For Advertisers',
+    'Блогерам': 'For Bloggers',
+    'Компания': 'Company',
+    'О компании': 'About',
+    'Карьера': 'Careers',
+    'Отзывы': 'Reviews',
+    'Рассылка с выгодными билетами': 'Newsletter with cheap tickets',
+    'Ваш email': 'Your email',
+    'Соглашаюсь получать рекламу': 'I agree to receive ads',
+    'Мы в соц сетях': 'Social Media',
+    'Способы оплаты': 'Payment Methods',
+    'Мы используем': 'We use ',
+    'cookie-файлы': 'cookies',
+    'для улучшения работы сайта.': 'to improve the site.',
+    'Продолжая пользоваться сайтом, вы соглашаетесь с их использованием.': 'By continuing to use the site, you agree to their use.',
+    'Принять': 'Accept',
+    'Тип вагона': 'Wagon Type',
+    'Все типы': 'All Types',
+    'Сидячий': 'Sitting',
+    'Плацкарт': 'Reserved Seat',
+    'Купе': 'Compart.',
+    'Люкс': 'Luxury',
+    'Мягкий': 'Soft',
+    'СВ': 'SV',
+    'Время отпр./приб.': 'Dep./Arr. Time',
+    'Любое': 'Any',
+    'Утро 06:00–12:00': 'Morning 06:00–12:00',
+    'День 12:00–18:00': 'Afternoon 12:00–18:00',
+    'Вечер 18:00–00:00': 'Evening 18:00–00:00',
+    'Ночь 00:00–06:00': 'Night 00:00–06:00',
+    'Цена': 'Price',
+    'До': 'To',
+    'Применить': 'Apply',
+    'Сначала ранние': 'Earliest First',
+    'Сначала поздние': 'Latest First',
+    'Сначала дешёвые': 'Cheapest First',
+    'Сначала дорогие': 'Most Expensive',
+    'Билетов не найдено': 'No Tickets Found',
+    'Попробуйте изменить параметры поиска': 'Try changing search parameters',
+    'Выбрать место': 'Select Seat',
+    'Выбрать поезд туда': 'Select Forward',
+    'Выбрать поезд обратно': 'Select Return',
+    'Введите город отправления и город прибытия': 'Enter departure and arrival cities',
+    'Без пересадок': 'No Transfers',
+    'С пересадкой': 'With Transfer',
+    'Нет мест': 'No Seats',
+    'из': 'of',
+    'место': 'seat',
+    'места': 'seats',
+    'мест': 'seats',
+    'Ваш поезд туда': 'Your Forward Train',
+    'Изменить выбор': 'Change',
+    'Сначала выберите поезд туда': 'Select forward train first',
+    'Стоимость билетов': 'Ticket Price',
+    'Итого': 'Total',
+    'Далее': 'Next',
+    'Изменить поезд туда': 'Change Forward',
+    'Изменить поезд обратно': 'Change Return',
+    'Укажите количество билетов': 'Number of Tickets',
+    'Выберите тип вагона и место': 'Select Wagon Type & Seat',
+    'Загрузка схемы вагона...': 'Loading Scheme...',
+    'Будет известна после выбора мест': 'Available after seat selection',
+    'Места туда': 'Forward Seats',
+    'Места обратно': 'Return Seats',
+    'Место не выбрано': 'Seat Not Selected',
+    'Ошибка загрузки схемы': 'Scheme Load Error',
+    'Взрослый': 'Adult',
+    'Детский': 'Child',
+    'Вагон': 'Wagon',
+    'Свободно': 'Free',
+    'ваг.': 'wag.',
+    'Ваг.': 'Wag.',
+    'Язык': 'Language',
+    'Валюта': 'Currency',
+    'Русский': 'Russian',
+    'English': 'English',
+    'Российский рубль': 'Russian Ruble',
+    'Доллар США': 'US Dollar',
+    'Евро': 'Euro',
+    'Личный кабинет': 'Personal Account',
     'Мои билеты': 'My Tickets',
-    'Создать': 'Create',
-    'Скачать CSV': 'Download CSV',
-    'Редактирование пользователя': 'Edit User',
-    'Добавить документ': 'Add Document',
-    'Документ сохранён': 'Document Saved',
-    'Тип документа': 'Document Type',
-    'Номер документа': 'Document Number',
-    'Серия': 'Series',
-    'Не указан': 'Not Specified',
-    'Другой документ': 'Other Document',
-    'Бонусные баллы': 'Bonus Points',
-    'Уровень лояльности': 'Loyalty Level',
-    'Сервисный сбор': 'Service Fee',
-    'Введите email': 'Enter Email',
-    'Введите промокод': 'Enter Promo Code',
-    'Введите код': 'Enter Code',
-    'Код': 'Code',
-    'Тип скидки': 'Discount Type',
-    'Процент': 'Percent',
-    'Фикс. цена': 'Fixed Price',
-    'Скидка': 'Discount',
-    'Мин. сумма заказа': 'Min Order Amount',
-    'Макс. использований': 'Max Uses',
-    'безлимит': 'Unlimited',
-    'Действует до': 'Valid Until',
-    'Статус': 'Status',
-    'Исп./Лимит': 'Used/Limit',
-    'Создан промокод': 'Promo Code Created',
-    'Удалён промокод': 'Promo Code Deleted',
-    'Изменил статус пользователя': 'Changed User Status',
-    'Изменил пользователя': 'Edited User',
-    'Удалил пользователя': 'Deleted User',
-    'Добавил админа': 'Added Admin',
-    'Удалил админа': 'Removed Admin',
-    'Изменил сервисный сбор': 'Changed Service Fee',
-    'Создал пользователя': 'Created User',
-    'Создал промокод': 'Created Promo Code',
-    'Удалил промокод': 'Deleted Promo Code',
-    'Доступно только супер-админу': 'Super Admin Only',
-    'Пароль': 'Password',
-    'Придумайте пароль': 'Create Password',
-    'Имя администратора': 'Admin Name',
-    'Промокод применён!': 'Promo Applied!',
-    'Промокод недействителен': 'Invalid Promo Code',
-    'Минимальная сумма заказа:': 'Min Order Amount:',
-    'Промокод не найден или истёк': 'Promo Code Not Found or Expired',
-    'Промокод больше не действует': 'Promo Code No Longer Valid',
-    'Скидка применена': 'Discount Applied',
-    'Билетов в среднем за день': 'Avg Tickets per Day',
-    'Средняя выручка за день': 'Avg Revenue per Day',
-    'Детализация по дням': 'Daily Breakdown',
-    'Дата': 'Date',
-    'Выручка': 'Revenue',
-    'Продано билетов': 'Tickets Sold',
-    'Общая выручка': 'Total Revenue',
-    'Билеты не найдены': 'Tickets Not Found',
-    'Ошибка загрузки': 'Load Error',
     'История поездок': 'Trip History',
-    'История поездок пуста': 'Trip History Empty',
     'Личные данные': 'Personal Data',
     'Документы': 'Documents',
     'Бонусная программа': 'Bonus Program',
     'История активности': 'Activity History',
     'Сменить пароль': 'Change Password',
     'Выйти': 'Logout',
+    'У вас пока нет билетов': 'You have no tickets yet',
+    'Загрузка...': 'Loading...',
+    'Фамилия': 'Last Name',
+    'Имя': 'First Name',
+    'Отчество': 'Middle Name',
+    'Дата рождения': 'Date of Birth',
+    'Пол': 'Gender',
+    'Мужской': 'Male',
+    'Женский': 'Female',
+    'Email': 'Email',
+    'Телефон': 'Phone',
+    'Гражданство': 'Citizenship',
+    'Сохранить изменения': 'Save Changes',
+    'Текущий пароль': 'Current Password',
+    'Новый пароль': 'New Password',
+    'Добавить документ': 'Add Document',
+    'Тип документа': 'Document Type',
+    'Серия и номер': 'Series and Number',
+    'Номер документа': 'Document Number',
+    'Сохранить': 'Save',
+    'Документ сохранён': 'Document Saved',
+    'Ошибка сохранения': 'Save Error',
+    'Нет сохранённых документов': 'No Saved Documents',
     'баллов': 'points',
     'Уровень:': 'Level:',
     'Кешбэк бонусами': 'Cashback Bonus',
@@ -604,259 +654,62 @@ const translations = {
     'Осталось': 'Remaining',
     'до следующего уровня': 'to Next Level',
     'Вы достигли максимального уровня!': 'You Reached Max Level!',
-    'Нет сохранённых документов': 'No Saved Documents',
-    'Сохранено': 'Saved',
-    'Готово': 'Done',
-    'Неверный текущий пароль': 'Incorrect Current Password',
-    'Пароль изменён': 'Password Changed',
-    'Ошибка': 'Error',
-    'Не авторизован': 'Not Authorized',
-    'У вас пока нет билетов': 'You Have No Tickets Yet',
-    'Поезд': 'Train',
-    'Билет №': 'Ticket #',
+    'Базовый': 'Basic',
+    'Серебряный': 'Silver',
+    'Золотой': 'Gold',
+    'Платиновый': 'Platinum',
+    'История поездок пуста': 'Trip History Empty',
+    'Нет записей': 'No Records',
     'Неизвестное устройство': 'Unknown Device',
     'Успешно': 'Success',
     'Неудачно': 'Failed',
-    'Текущий пароль': 'Current Password',
-    'Новый пароль': 'New Password',
-    'Справочный раздел': 'Information',
-    'Вернуть билет': 'Return Ticket',
-    'Перевозка животных': 'Pet Transport',
-    'Провоз багажа': 'Baggage',
-    'Обратная связь': 'Feedback',
-    'Способы оплаты': 'Payment Methods',
-    'Регистрация и вход': 'Registration & Login',
-    'С ответами на часто задаваемые вопросы': 'With answers to frequently asked questions',
-    'Условия возврата и обмена билетов': 'Ticket return and exchange conditions',
-    'Правила провоза домашних питомцев': 'Rules for transporting pets',
-    'Нормы и правила провоза багажа': 'Baggage rules and regulations',
-    'Свяжитесь с нами': 'Contact us',
-    'Доступные способы оплаты билетов': 'Available ticket payment methods',
-    'Как создать аккаунт и войти': 'How to create an account and log in',
-    'Как вернуть билет?': 'How to return a ticket?',
-    'Какая комиссия при возврате?': 'What is the refund fee?',
-    'Сколько ждать возврат денег?': 'How long to wait for a refund?',
-    'Какие животные допускаются к перевозке?': 'What animals are allowed for transport?',
-    'Нужно ли покупать билет для животного?': 'Do I need to buy a ticket for an animal?',
-    'Сколько багажа можно провезти бесплатно?': 'How much baggage can be carried for free?',
-    'Что нельзя провозить в багаже?': 'What cannot be carried in baggage?',
-    'Как связаться с поддержкой?': 'How to contact support?',
-    'Форма обратной связи': 'Feedback form',
-    'Какие способы оплаты доступны?': 'What payment methods are available?',
-    'Безопасно ли вводить данные карты?': 'Is it safe to enter card details?',
-    'Как зарегистрироваться?': 'How to register?',
-    'Что делать если забыл пароль?': 'What to do if you forgot your password?',
-    'Ваше имя': 'Your name',
-    'Сообщение': 'Message',
-    'Опишите ваш вопрос...': 'Describe your question...',
-    'Отправить': 'Send',
-    'Сообщение отправлено. Мы ответим вам в ближайшее время.': 'Message sent. We will reply shortly.',
-    'Ошибка отправки': 'Send error',
-    'Для возврата билета перейдите в раздел "Мои билеты" в личном кабинете, выберите нужный билет и нажмите кнопку "Вернуть". Возврат возможен не позднее чем за 24 часа до отправления поезда.': 'To return a ticket, go to "My Tickets" in your account, select the ticket and click "Return". Returns are possible no later than 24 hours before departure.',
-    'При возврате билета удерживается сервисный сбор. Размер комиссии зависит от времени до отправления поезда: более 24 часов — удерживается только сервисный сбор, менее 24 часов — дополнительно 50% от стоимости билета, менее 2 часов — возврат не производится.': 'A service fee is charged for ticket returns. The fee depends on time before departure: more than 24 hours — only service fee, less than 24 hours — additional 50% of ticket price, less than 2 hours — no refund.',
-    'Денежные средства возвращаются на карту в течение 3-30 рабочих дней. Срок зависит от вашего банка.': 'Funds are returned to the card within 3-30 business days. The timeframe depends on your bank.',
-    'Допускаются мелкие домашние животные (кошки, собаки, птицы) при наличии ветеринарного паспорта и переноски. Крупные собаки перевозятся только в специальных вагонах.': 'Small pets (cats, dogs, birds) are allowed with a veterinary passport and carrier. Large dogs are transported only in special carriages.',
-    'Да, для животного оформляется отдельный билет. Стоимость зависит от веса животного и типа вагона.': 'Yes, a separate ticket is issued for an animal. The cost depends on the animal\'s weight and carriage type.',
-    'Один пассажир может провезти бесплатно: 2 места ручной клади общим весом до 36 кг и габаритами не более 50×50×120 см каждое.': 'One passenger can carry for free: 2 pieces of hand luggage with a total weight up to 36 kg and dimensions not exceeding 50×50×120 cm each.',
-    'Запрещены: легковоспламеняющиеся жидкости, взрывчатые вещества, оружие без разрешения, ядовитые и радиоактивные материалы.': 'Prohibited: flammable liquids, explosives, weapons without permission, toxic and radioactive materials.',
-    'Вы можете связаться с нами по телефону 8-800-123-45-67, написать на почту support@brt.ru или через форму обратной связи в приложении. Поддержка работает ежедневно с 08:00 до 23:00 по московскому времени.': 'You can contact us by phone 8-800-123-45-67, email support@brt.ru or via the feedback form. Support is available daily from 08:00 to 23:00 Moscow time.',
-    'Оплатить билеты можно банковской картой (Мир, Visa, Mastercard), через СБП, СберПэй, а также наличными в кассах вокзалов.': 'Tickets can be paid by bank card (Mir, Visa, Mastercard), via SBP, SberPay, or cash at station ticket offices.',
-    'Да, все платежи проходят через защищённое соединение. Данные карты не сохраняются на сервере и передаются только в зашифрованном виде.': 'Yes, all payments go through a secure connection. Card data is not stored on the server and is transmitted only in encrypted form.',
-    'Нажмите на иконку профиля в правом верхнем углу, выберите "Зарегистрироваться", заполните поля Имя, Фамилия, Email и Пароль. После регистрации вы сможете отслеживать свои билеты и получать бонусы.': 'Click the profile icon in the top right corner, select "Register", fill in First Name, Last Name, Email and Password. After registration you can track your tickets and earn bonuses.',
-    'Напишите в службу поддержки на почту support@brt.ru с указанием email, который вы использовали при регистрации. Мы поможем восстановить доступ к аккаунту.': 'Write to support at support@brt.ru with the email you used during registration. We will help restore access to your account.',
+    'Пользователь': 'User',
+    'Паспорт РФ': 'Russian Passport',
+    'Загранпаспорт': 'International Passport',
+    'Свидетельство о рождении': 'Birth Certificate',
+    'Паспорт моряка': 'Seaman Passport',
+    'Военный билет': 'Military ID',
+    'Удостоверение военнослужащего': 'Military Card',
+    'Иностранный документ': 'Foreign Document',
+    'Другой документ': 'Other Document',
+    'Поезд': 'Train',
+    'Билет №': 'Ticket #',
+    'Активен': 'Active',
+    'Использован': 'Used',
+    'Отменён': 'Cancelled',
+    'Возврат': 'Refund',
+    'Готово': 'Done',
+    'Сохранено': 'Saved',
+    'Не авторизован': 'Not Authorized',
+    'Категория военнослужащего': 'Military Category',
+    'Дата начала военной службы': 'Military Service Start Date',
+    'Контрактник': 'Contractor',
+    'Призывник': 'Conscript',
+    'Мобилизованный': 'Mobilized',
+    'Курсант': 'Cadet'
 };
 
-function translatePage(lang) {
-    if (lang === 'ru') {
-        location.reload();
-        return;
-    }
-    
-    // Основной перевод
-    translateDynamicContent();
-    
-    // Наблюдатель за изменениями DOM
-    const observer = new MutationObserver(function(mutations) {
-        mutations.forEach(function(mutation) {
-            if (mutation.addedNodes.length) {
-                setTimeout(translateDynamicContent, 100);
-            }
-        });
-    });
-    
-    observer.observe(document.body, { childList: true, subtree: true });
-    
-    // Сохраняем observer для последующего использования
-    window._translateObserver = observer;
-}
-
 function translateDynamicContent() {
-    // Переводим все текстовые ноды
     const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null, false);
     const textNodes = [];
     while (walker.nextNode()) textNodes.push(walker.currentNode);
     
     textNodes.forEach(node => {
         let text = node.textContent.trim();
-        
         if (!text || node.parentElement.closest('script, style, [data-no-translate]')) return;
         
-        // Точное совпадение
         if (translations[text]) {
             node.textContent = translations[text];
             return;
         }
-        
-        // Частичный перевод
-        let translated = node.textContent;
-        Object.keys(translations).forEach(ru => {
-            if (ru.length > 3 && translated.includes(ru)) {
-                translated = translated.replace(new RegExp(ru.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), translations[ru]);
-            }
-        });
-        if (translated !== node.textContent) node.textContent = translated;
     });
     
-    // Переводим плейсхолдеры
     document.querySelectorAll('[placeholder]').forEach(el => {
         const p = el.getAttribute('placeholder');
         if (p && translations[p]) el.setAttribute('placeholder', translations[p]);
     });
-    
-    // Переводим заголовки FAQ
-    document.querySelectorAll('.faq-section__title, .faq-card__title').forEach(title => {
-        const text = title.textContent.trim();
-        if (translations[text]) title.textContent = translations[text];
-    });
-    
-    // Переводим кнопки аккордеона
-    document.querySelectorAll('.faq-accordion__trigger span:first-child').forEach(span => {
-        const text = span.textContent.trim();
-        if (translations[text]) span.textContent = translations[text];
-    });
-    
-    // Переводим заголовки в админке (th)
-    document.querySelectorAll('th').forEach(th => {
-        const text = th.textContent.trim();
-        if (translations[text]) th.textContent = translations[text];
-    });
-    
-    // Переводим заголовки h2, h3
-    document.querySelectorAll('h2, h3, .admin-tab__title').forEach(el => {
-        const text = el.textContent.trim();
-        if (translations[text]) el.textContent = translations[text];
-    });
-    
-    // Переводим кнопки
-    document.querySelectorAll('button').forEach(btn => {
-        if (btn.children.length === 0 || btn.childNodes.length === 1) {
-            const text = btn.textContent.trim();
-            if (translations[text]) btn.textContent = translations[text];
-        }
-    });
-    
-    // Переводим ссылки навигации админки
-    document.querySelectorAll('.admin-sidebar__link').forEach(link => {
-        const text = link.textContent.trim();
-        if (translations[text]) link.childNodes.forEach(node => {
-            if (node.nodeType === 3 && node.textContent.trim()) {
-                node.textContent = translations[text] || node.textContent;
-            }
-        });
-    });
 }
 
-// Автоматическое открытие модалки входа
-document.addEventListener('DOMContentLoaded', function() {
-    const urlParams = new URLSearchParams(window.location.search);
-    const showLogin = urlParams.get('show_login');
-    const redirectUrl = urlParams.get('redirect_url');
-    
-    if (showLogin === '1') {
-        // Сохраняем URL для редиректа после входа
-        if (redirectUrl) {
-            sessionStorage.setItem('brt_redirect_after_login', redirectUrl);
-        }
-        // Открываем модалку
-        setTimeout(function() {
-            openModal('loginModal');
-        }, 500);
-    }
-    
-    // Проверяем сохранённый email
-    const savedEmail = getCookie('brt_saved_email');
-    if (savedEmail) {
-        const emailInput = document.querySelector('#loginModal input[type="email"]');
-        if (emailInput) {
-            emailInput.value = savedEmail;
-        }
-    }
-});
-
-// Обновлённая функция handleLogin
-function handleLogin(e) {
-    e.preventDefault();
-    const form = e.target;
-    const email = form.querySelector('input[type="email"]').value;
-    const password = form.querySelector('input[type="password"]').value;
-    const redirectUrl = sessionStorage.getItem('brt_redirect_after_login') || '';
-    
-    fetch('/api/login', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({
-            email: email, 
-            password: password,
-            redirect_url: redirectUrl
-        })
-    })
-    .then(r => r.json())
-    .then(data => {
-        if (data.success) {
-            sessionStorage.removeItem('brt_redirect_after_login');
-            // Если есть URL для редиректа — переходим
-            if (data.redirect_url) {
-                window.location.href = data.redirect_url;
-            } else {
-                window.location.reload();
-            }
-        } else {
-            alert(data.message || 'Ошибка входа');
-        }
-    });
-}
-
-// Обновлённая функция handleRegister
-function handleRegister(e) {
-    e.preventDefault();
-    const form = e.target;
-    const inputs = form.querySelectorAll('input');
-    const redirectUrl = sessionStorage.getItem('brt_redirect_after_login') || '';
-    
-    const data = {
-        first_name: inputs[0].value,
-        last_name: inputs[1].value,
-        email: inputs[2].value,
-        password: inputs[3].value
-    };
-    
-    fetch('/api/register', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify(data)
-    })
-    .then(r => r.json())
-    .then(data => {
-        if (data.success) {
-            sessionStorage.removeItem('brt_redirect_after_login');
-            window.location.reload();
-        } else {
-            alert(data.message || 'Ошибка регистрации');
-        }
-    });
-}
-
-// Перехват fetch-запросов для автоматического показа модалки
 const originalFetch = window.fetch;
 window.fetch = function(...args) {
     return originalFetch.apply(this, args).then(response => {
